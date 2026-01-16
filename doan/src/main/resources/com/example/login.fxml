@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" spacing="20" xmlns="http://javafx.com/javafx" 
+      xmlns:fx="http://javafx.com/fxml" 
+      fx:controller="com.example.controller.LoginController"
+      style="-fx-background-color: #f5f5f5;">
+    
+    <padding>
+        <Insets top="50" right="50" bottom="50" left="50"/>
+    </padding>
+
+    <!-- Tiêu đề -->
+    <Label text="ĐĂNG NHẬP" style="-fx-text-fill: #2196F3; -fx-font-weight: bold;">
+        <font>
+            <Font size="28"/>
+        </font>
+    </Label>
+
+    <Label text="Hệ thống quản lý chi tiêu" style="-fx-text-fill: #666;">
+        <font>
+            <Font size="14"/>
+        </font>
+    </Label>
+
+    <Region prefHeight="20"/>
+
+    <!-- Form đăng nhập -->
+    <VBox spacing="15" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30;">
+        <effect>
+            <javafx.scene.effect.DropShadow color="#00000033" radius="10"/>
+        </effect>
+
+        <!-- Tên đăng nhập -->
+        <VBox spacing="5">
+            <Label text="Tên đăng nhập" style="-fx-font-weight: bold;"/>
+            <TextField fx:id="txtTenDangNhap" promptText="Nhập tên đăng nhập" 
+                      style="-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5;"/>
+        </VBox>
+
+        <!-- Mật khẩu -->
+        <VBox spacing="5">
+            <Label text="Mật khẩu" style="-fx-font-weight: bold;"/>
+            <PasswordField fx:id="txtMatKhau" promptText="Nhập mật khẩu" 
+                          style="-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5;"/>
+        </VBox>
+
+        <!-- Thông báo -->
+        <Label fx:id="lblThongBao" text="" wrapText="true" style="-fx-font-size: 12px;"/>
+
+        <!-- Nút đăng nhập -->
+        <Button fx:id="btnDangNhap" text="Đăng nhập" onAction="#handleDangNhap" 
+                maxWidth="Infinity" 
+                style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 12; -fx-background-radius: 5; -fx-cursor: hand;">
+            <font>
+                <Font name="System Bold" size="14"/>
+            </font>
+        </Button>
+
+        <!-- Link đăng ký -->
+        <HBox alignment="CENTER" spacing="5">
+            <Label text="Chưa có tài khoản?" style="-fx-text-fill: #666;"/>
+            <Hyperlink fx:id="linkDangKy" text="Đăng ký ngay" onAction="#handleDangKy" 
+                      style="-fx-text-fill: #2196F3;"/>
+        </HBox>
+    </VBox>
+
+</VBox>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.controller.TransactionController"
+            style="-fx-background-color: #f5f5f5;">
+
+    <!-- HEADER -->
+    <top>
+        <VBox style="-fx-background-color: #2196F3; -fx-padding: 20;">
+            <HBox alignment="CENTER_LEFT" spacing="20">
+                <Label text="💸 CHUYỂN TIỀN" style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="lblSoTaiKhoan" text="STK: " style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
+                <Button fx:id="btnQuayLai" text="← Quay lại" onAction="#handleQuayLai"
+                        style="-fx-background-color: white; -fx-text-fill: #2196F3; -fx-cursor: hand; -fx-padding: 8 15;"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- CENTER - CONTENT -->
+    <center>
+        <HBox spacing="20" style="-fx-padding: 20;">
+            
+            <!-- LEFT - Form chuyển tiền -->
+            <VBox spacing="20" style="-fx-background-color: white; -fx-padding: 30; -fx-background-radius: 10; -fx-min-width: 450;">
+                <effect><javafx.scene.effect.DropShadow color="#00000022" radius="8"/></effect>
+                
+                <Label text="THÔNG TIN CHUYỂN TIỀN" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2196F3;"/>
+                
+                <!-- Số dư hiện tại -->
+                <VBox spacing="5">
+                    <Label text="Số dư hiện tại:" style="-fx-font-size: 12px; -fx-text-fill: #666;"/>
+                    <Label fx:id="lblSoDu" text="0 đ" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: green;"/>
+                </VBox>
+                
+                <Separator/>
+                
+                <!-- Số tài khoản người nhận -->
+                <VBox spacing="8">
+                    <Label text="Số tài khoản người nhận *" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="txtSoTaiKhoanNhan" promptText="Nhập số tài khoản người nhận"
+                               style="-fx-padding: 12; -fx-font-size: 14px; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;"/>
+                </VBox>
+                
+                <!-- Số tiền -->
+                <VBox spacing="8">
+                    <Label text="Số tiền (VNĐ) *" style="-fx-font-weight: bold;"/>
+                    <TextField fx:id="txtSoTien" promptText="Nhập số tiền cần chuyển"
+                               style="-fx-padding: 12; -fx-font-size: 14px; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;"/>
+                    <Label text="Ví dụ: 100000" style="-fx-font-size: 11px; -fx-text-fill: #999;"/>
+                </VBox>
+                
+                <!-- Nội dung -->
+                <VBox spacing="8">
+                    <Label text="Nội dung chuyển tiền" style="-fx-font-weight: bold;"/>
+                    <TextArea fx:id="txtNoiDung" promptText="Nhập nội dung chuyển tiền (tùy chọn)" wrapText="true" prefRowCount="3"
+                              style="-fx-padding: 12; -fx-font-size: 14px; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-radius: 5;"/>
+                </VBox>
+                
+                <!-- Buttons -->
+                <HBox spacing="15" alignment="CENTER">
+                    <Button fx:id="btnChuyenTien" text="💸 Chuyển tiền" onAction="#handleChuyenTien"
+                            style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 12 30; -fx-cursor: hand; -fx-background-radius: 5;"
+                            HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+                
+                <Label text="* Thông tin bắt buộc" style="-fx-font-size: 11px; -fx-text-fill: #999;"/>
+            </VBox>
+            
+            <!-- RIGHT - Lịch sử giao dịch -->
+            <VBox spacing="15" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10;" HBox.hgrow="ALWAYS">
+                <effect><javafx.scene.effect.DropShadow color="#00000022" radius="8"/></effect>
+                
+                <Label text="📋 LỊCH SỬ GIAO DỊCH" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                
+                <TableView fx:id="tableGiaoDich" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colNgay" text="Ngày giờ" prefWidth="120"/>
+                        <TableColumn fx:id="colLoai" text="Loại" prefWidth="60"/>
+                        <TableColumn fx:id="colTaiKhoan" text="Tài khoản" prefWidth="150"/>
+                        <TableColumn fx:id="colSoTien" text="Số tiền" prefWidth="120"/>
+                        <TableColumn fx:id="colNoiDung" text="Nội dung" prefWidth="200"/>
+                    </columns>
+                    <placeholder>
+                        <Label text="Chưa có giao dịch nào" style="-fx-text-fill: #999;"/>
+                    </placeholder>
+                </TableView>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

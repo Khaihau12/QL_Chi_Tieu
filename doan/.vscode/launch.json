@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run JavaFX App",
+            "request": "launch",
+            "mainClass": "com.example.App",
+            "projectName": "doan",
+            "modulePaths": [
+                "${env:JAVA_HOME}/jmods",
+                "${userHome}/.m2/repository/org/openjfx/javafx-controls/13",
+                "${userHome}/.m2/repository/org/openjfx/javafx-fxml/13",
+                "${userHome}/.m2/repository/org/openjfx/javafx-graphics/13",
+                "${userHome}/.m2/repository/org/openjfx/javafx-base/13"
+            ],
+            "vmArgs": "--add-modules javafx.controls,javafx.fxml"
+        }
+    ]
+}
