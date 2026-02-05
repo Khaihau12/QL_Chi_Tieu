@@ -2,47 +2,126 @@ package com.example.controller;
 
 import com.example.dao.NguoiDungDAO;
 import com.example.model.NguoiDung;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
 /**
- * Controller cho màn hình đăng ký
+ * Controller cho màn hình đăng ký (JavaFX thuần)
  */
 public class RegisterController {
 
-    @FXML
+    private Stage stage;
+    private Scene scene;
     private TextField txtTenDangNhap;
-
-    @FXML
     private TextField txtEmail;
-
-    @FXML
     private TextField txtHoTen;
-
-    @FXML
     private PasswordField txtMatKhau;
-
-    @FXML
     private PasswordField txtXacNhanMatKhau;
-
-    @FXML
     private Label lblThongBao;
-
-    @FXML
     private Button btnDangKy;
-
-    @FXML
     private Hyperlink linkDangNhap;
-
     private NguoiDungDAO nguoiDungDAO = new NguoiDungDAO();
 
-    @FXML
+    public RegisterController(Stage stage) {
+        this.stage = stage;
+        createUI();
+    }
+
+    private void createUI() {
+        // Root layout
+        VBox root = new VBox(12);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(30));
+        root.setStyle("-fx-background-color: #f0f0f0;");
+
+        // Tiêu đề
+        Label lblTieuDe = new Label("ĐĂNG KÝ TÀI KHOẢN");
+        lblTieuDe.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        lblTieuDe.setStyle("-fx-text-fill: #2c3e50;");
+
+        // Form đăng ký
+        Label lblHoTen = new Label("Họ tên:");
+        lblHoTen.setFont(Font.font("Arial", 13));
+        txtHoTen = new TextField();
+        txtHoTen.setPromptText("Nhập họ tên đầy đủ");
+        txtHoTen.setPrefWidth(350);
+        txtHoTen.setStyle("-fx-font-size: 13px;");
+
+        Label lblTenDangNhap = new Label("Tên đăng nhập:");
+        lblTenDangNhap.setFont(Font.font("Arial", 13));
+        txtTenDangNhap = new TextField();
+        txtTenDangNhap.setPromptText("Nhập tên đăng nhập");
+        txtTenDangNhap.setPrefWidth(350);
+        txtTenDangNhap.setStyle("-fx-font-size: 13px;");
+
+        Label lblEmail = new Label("Email:");
+        lblEmail.setFont(Font.font("Arial", 13));
+        txtEmail = new TextField();
+        txtEmail.setPromptText("Nhập email");
+        txtEmail.setPrefWidth(350);
+        txtEmail.setStyle("-fx-font-size: 13px;");
+
+        Label lblMatKhau = new Label("Mật khẩu:");
+        lblMatKhau.setFont(Font.font("Arial", 13));
+        txtMatKhau = new PasswordField();
+        txtMatKhau.setPromptText("Nhập mật khẩu (ít nhất 6 ký tự)");
+        txtMatKhau.setPrefWidth(350);
+        txtMatKhau.setStyle("-fx-font-size: 13px;");
+
+        Label lblXacNhan = new Label("Xác nhận mật khẩu:");
+        lblXacNhan.setFont(Font.font("Arial", 13));
+        txtXacNhanMatKhau = new PasswordField();
+        txtXacNhanMatKhau.setPromptText("Nhập lại mật khẩu");
+        txtXacNhanMatKhau.setPrefWidth(350);
+        txtXacNhanMatKhau.setStyle("-fx-font-size: 13px;");
+
+        // Nút đăng ký
+        btnDangKy = new Button("Đăng ký");
+        btnDangKy.setPrefWidth(350);
+        btnDangKy.setPrefHeight(40);
+        btnDangKy.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+        btnDangKy.setOnAction(e -> handleDangKy());
+
+        // Thông báo
+        lblThongBao = new Label("");
+        lblThongBao.setFont(Font.font("Arial", 12));
+        lblThongBao.setWrapText(true);
+        lblThongBao.setMaxWidth(350);
+
+        // Link quay lại đăng nhập
+        linkDangNhap = new Hyperlink("Đã có tài khoản? Đăng nhập");
+        linkDangNhap.setStyle("-fx-font-size: 12px;");
+        linkDangNhap.setOnAction(e -> handleQuayLai());
+
+        // Thêm vào layout
+        root.getChildren().addAll(
+            lblTieuDe,
+            new Label(""), // spacer
+            lblHoTen,
+            txtHoTen,
+            lblTenDangNhap,
+            txtTenDangNhap,
+            lblEmail,
+            txtEmail,
+            lblMatKhau,
+            txtMatKhau,
+            lblXacNhan,
+            txtXacNhanMatKhau,
+            btnDangKy,
+            lblThongBao,
+            linkDangNhap
+        );
+
+        // Tạo scene
+        scene = new Scene(root, 500, 650);
+    }
+
     private void handleDangKy() {
         String tenDangNhap = txtTenDangNhap.getText().trim();
         String email = txtEmail.getText().trim();
@@ -71,7 +150,7 @@ public class RegisterController {
         }
 
         try {
-            // Tạo đối tượng người dùng mới (mật khẩu chưa mã hóa - đơn giản)
+            // Tạo đối tượng người dùng mới
             NguoiDung nguoiDung = new NguoiDung(tenDangNhap, matKhau, hoTen, email);
 
             boolean thanhCong = nguoiDungDAO.dangKy(nguoiDung);
@@ -101,21 +180,17 @@ public class RegisterController {
         }
     }
 
-    @FXML
     private void handleQuayLai() {
         chuyenVeDangNhap();
     }
 
     private void chuyenVeDangNhap() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/login.fxml"));
-            Parent root = loader.load();
+        LoginController loginController = new LoginController(stage);
+        stage.setScene(loginController.getScene());
+        stage.setTitle("Đăng nhập");
+    }
 
-            Stage stage = (Stage) btnDangKy.getScene().getWindow();
-            stage.setScene(new Scene(root, 500, 550));
-            stage.setTitle("Đăng nhập");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public Scene getScene() {
+        return scene;
     }
 }

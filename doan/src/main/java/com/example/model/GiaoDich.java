@@ -14,6 +14,7 @@ public class GiaoDich {
     private String noiDung; // Nội dung chuyển tiền
     private Timestamp ngayGiaoDich;
     private String trangThai; // 'thanh_cong', 'that_bai'
+    private Integer danhMucId;  // ID danh mục (null nếu không phân loại)
 
     // Constructor mặc định
     public GiaoDich() {
@@ -97,6 +98,14 @@ public class GiaoDich {
         this.trangThai = trangThai;
     }
 
+    public Integer getDanhMucId() {
+        return danhMucId;
+    }
+
+    public void setDanhMucId(Integer danhMucId) {
+        this.danhMucId = danhMucId;
+    }
+
     @Override
     public String toString() {
         return "GiaoDich{" +
@@ -107,6 +116,7 @@ public class GiaoDich {
                 ", noiDung='" + noiDung + '\'' +
                 ", ngayGiaoDich=" + ngayGiaoDich +
                 ", trangThai='" + trangThai + '\'' +
+                ", danhMucId=" + danhMucId +
                 '}';
     }
 }

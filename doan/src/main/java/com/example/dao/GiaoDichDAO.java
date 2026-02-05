@@ -17,6 +17,13 @@ public class GiaoDichDAO {
      * Chuyển tiền giữa 2 tài khoản (Transaction có rollback)
      */
     public boolean chuyenTien(String soTaiKhoanGui, String soTaiKhoanNhan, BigDecimal soTien, String noiDung) throws SQLException {
+        return chuyenTien(soTaiKhoanGui, soTaiKhoanNhan, soTien, noiDung, null);
+    }
+    
+    /**
+     * Chuyển tiền giữa 2 tài khoản với danh mục (Transaction có rollback)
+     */
+    public boolean chuyenTien(String soTaiKhoanGui, String soTaiKhoanNhan, BigDecimal soTien, String noiDung, Integer danhMucId) throws SQLException {
         Connection conn = null;
         try {
             conn = DatabaseConnection.getConnection();
@@ -64,13 +71,18 @@ public class GiaoDichDAO {
             stmtCong.setString(2, soTaiKhoanNhan);
             stmtCong.executeUpdate();
             
-            // 5. Lưu giao dịch
-            String sqlGiaoDich = "INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung) VALUES (?, ?, ?, ?)";
+            // 5. Lưu giao dịch với danh mục
+            String sqlGiaoDich = "INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement stmtGiaoDich = conn.prepareStatement(sqlGiaoDich);
             stmtGiaoDich.setString(1, soTaiKhoanGui);
             stmtGiaoDich.setString(2, soTaiKhoanNhan);
             stmtGiaoDich.setBigDecimal(3, soTien);
             stmtGiaoDich.setString(4, noiDung);
+            if (danhMucId != null) {
+                stmtGiaoDich.setInt(5, danhMucId);
+            } else {
+                stmtGiaoDich.setNull(5, Types.INTEGER);
+            }
             stmtGiaoDich.executeUpdate();
             
             conn.commit(); // Commit transaction
