@@ -188,6 +188,10 @@ public class RegisterController {
         LoginController loginController = new LoginController(stage);
         stage.setScene(loginController.getScene());
         stage.setTitle("Đăng nhập");
+        stage.setResizable(false);
+        stage.setWidth(520);
+        stage.setHeight(590);
+        stage.centerOnScreen();
     }
 
     public Scene getScene() {

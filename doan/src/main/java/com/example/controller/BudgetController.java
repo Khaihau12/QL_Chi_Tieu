@@ -4,6 +4,7 @@ import com.example.dao.DanhMucDAO;
 import com.example.dao.NganSachDAO;
 import com.example.model.DanhMuc;
 import com.example.model.NganSach;
+import com.example.util.MoneyInputUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -60,7 +61,7 @@ public class BudgetController {
         
         root.getChildren().addAll(title, filterBox, table, buttonBox);
         
-        scene = new Scene(root, 900, 600);
+        scene = new Scene(root, 1200, 800);
         loadData();
     }
     
@@ -198,6 +199,10 @@ public class BudgetController {
         btnQuayLai.setOnAction(e -> {
             DashboardController dashboard = new DashboardController(stage);
             stage.setScene(dashboard.getScene());
+            stage.setResizable(false);
+            stage.setWidth(1200);
+            stage.setHeight(830);
+            stage.centerOnScreen();
         });
         
         box.getChildren().addAll(btnThem, btnSua, btnXoa, btnQuayLai);
@@ -221,11 +226,12 @@ public class BudgetController {
         grid.setPadding(new Insets(20));
         
         ComboBox<DanhMuc> cbDanhMuc = new ComboBox<>();
-        List<DanhMuc> danhSachDM = danhMucDAO.layTatCaDanhMuc(soTaiKhoan);
+        List<DanhMuc> danhSachDM = danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, "chi");
         cbDanhMuc.getItems().addAll(danhSachDM);
         
         TextField txtGioiHan = new TextField();
         txtGioiHan.setPromptText("Nhập số tiền giới hạn (tối đa 9,999,999,999)");
+        MoneyInputUtil.attachMoneyFormatter(txtGioiHan);
         
         // Thêm chọn tháng/năm - CHỈ TỪ THÁNG HIỆN TẠI TRỞ ĐI
         LocalDate today = LocalDate.now();
@@ -296,7 +302,12 @@ public class BudgetController {
                         return null;
                     }
                     
-                    double gioiHan = Double.parseDouble(gioiHanStr);
+                    BigDecimal gioiHanBD = MoneyInputUtil.parseMoney(gioiHanStr);
+                    if (gioiHanBD == null) {
+                        showAlert("Lỗi", "Số tiền không hợp lệ! Vui lòng nhập số.");
+                        return null;
+                    }
+                    double gioiHan = gioiHanBD.doubleValue();
                     
                     // Kiểm tra giá trị hợp lệ
                     if (gioiHan <= 0) {
@@ -320,7 +331,7 @@ public class BudgetController {
                     NganSach ns = new NganSach();
                     ns.setDanhMucId(dm.getId());
                     ns.setSoTaiKhoan(soTaiKhoan);
-                    ns.setGioiHan(BigDecimal.valueOf(gioiHan));
+                    ns.setGioiHan(gioiHanBD);
                     ns.setThang(thang);
                     ns.setNam(nam);
                     return ns;
@@ -349,15 +360,23 @@ public class BudgetController {
             return;
         }
         
-        TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getGioiHan().doubleValue()));
+        TextInputDialog dialog = new TextInputDialog(String.format("%,.0f", selected.getGioiHan().doubleValue()).replace(',', '.'));
         dialog.setTitle("Sửa Ngân Sách");
         dialog.setHeaderText("Sửa giới hạn cho: " + selected.getTenDanhMuc() + " (Tháng " + 
                             selected.getThang() + "/" + selected.getNam() + ")");
         dialog.setContentText("Giới hạn mới (tối đa 9,999,999,999):");
+
+        TextField txtEditor = dialog.getEditor();
+        MoneyInputUtil.attachMoneyFormatter(txtEditor);
         
         dialog.showAndWait().ifPresent(gioiHanStr -> {
             try {
-                double gioiHan = Double.parseDouble(gioiHanStr.trim());
+                BigDecimal gioiHanBD = MoneyInputUtil.parseMoney(gioiHanStr.trim());
+                if (gioiHanBD == null) {
+                    showAlert("Lỗi", "Số tiền không hợp lệ! Vui lòng nhập số.");
+                    return;
+                }
+                double gioiHan = gioiHanBD.doubleValue();
                 
                 if (gioiHan <= 0) {
                     showAlert("Lỗi", "Giới hạn phải lớn hơn 0!");
@@ -369,7 +388,7 @@ public class BudgetController {
                     return;
                 }
                 
-                selected.setGioiHan(BigDecimal.valueOf(gioiHan));
+                selected.setGioiHan(gioiHanBD);
                 if (nganSachDAO.suaNganSach(selected)) {
                     showAlert("Thành công", "Sửa ngân sách thành công!");
                     loadData();

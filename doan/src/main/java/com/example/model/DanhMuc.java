@@ -5,36 +5,46 @@ package com.example.model;
  */
 public class DanhMuc {
     private int id;
-    private String tenDanhMuc;   // Tên danh mục (Ăn uống, Di chuyển, Mua sắm...)
-    private String moTa;          // Mô tả
-    private String mauSac;        // Màu sắc hiển thị (hex color)
-    private String soTaiKhoan;    // NULL = danh mục mặc định, khác NULL = danh mục riêng
+    private String tenDanhMuc;
+    private String moTa;
+    private String loai;         // 'chi' = chi tiêu, 'thu' = thu nhập
+    private String soTaiKhoan;   // NULL = mặc định, có giá trị = riêng tư
 
-    // Constructor đầy đủ
-    public DanhMuc(int id, String tenDanhMuc, String moTa, String mauSac, String soTaiKhoan) {
+    // Constructor đầy đủ (với loai)
+    public DanhMuc(int id, String tenDanhMuc, String moTa, String loai, String soTaiKhoan) {
         this.id = id;
         this.tenDanhMuc = tenDanhMuc;
         this.moTa = moTa;
-        this.mauSac = mauSac;
+        this.loai = loai;
         this.soTaiKhoan = soTaiKhoan;
     }
-    
+
+    // Constructor đầy đủ (backward-compat, mặc định loai='chi')
+    public DanhMuc(int id, String tenDanhMuc, String moTa, String soTaiKhoan) {
+        this(id, tenDanhMuc, moTa, "chi", soTaiKhoan);
+    }
+
     // Constructor không có ID (cho insert mới)
-    public DanhMuc(String tenDanhMuc, String moTa, String mauSac, String soTaiKhoan) {
+    public DanhMuc(String tenDanhMuc, String moTa, String loai, String soTaiKhoan) {
         this.tenDanhMuc = tenDanhMuc;
         this.moTa = moTa;
-        this.mauSac = mauSac;
+        this.loai = loai;
         this.soTaiKhoan = soTaiKhoan;
     }
 
-    // Constructor đầy đủ (backward compatible)
-    public DanhMuc(int id, String tenDanhMuc, String moTa, String mauSac) {
-        this(id, tenDanhMuc, moTa, mauSac, null);
+    // Constructor không có ID (backward-compat, mặc định loai='chi')
+    public DanhMuc(String tenDanhMuc, String moTa, String soTaiKhoan) {
+        this(tenDanhMuc, moTa, "chi", soTaiKhoan);
     }
 
-    // Constructor không có ID (backward compatible)
-    public DanhMuc(String tenDanhMuc, String moTa, String mauSac) {
-        this(tenDanhMuc, moTa, mauSac, null);
+    // Constructor đầy đủ không có soTaiKhoan
+    public DanhMuc(int id, String tenDanhMuc, String moTa) {
+        this(id, tenDanhMuc, moTa, "chi", null);
+    }
+
+    // Constructor không ID, không soTaiKhoan
+    public DanhMuc(String tenDanhMuc, String moTa) {
+        this(tenDanhMuc, moTa, "chi", null);
     }
 
     // Getters and Setters
@@ -62,14 +72,22 @@ public class DanhMuc {
         this.moTa = moTa;
     }
 
-    public String getMauSac() {
-        return mauSac;
+    public String getLoai() {
+        return loai;
     }
 
-    public void setMauSac(String mauSac) {
-        this.mauSac = mauSac;
+    public void setLoai(String loai) {
+        this.loai = loai;
     }
-    
+
+    public boolean isLoaiChi() {
+        return "chi".equals(loai);
+    }
+
+    public boolean isLoaiThu() {
+        return "thu".equals(loai);
+    }
+
     public String getSoTaiKhoan() {
         return soTaiKhoan;
     }

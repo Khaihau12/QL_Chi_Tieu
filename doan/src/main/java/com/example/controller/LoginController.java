@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.dao.NguoiDungDAO;
+import com.example.exception.TaiKhoanBiKhoaException;
 import com.example.model.NguoiDung;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
@@ -113,7 +114,7 @@ public class LoginController {
         }
 
         try {
-            // Kiểm tra đăng nhập
+            // Kiểm tra đăng nhập (có thể ném TaiKhoanBiKhoaException nếu bị khóa)
             NguoiDung nguoiDung = nguoiDungDAO.dangNhap(tenDangNhap, matKhau);
 
             if (nguoiDung != null) {
@@ -129,6 +130,34 @@ public class LoginController {
                 lblThongBao.setText("Tên đăng nhập hoặc mật khẩu không đúng!");
                 lblThongBao.setStyle("-fx-text-fill: red;");
             }
+        } catch (TaiKhoanBiKhoaException e) {
+            StringBuilder sb = new StringBuilder("🔒 Tài khoản bị khóa.");
+            String lyDo = e.getLyDoKhoa();
+            if (lyDo != null && !lyDo.isBlank()) {
+                sb.append("\nLý do: ").append(lyDo);
+            }
+            // Tính thời gian còn lại
+            java.sql.Timestamp thoiGianMoKhoa = e.getThoiGianMoKhoa();
+            if (thoiGianMoKhoa != null) {
+                long conLaiMs = thoiGianMoKhoa.getTime() - System.currentTimeMillis();
+                if (conLaiMs > 0) {
+                    long tong = conLaiMs / 1000;
+                    long ngay  = tong / 86400;
+                    long gio   = (tong % 86400) / 3600;
+                    long phut  = (tong % 3600) / 60;
+                    long giay  = tong % 60;
+                    StringBuilder thoiGian = new StringBuilder("\n⏳ Tự mở khóa sau: ");
+                    if (ngay > 0)  thoiGian.append(ngay).append(" ngày ");
+                    if (gio > 0)   thoiGian.append(gio).append(" giờ ");
+                    if (phut > 0)  thoiGian.append(phut).append(" phút ");
+                    if (ngay == 0 && gio == 0) thoiGian.append(giay).append(" giây");
+                    sb.append(thoiGian.toString().stripTrailing());
+                }
+            } else {
+                sb.append("\n⚠️ Vui lòng liên hệ quản trị viên để mở khóa.");
+            }
+            lblThongBao.setText(sb.toString());
+            lblThongBao.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
         } catch (Exception e) {
             lblThongBao.setText("Lỗi: " + e.getMessage());
             lblThongBao.setStyle("-fx-text-fill: red;");
@@ -140,14 +169,29 @@ public class LoginController {
         RegisterController registerController = new RegisterController(stage);
         stage.setScene(registerController.getScene());
         stage.setTitle("Đăng ký");
+        stage.setResizable(false);
+        stage.setWidth(520);
+        stage.setHeight(690);
+        stage.centerOnScreen();
     }
 
     private void chuyenSangDashboard() {
-        DashboardController dashboardController = new DashboardController(stage);
-        stage.setScene(dashboardController.getScene());
-        stage.setTitle("Quản Lý Chi Tiêu - Trang Chủ");
-        stage.setResizable(true);
-        stage.setMaximized(true);
+        NguoiDung user = currentUser;
+        if (user != null && "quan_ly".equals(user.getVaiTro())) {
+            // Admin -> màn hình quản trị
+            AdminDashboardController adminController = new AdminDashboardController(stage);
+            stage.setScene(adminController.getScene());
+            stage.setTitle("Quản Lý Chi Tiêu - Quản Trị Admin");
+        } else {
+            // Người dùng thường -> dashboard bình thường
+            DashboardController dashboardController = new DashboardController(stage);
+            stage.setScene(dashboardController.getScene());
+            stage.setTitle("Quản Lý Chi Tiêu - Trang Chủ");
+        }
+        stage.setResizable(false);
+        stage.setWidth(1200);
+        stage.setHeight(830);
+        stage.centerOnScreen();
     }
 
     public Scene getScene() {

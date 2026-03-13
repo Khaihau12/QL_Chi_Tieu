@@ -8,11 +8,11 @@
             "mainClass": "com.example.App",
             "projectName": "doan",
             "modulePaths": [
-                "${env:JAVA_HOME}/jmods",
-                "${userHome}/.m2/repository/org/openjfx/javafx-controls/13",
-                "${userHome}/.m2/repository/org/openjfx/javafx-fxml/13",
-                "${userHome}/.m2/repository/org/openjfx/javafx-graphics/13",
-                "${userHome}/.m2/repository/org/openjfx/javafx-base/13"
+                "C:/Users/Haupc/.jdk/jdk-21.0.8(1)/jmods",
+                "${userHome}/.m2/repository/org/openjfx/javafx-controls/21",
+                "${userHome}/.m2/repository/org/openjfx/javafx-fxml/21",
+                "${userHome}/.m2/repository/org/openjfx/javafx-graphics/21",
+                "${userHome}/.m2/repository/org/openjfx/javafx-base/21"
             ],
             "vmArgs": "--add-modules javafx.controls,javafx.fxml"
         }

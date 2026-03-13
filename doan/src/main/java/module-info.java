@@ -9,4 +9,5 @@ module com.example {
     exports com.example;
     exports com.example.controller;
     exports com.example.model;
+    exports com.example.exception;
 }

@@ -16,6 +16,8 @@ public class NguoiDung {
     private BigDecimal soDu; // Số dư tài khoản
     private String vaiTro; // 'quan_ly' hoặc 'nguoi_dung'
     private String trangThai; // 'hoat_dong' hoặc 'bi_khoa'
+    private String lyDoKhoa; // Lý do khóa (null nếu đang hoạt động)
+    private Timestamp thoiGianMoKhoa; // Thời điểm tự mở khóa (null = vĩnh viễn)
     private Timestamp lanDangNhapCuoi;
     private Timestamp ngayTao;
 
@@ -103,6 +105,22 @@ public class NguoiDung {
 
     public void setTrangThai(String trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public String getLyDoKhoa() {
+        return lyDoKhoa;
+    }
+
+    public void setLyDoKhoa(String lyDoKhoa) {
+        this.lyDoKhoa = lyDoKhoa;
+    }
+
+    public Timestamp getThoiGianMoKhoa() {
+        return thoiGianMoKhoa;
+    }
+
+    public void setThoiGianMoKhoa(Timestamp thoiGianMoKhoa) {
+        this.thoiGianMoKhoa = thoiGianMoKhoa;
     }
 
     public Timestamp getLanDangNhapCuoi() {

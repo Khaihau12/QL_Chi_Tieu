@@ -18,10 +18,11 @@ CREATE TABLE nguoi_dung (
     email VARCHAR(100) NOT NULL UNIQUE,
     mat_khau VARCHAR(255) NOT NULL,
     ho_ten VARCHAR(100),
-    so_dien_thoai VARCHAR(20),
     so_du DECIMAL(15, 2) DEFAULT 0, -- Số dư tài khoản
     vai_tro VARCHAR(20) DEFAULT 'nguoi_dung', -- 'quan_ly' hoặc 'nguoi_dung'
     trang_thai VARCHAR(20) DEFAULT 'hoat_dong', -- 'hoat_dong' hoặc 'bi_khoa'
+    ly_do_khoa VARCHAR(500) DEFAULT NULL,       -- Lý do khóa tài khoản (NULL nếu đang hoạt động)
+    thoi_gian_mo_khoa DATETIME DEFAULT NULL,    -- Thời điểm tự động mở khóa (NULL = khóa vĩnh viễn)
     lan_dang_nhap_cuoi DATETIME NULL,
     ngay_tao DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -33,7 +34,7 @@ CREATE TABLE danh_muc (
     id INT PRIMARY KEY AUTO_INCREMENT,
     ten_danh_muc VARCHAR(100) NOT NULL,
     mo_ta TEXT,
-    mau_sac VARCHAR(7) DEFAULT '#3498db',  -- Màu hex
+    loai VARCHAR(10) DEFAULT 'chi',         -- 'chi' = danh mục chi tiêu, 'thu' = danh mục thu nhập
     so_tai_khoan VARCHAR(10) DEFAULT NULL,  -- NULL = danh mục mặc định, khác NULL = danh mục riêng
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (so_tai_khoan) REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
@@ -48,12 +49,14 @@ CREATE TABLE giao_dich (
     so_tai_khoan_nhan VARCHAR(20) NOT NULL, -- Số tài khoản nhận tiền
     so_tien DECIMAL(15, 2) NOT NULL,
     noi_dung TEXT, -- Nội dung chuyển tiền
-    danh_muc_id INT DEFAULT NULL, -- Danh mục của giao dịch
+    danh_muc_id INT DEFAULT NULL,     -- Danh mục chi tiêu của người gửi
+    danh_muc_thu_id INT DEFAULT NULL, -- Danh mục thu nhập của người nhận
     ngay_giao_dich DATETIME DEFAULT CURRENT_TIMESTAMP,
     trang_thai VARCHAR(20) DEFAULT 'thanh_cong', -- 'thanh_cong', 'that_bai'
     FOREIGN KEY (so_tai_khoan_gui) REFERENCES nguoi_dung(so_tai_khoan),
     FOREIGN KEY (so_tai_khoan_nhan) REFERENCES nguoi_dung(so_tai_khoan),
-    FOREIGN KEY (danh_muc_id) REFERENCES danh_muc(id) ON DELETE SET NULL
+    FOREIGN KEY (danh_muc_id) REFERENCES danh_muc(id) ON DELETE SET NULL,
+    FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- =====================================================
@@ -77,6 +80,7 @@ CREATE TABLE ngan_sach (
 -- 5. TẠO INDEX ĐỂ TĂNG TỐC QUERY
 -- =====================================================
 CREATE INDEX idx_giao_dich_danh_muc ON giao_dich(danh_muc_id);
+CREATE INDEX idx_giao_dich_danh_muc_thu ON giao_dich(danh_muc_thu_id);
 CREATE INDEX idx_giao_dich_ngay ON giao_dich(ngay_giao_dich);
 CREATE INDEX idx_ngan_sach_thang_nam ON ngan_sach(thang, nam);
 
@@ -92,27 +96,46 @@ VALUES ('101', 'admin', 'admin@qlchitieu.com', '0192023a7bbd73250516f069df18b500
 -- User mẫu
 -- nguyenvana - Password: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
 -- tranthib - Password: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
-INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_dien_thoai, so_du, vai_tro, trang_thai) 
+INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, vai_tro, trang_thai) 
 VALUES 
-('102', 'nguyenvana', 'nguyenvana@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Nguyễn Văn A', '0901234567', 10000000, 'nguoi_dung', 'hoat_dong'),
-('103', 'tranthib', 'tranthib@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Trần Thị B', '0912345678', 8000000, 'nguoi_dung', 'hoat_dong');
+('102', 'nguyenvana', 'nguyenvana@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Nguyễn Văn A', 10000000, 'nguoi_dung', 'hoat_dong'),
+('103', 'tranthib', 'tranthib@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Trần Thị B', 8000000, 'nguoi_dung', 'hoat_dong');
 
--- 2. Danh mục mặc định (8 loại - Mọi người dùng đều có)
-INSERT INTO danh_muc (ten_danh_muc, mo_ta, mau_sac, so_tai_khoan) VALUES
-('Ăn uống', 'Chi phí ăn uống, nhà hàng, cafe', '#e74c3c', NULL),
-('Di chuyển', 'Xe bus, taxi, xăng xe', '#3498db', NULL),
-('Mua sắm', 'Quần áo, đồ dùng cá nhân', '#9b59b6', NULL),
-('Giải trí', 'Xem phim, du lịch, sở thích', '#f39c12', NULL),
-('Học tập', 'Sách, khóa học, văn phòng phẩm', '#27ae60', NULL),
-('Sức khỏe', 'Thuốc men, khám bệnh', '#e67e22', NULL),
-('Hóa đơn', 'Điện, nước, internet, điện thoại', '#95a5a6', NULL),
-('Khác', 'Các khoản chi khác', '#34495e', NULL);
+-- 2a. Danh mục chi mặc định (8 loại - loai='chi')
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES
+('Ăn uống',   'Chi phí ăn uống, nhà hàng, cafe',           'chi', NULL),
+('Di chuyển', 'Xe bus, taxi, xăng xe',                     'chi', NULL),
+('Mua sắm',   'Quần áo, đồ dùng cá nhân',                  'chi', NULL),
+('Giải trí',  'Xem phim, du lịch, sở thích',               'chi', NULL),
+('Học tập',   'Sách, khóa học, văn phòng phẩm',            'chi', NULL),
+('Sức khỏe',  'Thuốc men, khám bệnh',                      'chi', NULL),
+('Hóa đơn',   'Điện, nước, internet, điện thoại',          'chi', NULL),
+('Chi khác',  'Các khoản chi tiêu khác',                   'chi', NULL);
+
+-- 2b. Danh mục thu mặc định (5 loại - loai='thu')
+-- LƯU Ý: 'Thu khác' là danh mục THU MẶC ĐỊNH khi nhận tiền chuyển khoản
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES
+('Lương',      'Thu nhập từ lương, thù lao',                'thu', NULL),
+('Thưởng',     'Thưởng, bonus, hoa hồng',                   'thu', NULL),
+('Hoàn tiền',  'Hoàn tiền mua hàng, trả nợ nhận lại',      'thu', NULL),
+('Đầu tư',     'Lợi nhuận đầu tư, cổ tức',                 'thu', NULL),
+('Thu khác',   'Các khoản thu nhập khác (mặc định nhận tiền)', 'thu', NULL);
 
 -- 3. Giao dịch mẫu (Chuyển tiền giữa các tài khoản với danh mục)
 INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, ngay_giao_dich) VALUES
 ('101', '102', 5000000, 'Chuyển tiền hỗ trợ', 8, '2026-01-05 10:30:00'),
 ('102', '103', 2000000, 'Trả nợ', 8, '2026-01-06 14:20:00'),
 ('103', '102', 1000000, 'Tiền ăn', 1, '2026-01-08 09:15:00');
+
+-- =====================================================
+-- NÂNG CẤP DATABASE (Chạy nếu đã có DB cũ, bỏ qua nếu tạo mới)
+-- =====================================================
+-- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS loai VARCHAR(10) DEFAULT 'chi';
+-- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS danh_muc_thu_id INT DEFAULT NULL;
+-- ALTER TABLE giao_dich ADD CONSTRAINT fk_dmthu FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL;
+-- UPDATE danh_muc SET loai='chi' WHERE loai IS NULL;
+-- Thêm danh mục thu mặc định nếu chưa có:
+-- INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES ('Lương','Thu từ lương','thu',NULL),('Thưởng','Thưởng bonus','thu',NULL),('Hoàn tiền','Hoàn tiền','thu',NULL),('Đầu tư','Lợi nhuận','thu',NULL),('Thu khác','Thu nhập khác','thu',NULL);
 
 -- =====================================================
 -- HOÀN TẤT

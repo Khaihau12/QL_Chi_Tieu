@@ -1,32 +1,162 @@
-# PHÁC THẢO THIẾT KẾ DATABASE - HỆ THỐNG QUẢN LÝ CHI TIÊU
+# 3.2. THIẾT KẾ CƠ SỞ DỮ LIỆU
 
-## 📋 TỔNG QUAN
+## 3.2.1. Thiết kế các table
 
-**Tên Database:** `expense_management_db`  
-**Công cụ:** XAMPP - MySQL (phpMyAdmin)  
-**Charset:** utf8mb4_unicode_ci
+### Bảng 1: nguoi_dung (Người dùng)
+
+| Field | Data type | Key | Description |
+|-------|-----------|-----|-------------|
+| ma_nguoi_dung | INT | PRIMARY KEY | Mã định danh người dùng, tự động tăng |
+| so_tai_khoan | VARCHAR(10) | UNIQUE | Số tài khoản duy nhất (định dạng 3 chữ số: 101, 102, 103...) |
+| ten_dang_nhap | VARCHAR(50) | UNIQUE | Tên đăng nhập duy nhất |
+| email | VARCHAR(100) | UNIQUE | Địa chỉ email duy nhất |
+| mat_khau | VARCHAR(255) | - | Mật khẩu đã mã hóa MD5 |
+| ho_ten | VARCHAR(100) | - | Họ và tên đầy đủ |
+| so_du | DECIMAL(15,2) | - | Số dư tài khoản hiện tại (đơn vị: VNĐ) |
+| vai_tro | VARCHAR(20) | - | Vai trò trong hệ thống (USER/ADMIN) |
+| trang_thai | VARCHAR(20) | - | Trạng thái tài khoản (ACTIVE/INACTIVE) |
+| lan_dang_nhap_cuoi | DATETIME | - | Thời điểm đăng nhập gần nhất |
+| ngay_tao | DATETIME | - | Thời điểm tạo tài khoản |
+
+**Ràng buộc:**
+- PRIMARY KEY: ma_nguoi_dung
+- UNIQUE: so_tai_khoan, ten_dang_nhap, email
+- DEFAULT: vai_tro='USER', trang_thai='ACTIVE', so_du=0.00
 
 ---
 
-## 🗂️ DANH SÁCH CÁC BẢNG
+### Bảng 2: danh_muc (Danh mục giao dịch)
 
-### 1. **BẢNG USERS** (Người dùng)
-Lưu thông tin tài khoản người dùng
+| Field | Data type | Key | Description |
+|-------|-----------|-----|-------------|
+| id | INT | PRIMARY KEY | Mã định danh danh mục, tự động tăng |
+| ten_danh_muc | VARCHAR(100) | - | Tên danh mục (Ăn uống, Di chuyển, Giải trí...) |
+| mo_ta | TEXT | - | Mô tả chi tiết về danh mục |
+| mau_sac | VARCHAR(7) | - | Mã màu HEX để hiển thị (#RRGGBB) |
+| so_tai_khoan | VARCHAR(10) | FOREIGN KEY | Chủ sở hữu danh mục (NULL = mặc định, có giá trị = danh mục riêng) |
+| created_at | TIMESTAMP | - | Thời điểm tạo danh mục |
 
-| Tên Cột | Kiểu Dữ Liệu | Mô Tả | Ghi Chú |
-|----------|--------------|-------|---------|
-| user_id | INT | ID người dùng | Primary Key, Auto Increment |
-| username | VARCHAR(50) | Tên đăng nhập | Unique, Not Null |
-| email | VARCHAR(100) | Email | Unique, Not Null |
-| password_hash | VARCHAR(255) | Mật khẩu đã mã hóa | Not Null |
-| full_name | VARCHAR(100) | Họ tên đầy đủ | |
-| phone_number | VARCHAR(20) | Số điện thoại | |
-| created_at | TIMESTAMP | Thời gian tạo | Default CURRENT_TIMESTAMP |
-| updated_at | TIMESTAMP | Thời gian cập nhật | Auto update |
-| last_login | TIMESTAMP | Lần đăng nhập cuối | NULL |
-| is_active | BOOLEAN | Trạng thái hoạt động | Default TRUE |
+**Ràng buộc:**
+- PRIMARY KEY: id
+- FOREIGN KEY: so_tai_khoan REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
+- DEFAULT: created_at=CURRENT_TIMESTAMP
 
-**Index:** username, email
+**Quy tắc phân loại:**
+- `so_tai_khoan IS NULL`: Danh mục mặc định (hiển thị cho tất cả người dùng)
+- `so_tai_khoan IS NOT NULL`: Danh mục riêng (chỉ chủ sở hữu thấy)
+
+---
+
+### Bảng 3: giao_dich (Giao dịch chuyển tiền)
+
+| Field | Data type | Key | Description |
+|-------|-----------|-----|-------------|
+| ma_giao_dich | INT | PRIMARY KEY | Mã định danh giao dịch, tự động tăng |
+| so_tai_khoan_gui | VARCHAR(10) | FOREIGN KEY | Số tài khoản người gửi tiền |
+| so_tai_khoan_nhan | VARCHAR(10) | FOREIGN KEY | Số tài khoản người nhận tiền |
+| so_tien | DECIMAL(15,2) | - | Số tiền giao dịch (đơn vị: VNĐ) |
+| noi_dung | TEXT | - | Nội dung/ghi chú giao dịch |
+| danh_muc_id | INT | FOREIGN KEY | Danh mục phân loại giao dịch |
+| ngay_giao_dich | DATETIME | - | Thời điểm thực hiện giao dịch |
+| trang_thai | VARCHAR(20) | - | Trạng thái giao dịch (SUCCESS/PENDING/FAILED) |
+
+**Ràng buộc:**
+- PRIMARY KEY: ma_giao_dich
+- FOREIGN KEY: so_tai_khoan_gui REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
+- FOREIGN KEY: so_tai_khoan_nhan REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
+- FOREIGN KEY: danh_muc_id REFERENCES danh_muc(id) ON DELETE SET NULL
+- INDEX: idx_giao_dich_danh_muc (danh_muc_id), idx_giao_dich_ngay (ngay_giao_dich)
+- DEFAULT: trang_thai='SUCCESS'
+
+---
+
+### Bảng 4: ngan_sach (Ngân sách theo danh mục)
+
+| Field | Data type | Key | Description |
+|-------|-----------|-----|-------------|
+| id | INT | PRIMARY KEY | Mã định danh ngân sách, tự động tăng |
+| danh_muc_id | INT | FOREIGN KEY | Danh mục áp dụng ngân sách |
+| so_tai_khoan | VARCHAR(10) | FOREIGN KEY | Chủ sở hữu ngân sách |
+| gioi_han | DECIMAL(15,2) | - | Giới hạn chi tiêu (đơn vị: VNĐ) |
+| thang | INT | - | Tháng áp dụng (1-12) |
+| nam | INT | - | Năm áp dụng (YYYY) |
+| created_at | TIMESTAMP | - | Thời điểm tạo ngân sách |
+| updated_at | TIMESTAMP | - | Thời điểm cập nhật gần nhất |
+
+**Ràng buộc:**
+- PRIMARY KEY: id
+- FOREIGN KEY: danh_muc_id REFERENCES danh_muc(id) ON DELETE CASCADE
+- FOREIGN KEY: so_tai_khoan REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
+- UNIQUE: (danh_muc_id, so_tai_khoan, thang, nam) - Mỗi danh mục chỉ có 1 ngân sách/tháng/năm
+- INDEX: idx_ngan_sach_thang_nam (thang, nam)
+- DEFAULT: created_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+---
+
+## 3.2.2. Mô hình quan hệ (ERD)
+
+```
+┌─────────────────┐         ┌──────────────────┐
+│  nguoi_dung     │◄────────│   danh_muc       │
+│                 │  1:N    │                  │
+│ *ma_nguoi_dung  │         │ *id              │
+│  so_tai_khoan◄──┼─────────┤  so_tai_khoan(FK)│
+│  ten_dang_nhap  │         │  ten_danh_muc    │
+│  email          │         │  mau_sac         │
+│  mat_khau       │         └──────────────────┘
+│  so_du          │                  │
+└─────────────────┘                  │
+         │                           │
+         │ 1:N                       │ 1:N
+         ▼                           ▼
+┌─────────────────┐         ┌──────────────────┐
+│  giao_dich      │         │  ngan_sach       │
+│                 │         │                  │
+│ *ma_giao_dich   │         │ *id              │
+│  so_tk_gui(FK)  │─┐       │  danh_muc_id(FK) │
+│  so_tk_nhan(FK) │─┘       │  so_tai_khoan(FK)│
+│  so_tien        │         │  gioi_han        │
+│  danh_muc_id(FK)│◄────────│  thang/nam       │
+│  ngay_giao_dich │         └──────────────────┘
+└─────────────────┘
+```
+
+**Giải thích quan hệ:**
+
+1. **nguoi_dung (1) - danh_muc (N)**: Một người dùng có thể tạo nhiều danh mục riêng
+2. **nguoi_dung (1) - giao_dich (N)**: Một người dùng có thể thực hiện nhiều giao dịch (cả gửi và nhận)
+3. **danh_muc (1) - giao_dich (N)**: Một danh mục có thể chứa nhiều giao dịch
+4. **nguoi_dung (1) - ngan_sach (N)**: Một người dùng có thể đặt nhiều ngân sách
+5. **danh_muc (1) - ngan_sach (N)**: Một danh mục có thể có nhiều ngân sách (theo tháng/năm khác nhau)
+
+---
+
+## 3.2.3. Chỉ mục (Indexes)
+
+| Index Name | Table | Columns | Purpose |
+|------------|-------|---------|---------|
+| idx_giao_dich_danh_muc | giao_dich | danh_muc_id | Tăng tốc truy vấn thống kê theo danh mục |
+| idx_giao_dich_ngay | giao_dich | ngay_giao_dich | Tăng tốc truy vấn lịch sử giao dịch theo ngày |
+| idx_ngan_sach_thang_nam | ngan_sach | thang, nam | Tăng tốc truy vấn ngân sách theo tháng/năm |
+
+---
+
+## 3.2.4. Dữ liệu mẫu
+
+- **3 người dùng**: Admin (101), User1 (102), User2 (103)
+- **8 danh mục mặc định**: Ăn uống, Di chuyển, Giải trí, Mua sắm, Học tập, Sức khỏe, Hóa đơn, Khác
+- **3 giao dịch mẫu**: Minh họa chuyển tiền giữa các tài khoản với các danh mục khác nhau
+
+---
+
+## 3.2.5. Đặc điểm thiết kế
+
+1. **Tính toàn vẹn**: Sử dụng FOREIGN KEY để đảm bảo ràng buộc tham chiếu
+2. **Mở rộng**: Hỗ trợ danh mục mặc định + danh mục riêng cho từng người dùng
+3. **Bảo mật**: Mật khẩu mã hóa MD5, không lưu trữ plain text
+4. **Hiệu năng**: Index trên các cột thường xuyên truy vấn (ngày, danh mục)
+5. **Linh hoạt**: Số tài khoản 3 chữ số dễ nhớ, dễ sử dụng
+6. **Kiểm soát**: Ràng buộc UNIQUE đảm bảo không trùng lặp ngân sách theo tháng
 
 ---
 

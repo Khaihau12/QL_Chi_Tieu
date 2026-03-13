@@ -14,7 +14,11 @@ public class GiaoDich {
     private String noiDung; // Nội dung chuyển tiền
     private Timestamp ngayGiaoDich;
     private String trangThai; // 'thanh_cong', 'that_bai'
-    private Integer danhMucId;  // ID danh mục (null nếu không phân loại)
+    private Integer danhMucId;     // ID danh mục chi (người gửi)
+    private Integer danhMucThuId;  // ID danh mục thu (người nhận)
+    // Tên danh mục (populated by DAO JOIN - không lưu DB)
+    private String tenDanhMucChi;
+    private String tenDanhMucThu;
 
     // Constructor mặc định
     public GiaoDich() {
@@ -104,6 +108,30 @@ public class GiaoDich {
 
     public void setDanhMucId(Integer danhMucId) {
         this.danhMucId = danhMucId;
+    }
+
+    public Integer getDanhMucThuId() {
+        return danhMucThuId;
+    }
+
+    public void setDanhMucThuId(Integer danhMucThuId) {
+        this.danhMucThuId = danhMucThuId;
+    }
+
+    public String getTenDanhMucChi() {
+        return tenDanhMucChi;
+    }
+
+    public void setTenDanhMucChi(String tenDanhMucChi) {
+        this.tenDanhMucChi = tenDanhMucChi;
+    }
+
+    public String getTenDanhMucThu() {
+        return tenDanhMucThu;
+    }
+
+    public void setTenDanhMucThu(String tenDanhMucThu) {
+        this.tenDanhMucThu = tenDanhMucThu;
     }
 
     @Override

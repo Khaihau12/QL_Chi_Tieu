@@ -28,6 +28,7 @@ public class StatisticsController {
     private ComboBox<Integer> cbThang;
     private ComboBox<Integer> cbNam;
     private VBox chartBox;
+    private VBox chartThuBox;
     private Label lblTongChi;
     private Label lblTongThu;
     private GiaoDichDAO giaoDichDAO;
@@ -57,25 +58,49 @@ public class StatisticsController {
         // Tổng quan
         HBox summaryBox = createSummaryBox();
         
-        // Biểu đồ (đơn giản bằng thanh ngang)
-        Label lblChart = new Label("Chi tiêu theo danh mục:");
-        lblChart.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        
-        chartBox = new VBox(10);
+        // Biểu đồ chi theo danh mục
+        Label lblChart = new Label("🟠 Chi tiêu theo danh mục:");
+        lblChart.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+
+        chartBox = new VBox(8);
         chartBox.setPadding(new Insets(10));
-        chartBox.setStyle("-fx-border-color: #ccc; -fx-border-width: 1; -fx-background-color: white;");
-        VBox.setVgrow(chartBox, Priority.ALWAYS);
-        
+        chartBox.setStyle("-fx-border-color: #e67e22; -fx-border-width: 1; -fx-background-color: #fffbf5;");
+
+        // Biểu đồ thu theo danh mục
+        Label lblThuChart = new Label("🟢 Thu nhập theo danh mục:");
+        lblThuChart.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+
+        chartThuBox = new VBox(8);
+        chartThuBox.setPadding(new Insets(10));
+        chartThuBox.setStyle("-fx-border-color: #27ae60; -fx-border-width: 1; -fx-background-color: #f5fffb;");
+
         // Nút quay lại
-        Button btnQuayLai = new Button("Quay Lại");
+        Button btnQuayLai = new Button("⬅️ Quay Lại");
+        btnQuayLai.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold;");
         btnQuayLai.setOnAction(e -> {
             DashboardController dashboard = new DashboardController(stage);
             stage.setScene(dashboard.getScene());
+            stage.setResizable(false);
+            stage.setWidth(1200);
+            stage.setHeight(830);
+            stage.centerOnScreen();
         });
-        
-        root.getChildren().addAll(title, filterBox, summaryBox, lblChart, chartBox, btnQuayLai);
-        
-        scene = new Scene(root, 800, 600);
+
+        ScrollPane scroll = new ScrollPane();
+        VBox scrollContent = new VBox(15,
+                title, filterBox, summaryBox,
+                lblChart, chartBox,
+                lblThuChart, chartThuBox,
+                btnQuayLai);
+        scrollContent.setPadding(new Insets(20));
+        scroll.setContent(scrollContent);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color: transparent;");
+
+        root.getChildren().addAll(scroll);
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+
+        scene = new Scene(root, 1200, 800);
         loadData();
     }
     
@@ -137,44 +162,57 @@ public class StatisticsController {
         // Lấy chi tiêu theo danh mục
         Map<String, Double> chiTheoDanhMuc = layChiTheoDanhMuc(thang, nam);
         
-        // Vẽ biểu đồ đơn giản
+        // Vẽ biểu đồ chi
         chartBox.getChildren().clear();
-        
         if (chiTheoDanhMuc.isEmpty()) {
-            Label lblEmpty = new Label("Không có dữ liệu trong tháng này");
+            Label lblEmpty = new Label("Không có dữ liệu chi tiêu trong tháng này");
             lblEmpty.setStyle("-fx-font-size: 14px; -fx-text-fill: #999;");
             chartBox.getChildren().add(lblEmpty);
-            return;
+        } else {
+            double maxChi = chiTheoDanhMuc.values().stream().max(Double::compare).orElse(1.0);
+            for (Map.Entry<String, Double> entry : chiTheoDanhMuc.entrySet()) {
+                chartBox.getChildren().add(buildBarRow(
+                    entry.getKey(), entry.getValue(), maxChi, tongChi, "#e67e22"));
+            }
         }
-        
-        // Tìm giá trị lớn nhất để scale
-        double max = chiTheoDanhMuc.values().stream().max(Double::compare).orElse(1.0);
-        
-        for (Map.Entry<String, Double> entry : chiTheoDanhMuc.entrySet()) {
-            String danhMuc = entry.getKey();
-            double soTien = entry.getValue();
-            
-            HBox barBox = new HBox(10);
-            barBox.setAlignment(Pos.CENTER_LEFT);
-            
-            Label lblDanhMuc = new Label(danhMuc);
-            lblDanhMuc.setPrefWidth(120);
-            lblDanhMuc.setStyle("-fx-font-weight: bold;");
-            
-            // Thanh ngang (progress bar đơn giản)
-            ProgressBar bar = new ProgressBar(soTien / max);
-            bar.setPrefWidth(300);
-            bar.setStyle("-fx-accent: #3498db;");
-            
-            Label lblSoTien = new Label(String.format("%,.0f VNĐ", soTien));
-            lblSoTien.setStyle("-fx-text-fill: #2c3e50;");
-            
-            Label lblPercent = new Label(String.format("(%.1f%%)", (soTien / tongChi) * 100));
-            lblPercent.setStyle("-fx-text-fill: #7f8c8d;");
-            
-            barBox.getChildren().addAll(lblDanhMuc, bar, lblSoTien, lblPercent);
-            chartBox.getChildren().add(barBox);
+
+        // Vẽ biểu đồ thu
+        Map<String, Double> thuTheoDanhMuc = giaoDichDAO.layThuTheoDanhMuc(soTaiKhoan, thang, nam);
+        chartThuBox.getChildren().clear();
+        if (thuTheoDanhMuc.isEmpty()) {
+            Label lblEmpty2 = new Label("Không có dữ liệu thu nhập trong tháng này");
+            lblEmpty2.setStyle("-fx-font-size: 14px; -fx-text-fill: #999;");
+            chartThuBox.getChildren().add(lblEmpty2);
+        } else {
+            double maxThu = thuTheoDanhMuc.values().stream().max(Double::compare).orElse(1.0);
+            for (Map.Entry<String, Double> entry : thuTheoDanhMuc.entrySet()) {
+                chartThuBox.getChildren().add(buildBarRow(
+                    entry.getKey(), entry.getValue(), maxThu, tongThu, "#27ae60"));
+            }
         }
+    }
+
+    private HBox buildBarRow(String label, double value, double max, double total, String color) {
+        HBox barBox = new HBox(10);
+        barBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label lblDM = new Label(label);
+        lblDM.setPrefWidth(130);
+        lblDM.setStyle("-fx-font-weight: bold;");
+
+        ProgressBar bar = new ProgressBar(max > 0 ? value / max : 0);
+        bar.setPrefWidth(300);
+        bar.setStyle("-fx-accent: " + color + ";");
+
+        Label lblVal = new Label(String.format("%,.0f VNĐ", value));
+        lblVal.setStyle("-fx-text-fill: #2c3e50;");
+
+        String pct = total > 0 ? String.format("(%.1f%%)", (value / total) * 100) : "";
+        Label lblPct = new Label(pct);
+        lblPct.setStyle("-fx-text-fill: #7f8c8d;");
+
+        barBox.getChildren().addAll(lblDM, bar, lblVal, lblPct);
+        return barBox;
     }
     
     private Map<String, Double> layTongQuanTheoThang(int thang, int nam) {

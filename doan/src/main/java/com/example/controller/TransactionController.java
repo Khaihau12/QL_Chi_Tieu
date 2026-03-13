@@ -5,6 +5,7 @@ import com.example.dao.DanhMucDAO;
 import com.example.dao.NganSachDAO;
 import com.example.model.GiaoDich;
 import com.example.model.DanhMuc;
+import com.example.util.MoneyInputUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -39,6 +40,7 @@ public class TransactionController {
     private Button btnQuayLai;
     private Label lblSoTaiKhoan;
     private Label lblSoDu;
+    private Label lblTenNguoiNhan;
     private TableView<GiaoDichInfo> tableGiaoDich;
     private GiaoDichDAO giaoDichDAO = new GiaoDichDAO();
     private DanhMucDAO danhMucDAO = new DanhMucDAO();
@@ -88,7 +90,7 @@ public class TransactionController {
         root.setCenter(center);
 
         // Tạo scene
-        scene = new Scene(root, 1100, 750);
+        scene = new Scene(root, 1200, 800);
     }
 
     private VBox createTopSection() {
@@ -145,6 +147,32 @@ public class TransactionController {
         txtSoTaiKhoanNhan = new TextField();
         txtSoTaiKhoanNhan.setPromptText("Nhập số tài khoản");
         txtSoTaiKhoanNhan.setPrefWidth(300);
+        MoneyInputUtil.attachDigitsOnly(txtSoTaiKhoanNhan);
+
+        lblTenNguoiNhan = new Label("Người nhận: (chưa nhập STK)");
+        lblTenNguoiNhan.setStyle("-fx-text-fill: #7f8c8d; -fx-font-style: italic;");
+
+        txtSoTaiKhoanNhan.textProperty().addListener((obs, oldVal, newVal) -> {
+            String stk = newVal != null ? newVal.trim() : "";
+            if (stk.isEmpty()) {
+                lblTenNguoiNhan.setText("Người nhận: (chưa nhập STK)");
+                lblTenNguoiNhan.setStyle("-fx-text-fill: #7f8c8d; -fx-font-style: italic;");
+                return;
+            }
+            try {
+                String ten = giaoDichDAO.layTenNguoiDungThuong(stk);
+                if (ten == null || ten.isBlank()) {
+                    lblTenNguoiNhan.setText("Người nhận: không hợp lệ hoặc không tìm thấy");
+                    lblTenNguoiNhan.setStyle("-fx-text-fill: #e67e22;");
+                } else {
+                    lblTenNguoiNhan.setText("Người nhận: " + ten);
+                    lblTenNguoiNhan.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
+                }
+            } catch (Exception ex) {
+                lblTenNguoiNhan.setText("Người nhận: lỗi tra cứu");
+                lblTenNguoiNhan.setStyle("-fx-text-fill: #e74c3c;");
+            }
+        });
 
         // Số tiền
         Label lbl2 = new Label("Số tiền:");
@@ -152,15 +180,16 @@ public class TransactionController {
         txtSoTien = new TextField();
         txtSoTien.setPromptText("Nhập số tiền (VNĐ)");
         txtSoTien.setPrefWidth(300);
+        MoneyInputUtil.attachMoneyFormatter(txtSoTien);
 
         // Danh mục
         Label lblDanhMuc = new Label("Danh mục:");
         lblDanhMuc.setFont(Font.font("Arial", 13));
         cbDanhMuc = new ComboBox<>();
         
-        // Lấy danh mục của user (mặc định + riêng)
+        // Lấy danh mục CHI của user (mặc định + riêng)
         String userSoTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
-        List<DanhMuc> danhSachDanhMuc = danhMucDAO.layTatCaDanhMuc(userSoTaiKhoan);
+        List<DanhMuc> danhSachDanhMuc = danhMucDAO.layDanhMucTheoLoai(userSoTaiKhoan, "chi");
         cbDanhMuc.getItems().addAll(danhSachDanhMuc);
         if (!danhSachDanhMuc.isEmpty()) {
             cbDanhMuc.setValue(danhSachDanhMuc.get(0)); // Chọn mặc định
@@ -184,13 +213,14 @@ public class TransactionController {
 
         form.add(lbl1, 0, 0);
         form.add(txtSoTaiKhoanNhan, 0, 1);
-        form.add(lbl2, 0, 2);
-        form.add(txtSoTien, 0, 3);
-        form.add(lblDanhMuc, 0, 4);
-        form.add(cbDanhMuc, 0, 5);
-        form.add(lbl3, 0, 6);
-        form.add(txtNoiDung, 0, 7);
-        form.add(btnChuyenTien, 0, 8);
+        form.add(lblTenNguoiNhan, 0, 2);
+        form.add(lbl2, 0, 3);
+        form.add(txtSoTien, 0, 4);
+        form.add(lblDanhMuc, 0, 5);
+        form.add(cbDanhMuc, 0, 6);
+        form.add(lbl3, 0, 7);
+        form.add(txtNoiDung, 0, 8);
+        form.add(btnChuyenTien, 0, 9);
 
         top.getChildren().addAll(header, accountInfo, form);
         return top;
@@ -338,7 +368,8 @@ public class TransactionController {
             
             BigDecimal soTien;
             try {
-                soTien = new BigDecimal(soTienStr);
+                soTien = MoneyInputUtil.parseMoney(soTienStr);
+                if (soTien == null) throw new NumberFormatException();
                 if (soTien.compareTo(BigDecimal.ZERO) <= 0) {
                     showError("Số tiền phải lớn hơn 0!");
                     return;
@@ -356,9 +387,9 @@ public class TransactionController {
             }
             
             // Kiểm tra tài khoản người nhận có tồn tại
-            String tenNguoiNhan = giaoDichDAO.layTenNguoiDung(soTaiKhoanNhan);
+            String tenNguoiNhan = giaoDichDAO.layTenNguoiDungThuong(soTaiKhoanNhan);
             if (tenNguoiNhan == null) {
-                showError("Số tài khoản người nhận không tồn tại!");
+                showError("Số tài khoản người nhận không hợp lệ hoặc không tồn tại!");
                 return;
             }
             
@@ -438,10 +469,16 @@ public class TransactionController {
         DashboardController dashboardController = new DashboardController(stage);
         stage.setScene(dashboardController.getScene());
         stage.setTitle("Trang Chủ");
+        stage.setResizable(false);
+        stage.setWidth(1200);
+        stage.setHeight(830);
+        stage.centerOnScreen();
     }
 
     private void clearForm() {
         txtSoTaiKhoanNhan.clear();
+        lblTenNguoiNhan.setText("Người nhận: (chưa nhập STK)");
+        lblTenNguoiNhan.setStyle("-fx-text-fill: #7f8c8d; -fx-font-style: italic;");
         txtSoTien.clear();
         txtNoiDung.clear();
     }
