@@ -130,6 +130,14 @@ INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, d
 -- =====================================================
 -- NÂNG CẤP DATABASE (Chạy nếu đã có DB cũ, bỏ qua nếu tạo mới)
 -- =====================================================
+-- Giao dịch: bổ sung cột nếu DB cũ còn thiếu
+-- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS ngay_giao_dich DATETIME DEFAULT CURRENT_TIMESTAMP;
+-- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS trang_thai VARCHAR(20) DEFAULT 'thanh_cong';
+
+-- Ngân sách: bổ sung cột thời gian nếu DB cũ còn thiếu
+-- ALTER TABLE ngan_sach ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+-- ALTER TABLE ngan_sach ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
 -- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS loai VARCHAR(10) DEFAULT 'chi';
 -- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS danh_muc_thu_id INT DEFAULT NULL;
 -- ALTER TABLE giao_dich ADD CONSTRAINT fk_dmthu FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL;

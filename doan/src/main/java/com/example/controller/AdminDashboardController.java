@@ -916,6 +916,7 @@ public class AdminDashboardController {
     private void handleSuaDanhMuc() {
         DanhMuc selected = tableDanhMuc.getSelectionModel().getSelectedItem();
         if (selected == null) { showAlert("Lỗi", "Vui lòng chọn danh mục cần sửa!"); return; }
+        final String tenCu = selected.getTenDanhMuc() != null ? selected.getTenDanhMuc().trim() : "";
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Sửa danh mục");
@@ -946,14 +947,25 @@ public class AdminDashboardController {
             if (btn == btnOK) {
                 String ten = txtTen.getText().trim();
                 if (ten.isEmpty()) { showAlert("Lỗi", "Vui lòng nhập tên danh mục!"); return null; }
-                selected.setTenDanhMuc(ten);
-                selected.setMoTa(txtMoTa.getText().trim());
-                return selected;
+                return new DanhMuc(
+                    selected.getId(),
+                    ten,
+                    txtMoTa.getText().trim(),
+                    selected.getLoai(),
+                    selected.getSoTaiKhoan()
+                );
             }
             return null;
         });
 
         dialog.showAndWait().ifPresent(dm -> {
+            String tenMoi = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
+            boolean daDoiTen = !tenMoi.equalsIgnoreCase(tenCu);
+            if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
+                showAlert("Lỗi", "Tên danh mục Chi mặc định đã tồn tại!\nVui lòng nhập tên khác.");
+                return;
+            }
+
             if (danhMucDAO.suaDanhMuc(dm)) {
                 showAlert("Thành công", "Đã cập nhật danh mục!");
                 refreshDanhMucPanel();
@@ -1085,6 +1097,7 @@ public class AdminDashboardController {
     private void handleSuaDanhMucThu() {
         DanhMuc selected = tableDanhMucThu.getSelectionModel().getSelectedItem();
         if (selected == null) { showAlert("Lỗi", "Vui lòng chọn danh mục cần sửa!"); return; }
+        final String tenCu = selected.getTenDanhMuc() != null ? selected.getTenDanhMuc().trim() : "";
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Sửa danh mục Thu");
@@ -1107,13 +1120,25 @@ public class AdminDashboardController {
             if (btn == btnOK) {
                 String ten = txtTen.getText().trim();
                 if (ten.isEmpty()) { showAlert("Lỗi", "Vui lòng nhập tên!"); return null; }
-                selected.setTenDanhMuc(ten); selected.setMoTa(txtMoTa.getText().trim());
-                return selected;
+                return new DanhMuc(
+                    selected.getId(),
+                    ten,
+                    txtMoTa.getText().trim(),
+                    selected.getLoai(),
+                    selected.getSoTaiKhoan()
+                );
             }
             return null;
         });
 
         dialog.showAndWait().ifPresent(dm -> {
+            String tenMoi = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
+            boolean daDoiTen = !tenMoi.equalsIgnoreCase(tenCu);
+            if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
+                showAlert("Lỗi", "Tên danh mục Thu mặc định đã tồn tại!\nVui lòng nhập tên khác.");
+                return;
+            }
+
             if (danhMucDAO.suaDanhMuc(dm)) {
                 showAlert("Thành công", "Đã cập nhật!");
                 refreshDanhMucThuPanel();
