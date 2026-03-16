@@ -60,7 +60,7 @@ public class StatisticsController {
         HBox summaryBox = createSummaryBox();
         
         // Biểu đồ chi theo danh mục
-        Label lblChart = new Label("🟠 Chi tiêu theo danh mục:");
+        Label lblChart = new Label("Chi tiêu theo danh mục:");
         lblChart.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
 
         chartBox = new VBox(8);
@@ -68,7 +68,7 @@ public class StatisticsController {
         chartBox.setStyle("-fx-border-color: #e67e22; -fx-border-width: 1; -fx-background-color: #fffbf5;");
 
         // Biểu đồ thu theo danh mục
-        Label lblThuChart = new Label("🟢 Thu nhập theo danh mục:");
+        Label lblThuChart = new Label("Thu nhập theo danh mục:");
         lblThuChart.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
 
         chartThuBox = new VBox(8);
@@ -76,7 +76,7 @@ public class StatisticsController {
         chartThuBox.setStyle("-fx-border-color: #27ae60; -fx-border-width: 1; -fx-background-color: #f5fffb;");
 
         // Nút quay lại
-        Button btnQuayLai = new Button("⬅️ Quay Lại");
+        Button btnQuayLai = new Button("Quay Lại");
         btnQuayLai.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold;");
         btnQuayLai.setOnAction(e -> {
             DashboardController dashboard = new DashboardController(stage);

@@ -171,19 +171,19 @@ public class DashboardController {
         HBox row3 = new HBox(15);
         row3.setAlignment(Pos.CENTER_LEFT);
 
-        btnGiaoDich = new Button("💸 Chuyển tiền");
+        btnGiaoDich = new Button("Chuyển tiền");
         btnGiaoDich.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnGiaoDich.setPrefHeight(40);
         btnGiaoDich.setPrefWidth(150);
         btnGiaoDich.setOnAction(e -> handleGiaoDich());
 
-        btnRefresh = new Button("🔄 Làm mới");
+        btnRefresh = new Button("Làm mới");
         btnRefresh.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnRefresh.setPrefHeight(40);
         btnRefresh.setPrefWidth(130);
         btnRefresh.setOnAction(e -> handleRefresh());
         
-        Button btnNganSach = new Button("📋 Ngân sách");
+        Button btnNganSach = new Button("Ngân sách");
         btnNganSach.setStyle("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnNganSach.setPrefHeight(40);
         btnNganSach.setPrefWidth(150);
@@ -192,7 +192,7 @@ public class DashboardController {
             handleNganSach();
         });
         
-        Button btnThongKe = new Button("📊 Thống kê");
+        Button btnThongKe = new Button("Thống kê");
         btnThongKe.setStyle("-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnThongKe.setPrefHeight(40);
         btnThongKe.setPrefWidth(150);
@@ -201,13 +201,13 @@ public class DashboardController {
             handleThongKe();
         });
         
-        Button btnDanhMuc = new Button("📂 Danh mục");
+        Button btnDanhMuc = new Button("Danh mục");
         btnDanhMuc.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnDanhMuc.setPrefHeight(40);
         btnDanhMuc.setPrefWidth(150);
         btnDanhMuc.setOnAction(e -> handleDanhMuc());
 
-        Button btnDoiMatKhau = new Button("🔑 Đổi mật khẩu");
+        Button btnDoiMatKhau = new Button("Đổi mật khẩu");
         btnDoiMatKhau.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnDoiMatKhau.setPrefHeight(40);
         btnDoiMatKhau.setPrefWidth(160);
@@ -224,12 +224,12 @@ public class DashboardController {
         center.setPadding(new Insets(20));
 
         // Tiêu đề
-        Label lblTitle = new Label("📊 Lịch sử giao dịch gần đây");
+        Label lblTitle = new Label("Lịch sử giao dịch gần đây");
         lblTitle.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         lblTitle.setStyle("-fx-text-fill: #2c3e50;");
 
         // Nút đổi danh mục
-        Button btnDoiDanhMuc = new Button("↙️ Đổi danh mục");
+        Button btnDoiDanhMuc = new Button("Đổi danh mục");
         btnDoiDanhMuc.setStyle("-fx-background-color: #16a085; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
         btnDoiDanhMuc.setPrefHeight(35);
         btnDoiDanhMuc.setOnAction(e -> handleDoiDanhMuc());
@@ -488,7 +488,7 @@ public class DashboardController {
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Đổi danh mục");
-        dialog.setHeaderText((isGui ? "🟠 Danh mục Chi" : "🟢 Danh mục Thu") +
+        dialog.setHeaderText((isGui ? "Danh mục Chi" : "Danh mục Thu") +
                 " — Giao dịch ngày " + selected.getNgay());
 
         ComboBox<DanhMuc> cbDM = new ComboBox<>();
@@ -532,7 +532,7 @@ public class DashboardController {
                         BigDecimal tongSau = BigDecimal.valueOf(daChi).add(selected.getSoTienRaw());
                         if (tongSau.compareTo(gioiHan) > 0) {
                             String msg = String.format(
-                                    "⚠️ Cảnh báo ngân sách!%n" +
+                                    "Cảnh báo ngân sách!%n" +
                                     "Danh mục: %s%n" +
                                     "Hạn mức tháng %d/%d: %s đ%n" +
                                     "Đã chi: %s đ%n" +
@@ -569,7 +569,7 @@ public class DashboardController {
             }
 
             Alert ok = new Alert(Alert.AlertType.INFORMATION,
-                    "✅ Đã đổi danh mục thành công: " + newDM.getTenDanhMuc(), ButtonType.OK);
+                    "Đã đổi danh mục thành công: " + newDM.getTenDanhMuc(), ButtonType.OK);
             ok.setHeaderText(null);
             ok.showAndWait();
             loadDashboardData();
@@ -579,7 +579,7 @@ public class DashboardController {
     private void handleDoiMatKhau() {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Đổi mật khẩu");
-        dialog.setHeaderText("🔑  Đổi mật khẩu tài khoản: " + LoginController.currentUser.getTenDangNhap());
+        dialog.setHeaderText("Đổi mật khẩu tài khoản: " + LoginController.currentUser.getTenDangNhap());
 
         GridPane grid = new GridPane();
         grid.setHgap(15);
@@ -611,7 +611,7 @@ public class DashboardController {
 
         dialog.getDialogPane().setContent(grid);
 
-        ButtonType btnLuu = new ButtonType("💾 Lưu mật khẩu", ButtonBar.ButtonData.OK_DONE);
+        ButtonType btnLuu = new ButtonType("Lưu mật khẩu", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnLuu, ButtonType.CANCEL);
 
         // Validate khi nhấn Lưu (dùng event filter để chặn dialog đóng khi lỗi)
@@ -622,19 +622,19 @@ public class DashboardController {
             String xn = txtXacNhan.getText();
 
             if (cu.isEmpty() || moi.isEmpty() || xn.isEmpty()) {
-                lblKetQua.setText("⚠️ Vui lòng điền đầy đủ thông tin!");
+                lblKetQua.setText("Vui lòng điền đầy đủ thông tin!");
                 lblKetQua.setStyle("-fx-text-fill: red;");
                 ev.consume(); // chặn đóng
                 return;
             }
             if (moi.length() < 6) {
-                lblKetQua.setText("⚠️ Mật khẩu mới phải ít nhất 6 ký tự!");
+                lblKetQua.setText("Mật khẩu mới phải ít nhất 6 ký tự!");
                 lblKetQua.setStyle("-fx-text-fill: red;");
                 ev.consume();
                 return;
             }
             if (!moi.equals(xn)) {
-                lblKetQua.setText("⚠️ Mật khẩu xác nhận không khớp!");
+                lblKetQua.setText("Mật khẩu xác nhận không khớp!");
                 lblKetQua.setStyle("-fx-text-fill: red;");
                 ev.consume();
                 return;
@@ -643,7 +643,7 @@ public class DashboardController {
                 boolean ok = nguoiDungDAO.doiMatKhau(
                         LoginController.currentUser.getMaNguoiDung(), cu, moi);
                 if (!ok) {
-                    lblKetQua.setText("❌ Mật khẩu hiện tại không đúng!");
+                    lblKetQua.setText("Mật khẩu hiện tại không đúng!");
                     lblKetQua.setStyle("-fx-text-fill: red;");
                     ev.consume();
                 } // nếu ok thì cho dialog đóng bình thường

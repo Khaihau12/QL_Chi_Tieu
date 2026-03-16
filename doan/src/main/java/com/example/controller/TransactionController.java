@@ -103,14 +103,14 @@ public class TransactionController {
         header.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(header, Priority.ALWAYS);
 
-        Label lblTitle = new Label("💸 CHUYỂN TIỀN");
+        Label lblTitle = new Label("CHUYỂN TIỀN");
         lblTitle.setFont(Font.font("Arial", FontWeight.BOLD, 22));
         lblTitle.setStyle("-fx-text-fill: #2c3e50;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        btnQuayLai = new Button("◀ Quay lại");
+        btnQuayLai = new Button("Quay lại");
         btnQuayLai.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
         btnQuayLai.setPrefHeight(35);
         btnQuayLai.setPrefWidth(110);
@@ -230,7 +230,7 @@ public class TransactionController {
         VBox center = new VBox(10);
         center.setPadding(new Insets(20));
 
-        Label lblTitle = new Label("📊 Lịch sử giao dịch");
+        Label lblTitle = new Label("Lịch sử giao dịch");
         lblTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         lblTitle.setStyle("-fx-text-fill: #2c3e50;");
 
@@ -414,16 +414,16 @@ public class TransactionController {
                     // Nếu vượt ngân sách → cảnh báo
                     if (tongChiSauGiaoDich > gioiHan.doubleValue()) {
                         Alert warningAlert = new Alert(Alert.AlertType.WARNING);
-                        warningAlert.setTitle("⚠️ CẢNH BÁO VƯỢT NGÂN SÁCH");
+                        warningAlert.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");
                         warningAlert.setHeaderText("Giao dịch này sẽ vượt quá ngân sách đã đặt!");
                         warningAlert.setContentText(
-                            "📊 Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thangHienTai + "/" + namHienTai + ")\n\n" +
-                            "💰 Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
-                            "📉 Đã chi: " + df.format(daChiHienTai) + " đ\n" +
-                            "➕ Số tiền này: " + df.format(soTien) + " đ\n" +
+                            "Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thangHienTai + "/" + namHienTai + ")\n\n" +
+                            "Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
+                            "Đã chi: " + df.format(daChiHienTai) + " đ\n" +
+                            "Số tiền này: " + df.format(soTien) + " đ\n" +
                             "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                            "📊 Tổng sau giao dịch: " + df.format(tongChiSauGiaoDich) + " đ\n" +
-                            "⚠️ Vượt mức: " + df.format(tongChiSauGiaoDich - gioiHan.doubleValue()) + " đ\n\n" +
+                            "Tổng sau giao dịch: " + df.format(tongChiSauGiaoDich) + " đ\n" +
+                            "Vượt mức: " + df.format(tongChiSauGiaoDich - gioiHan.doubleValue()) + " đ\n\n" +
                             "Bạn có chắc chắn muốn tiếp tục?"
                         );
                         warningAlert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);

@@ -103,6 +103,6 @@ public class DanhMuc {
 
     @Override
     public String toString() {
-        return tenDanhMuc + (isDanhMucMacDinh() ? "" : " ⭐"); // ⭐ = danh mục riêng
+        return tenDanhMuc + (isDanhMucMacDinh() ? "" : " ");
     }
 }
