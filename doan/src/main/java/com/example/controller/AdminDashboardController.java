@@ -486,11 +486,6 @@ public class AdminDashboardController {
         Button btnNap = (Button) dialog.getDialogPane().lookupButton(btnNapType);
         btnNap.setDisable(true);
 
-        NguoiDung selected = tableTaiKhoan.getSelectionModel().getSelectedItem();
-        if (selected != null && "nguoi_dung".equals(selected.getVaiTro()) && selected.getSoTaiKhoan() != null) {
-            txtSoTaiKhoan.setText(selected.getSoTaiKhoan());
-        }
-
         txtSoTaiKhoan.textProperty().addListener((obs, oldVal, newVal) -> {
             String stk = newVal != null ? newVal.trim() : "";
             if (stk.isEmpty()) {
@@ -527,6 +522,11 @@ public class AdminDashboardController {
                 showAlert("Lỗi", "Không thể tra cứu STK: " + ex.getMessage());
             }
         });
+
+        NguoiDung selected = tableTaiKhoan.getSelectionModel().getSelectedItem();
+        if (selected != null && "nguoi_dung".equals(selected.getVaiTro()) && selected.getSoTaiKhoan() != null) {
+            txtSoTaiKhoan.setText(selected.getSoTaiKhoan());
+        }
 
         dialog.setResultConverter(btn -> {
             if (btn == btnNapType) {
