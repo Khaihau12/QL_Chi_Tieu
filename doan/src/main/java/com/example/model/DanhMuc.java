@@ -103,6 +103,6 @@ public class DanhMuc {
 
     @Override
     public String toString() {
-        return tenDanhMuc;
+        return tenDanhMuc + (isDanhMucMacDinh() ? "" : " ");
     }
 }
