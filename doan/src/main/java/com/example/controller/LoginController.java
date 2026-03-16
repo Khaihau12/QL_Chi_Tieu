@@ -131,7 +131,7 @@ public class LoginController {
                 lblThongBao.setStyle("-fx-text-fill: red;");
             }
         } catch (TaiKhoanBiKhoaException e) {
-            StringBuilder sb = new StringBuilder("🔒 Tài khoản bị khóa.");
+            StringBuilder sb = new StringBuilder("Tài khoản bị khóa.");
             String lyDo = e.getLyDoKhoa();
             if (lyDo != null && !lyDo.isBlank()) {
                 sb.append("\nLý do: ").append(lyDo);
@@ -154,7 +154,7 @@ public class LoginController {
                     sb.append(thoiGian.toString().stripTrailing());
                 }
             } else {
-                sb.append("\n⚠️ Vui lòng liên hệ quản trị viên để mở khóa.");
+                sb.append("\nVui lòng liên hệ quản trị viên để mở khóa.");
             }
             lblThongBao.setText(sb.toString());
             lblThongBao.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");

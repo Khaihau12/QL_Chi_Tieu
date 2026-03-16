@@ -35,26 +35,26 @@ public class CategoryController {
         VBox root = new VBox(15);
         root.setPadding(new Insets(20));
 
-        Label title = new Label("📂 QUẢN LÝ DANH MỤC");
+        Label title = new Label("QUẢN LÝ DANH MỤC");
         title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
 
-        Label guide = new Label("💡 Danh mục mặc định 🌐: chỉ đọc  |  Danh mục riêng ⭐: có thể sửa/xóa");
+        Label guide = new Label("Danh mục mặc định: chỉ đọc  |  Danh mục riêng: có thể sửa/xóa");
         guide.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d; -fx-font-style: italic;");
 
         // ===== Tab pane =====
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        Tab tabChi = new Tab("🟠 Danh mục Chi");
+        Tab tabChi = new Tab("Danh mục Chi");
         tabChi.setContent(buildTabContent("chi"));
 
-        Tab tabThu = new Tab("🟢 Danh mục Thu");
+        Tab tabThu = new Tab("Danh mục Thu");
         tabThu.setContent(buildTabContent("thu"));
 
         tabPane.getTabs().addAll(tabChi, tabThu);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
 
-        Button btnQuayLai = new Button("⬅️ Quay Lại");
+        Button btnQuayLai = new Button("Quay Lại");
         btnQuayLai.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold;");
         btnQuayLai.setOnAction(e -> {
             DashboardController dashboard = new DashboardController(stage);
@@ -82,18 +82,17 @@ public class CategoryController {
         HBox btnBox = new HBox(10);
         btnBox.setAlignment(Pos.CENTER_LEFT);
 
-        String icon = "chi".equals(loai) ? "🟠" : "🟢";
         String loaiLabel = "chi".equals(loai) ? "Chi" : "Thu";
 
-        Button btnThem = new Button("➕ Thêm danh mục " + loaiLabel);
+        Button btnThem = new Button("Thêm danh mục " + loaiLabel);
         btnThem.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;");
         btnThem.setOnAction(e -> handleThem(tbl, loai, loaiLabel));
 
-        Button btnSua = new Button("✏️ Sửa");
+        Button btnSua = new Button("Sửa");
         btnSua.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
         btnSua.setOnAction(e -> handleSua(tbl));
 
-        Button btnXoa = new Button("🗑️ Xóa");
+        Button btnXoa = new Button("Xóa");
         btnXoa.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;");
         btnXoa.setOnAction(e -> handleXoa(tbl));
 
@@ -125,10 +124,10 @@ public class CategoryController {
                 if (empty || getIndex() >= getTableView().getItems().size()) { setText(null); return; }
                 DanhMuc dm = getTableView().getItems().get(getIndex());
                 if (dm.isDanhMucMacDinh()) {
-                    setText("🌐 Mặc định");
+                    setText("Mặc định");
                     setStyle("-fx-text-fill: #3498db; -fx-font-weight: bold;");
                 } else {
-                    setText("⭐ Riêng tư");
+                    setText("Riêng tư");
                     setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold;");
                 }
             }
@@ -243,7 +242,7 @@ public class CategoryController {
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                 "Xóa danh mục: " + selected.getTenDanhMuc() +
-                "\n\n⚠️ Các giao dịch dùng danh mục này sẽ mất liên kết!",
+                "\n\nCác giao dịch dùng danh mục này sẽ mất liên kết!",
                 ButtonType.OK, ButtonType.CANCEL);
         confirm.setTitle("Xác nhận xóa"); confirm.setHeaderText(null);
         confirm.showAndWait().ifPresent(r -> {

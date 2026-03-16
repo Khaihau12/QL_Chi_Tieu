@@ -128,7 +128,7 @@ public class AdminDashboardController {
         header.setAlignment(Pos.CENTER_LEFT);
         header.setStyle("-fx-background-color: #2c3e50;");
 
-        Label lblTitle = new Label("⚙️  BẢNG ĐIỀU KHIỂN QUẢN TRỊ");
+        Label lblTitle = new Label("BẢNG ĐIỀU KHIỂN QUẢN TRỊ");
         lblTitle.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         lblTitle.setStyle("-fx-text-fill: white;");
 
@@ -137,10 +137,10 @@ public class AdminDashboardController {
 
         NguoiDung admin = LoginController.currentUser;
         String tenAdmin = (admin != null && admin.getHoTen() != null) ? admin.getHoTen() : "Admin";
-        Label lblAdmin = new Label("👤  " + tenAdmin);
+        Label lblAdmin = new Label(tenAdmin);
         lblAdmin.setStyle("-fx-text-fill: #bdc3c7; -fx-font-size: 13px;");
 
-        Button btnDangXuat = new Button("🚪 Đăng xuất");
+        Button btnDangXuat = new Button("Đăng xuất");
         btnDangXuat.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;");
         btnDangXuat.setOnAction(e -> handleDangXuat());
 
@@ -160,11 +160,11 @@ public class AdminDashboardController {
         lblMenu.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 11px; -fx-font-weight: bold;");
         lblMenu.setPadding(new Insets(0, 0, 10, 5));
 
-        btnNavTaiKhoan = createNavButton("👥  Quản lý tài khoản");
-        btnNavDoiMatKhau = createNavButton("🔑  Đổi mật khẩu");
-        btnNavDanhMuc = createNavButton("📂  Danh mục Chi mặc định");
-        btnNavDanhMucThu = createNavButton("💰  Danh mục Thu mặc định");
-        btnNavBaoCao = createNavButton("📊  Báo cáo hệ thống");
+        btnNavTaiKhoan = createNavButton("Quản lý tài khoản");
+        btnNavDoiMatKhau = createNavButton("Đổi mật khẩu");
+        btnNavDanhMuc = createNavButton("Danh mục Chi mặc định");
+        btnNavDanhMucThu = createNavButton("Danh mục Thu mặc định");
+        btnNavBaoCao = createNavButton("Báo cáo hệ thống");
 
         btnNavTaiKhoan.setOnAction(e -> { showPanel(panelTaiKhoan); setActiveNav(btnNavTaiKhoan); });
         btnNavDoiMatKhau.setOnAction(e -> { showPanel(panelDoiMatKhau); setActiveNav(btnNavDoiMatKhau); });
@@ -203,7 +203,7 @@ public class AdminDashboardController {
         panelTaiKhoan = new VBox(15);
         panelTaiKhoan.setPadding(new Insets(5));
 
-        Label title = new Label("👥  Quản lý tài khoản người dùng");
+        Label title = new Label("Quản lý tài khoản người dùng");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
         tableTaiKhoan = new TableView<>();
@@ -241,10 +241,10 @@ public class AdminDashboardController {
                 } else {
                     NguoiDung nd = getTableView().getItems().get(getIndex());
                     if ("hoat_dong".equals(nd.getTrangThai())) {
-                        setText("✅ Hoạt động");
+                        setText("Hoạt động");
                         setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                     } else {
-                        setText("🔒 Bị khóa");
+                        setText("Bị khóa");
                         setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
                     }
                 }
@@ -303,19 +303,19 @@ public class AdminDashboardController {
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
 
-        Button btnRefresh = new Button("🔄 Làm mới");
+        Button btnRefresh = new Button("Làm mới");
         btnRefresh.setStyle("-fx-background-color: #3498db; -fx-text-fill: white;");
         btnRefresh.setOnAction(e -> loadDanhSachTaiKhoan());
 
-        Button btnKhoa = new Button("🔒 Khóa tài khoản");
+        Button btnKhoa = new Button("Khóa tài khoản");
         btnKhoa.setStyle("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold;");
         btnKhoa.setOnAction(e -> handleKhoaTaiKhoan());
 
-        Button btnMoKhoa = new Button("🔓 Mở khóa");
+        Button btnMoKhoa = new Button("Mở khóa");
         btnMoKhoa.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;");
         btnMoKhoa.setOnAction(e -> handleMoKhoaTaiKhoan());
 
-        Button btnNapTien = new Button("💵 Nạp tiền cho user");
+        Button btnNapTien = new Button("Nạp tiền cho user");
         btnNapTien.setStyle("-fx-background-color: #16a085; -fx-text-fill: white; -fx-font-weight: bold;");
         btnNapTien.setOnAction(e -> handleNapTienChoUser());
 
@@ -386,7 +386,7 @@ public class AdminDashboardController {
         grid.add(cbThoiGian, 0, 3);
 
         dialog.getDialogPane().setContent(grid);
-        ButtonType btnKhoaOK = new ButtonType("🔒 Xác nhận khóa", ButtonBar.ButtonData.OK_DONE);
+        ButtonType btnKhoaOK = new ButtonType("Xác nhận khóa", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnKhoaOK, ButtonType.CANCEL);
 
         dialog.setResultConverter(btn -> {
@@ -501,7 +501,7 @@ public class AdminDashboardController {
                 NguoiDung nd = nguoiDungDAO.layNguoiDungThuongTheoSoTaiKhoan(stk);
                 if (nd == null) {
                     userDaXacNhan[0] = null;
-                    lblXacNhan.setText("❌ Không tìm thấy user với STK này.");
+                    lblXacNhan.setText("Không tìm thấy user với STK này.");
                     lblXacNhan.setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
                     lblSoDu.setText("Số dư hiện tại: -");
                     btnNap.setDisable(true);
@@ -509,13 +509,13 @@ public class AdminDashboardController {
                 }
 
                 userDaXacNhan[0] = nd;
-                lblXacNhan.setText("✅ " + nd.getTenDangNhap() + " - " + nd.getHoTen());
+                lblXacNhan.setText(nd.getTenDangNhap() + " - " + nd.getHoTen());
                 lblXacNhan.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                 lblSoDu.setText("Số dư hiện tại: " + df.format(nd.getSoDu()) + " đ");
                 btnNap.setDisable(false);
             } catch (Exception ex) {
                 userDaXacNhan[0] = null;
-                lblXacNhan.setText("❌ Lỗi tra cứu STK.");
+                lblXacNhan.setText("Lỗi tra cứu STK.");
                 lblXacNhan.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
                 lblSoDu.setText("Số dư hiện tại: -");
                 btnNap.setDisable(true);
@@ -600,7 +600,7 @@ public class AdminDashboardController {
         outer.setAlignment(Pos.TOP_CENTER);
         outer.setPadding(new Insets(30));
 
-        Label title = new Label("🔑  Đổi mật khẩu Admin");
+        Label title = new Label("Đổi mật khẩu Admin");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
         GridPane grid = new GridPane();
@@ -625,7 +625,7 @@ public class AdminDashboardController {
         Label lblKetQua = new Label("");
         lblKetQua.setWrapText(true);
 
-        Button btnDoi = new Button("💾  Đổi mật khẩu");
+        Button btnDoi = new Button("Đổi mật khẩu");
         btnDoi.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
         btnDoi.setPrefWidth(200);
 
@@ -653,13 +653,13 @@ public class AdminDashboardController {
             try {
                 boolean ok = nguoiDungDAO.doiMatKhau(LoginController.currentUser.getMaNguoiDung(), cu, moi);
                 if (ok) {
-                    lblKetQua.setText("✅ Đổi mật khẩu thành công!");
+                    lblKetQua.setText("Đổi mật khẩu thành công!");
                     lblKetQua.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                     txtCu.clear();
                     txtMoi.clear();
                     txtXacNhan.clear();
                 } else {
-                    lblKetQua.setText("❌ Mật khẩu hiện tại không đúng!");
+                    lblKetQua.setText("Mật khẩu hiện tại không đúng!");
                     lblKetQua.setStyle("-fx-text-fill: red;");
                 }
             } catch (Exception ex) {
@@ -680,7 +680,7 @@ public class AdminDashboardController {
         Separator separator = new Separator();
         separator.setMaxWidth(620);
 
-        Label titleReset = new Label("🔄  Đặt lại mật khẩu cho User (quên mật khẩu)");
+        Label titleReset = new Label("Đặt lại mật khẩu cho User (quên mật khẩu)");
         titleReset.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
         GridPane gridReset = new GridPane();
@@ -722,21 +722,21 @@ public class AdminDashboardController {
                 NguoiDung nd = nguoiDungDAO.layNguoiDungThuongTheoSoTaiKhoan(stk);
                 if (nd == null) {
                     selectedUser[0] = null;
-                    lblUserInfo.setText("❌ Không tìm thấy user với STK này.");
+                    lblUserInfo.setText("Không tìm thấy user với STK này.");
                     lblUserInfo.setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
                 } else {
                     selectedUser[0] = nd;
-                    lblUserInfo.setText("✅ " + nd.getTenDangNhap() + " - " + nd.getHoTen());
+                    lblUserInfo.setText(nd.getTenDangNhap() + " - " + nd.getHoTen());
                     lblUserInfo.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                 }
             } catch (Exception ex) {
                 selectedUser[0] = null;
-                lblUserInfo.setText("❌ Lỗi kiểm tra STK.");
+                lblUserInfo.setText("Lỗi kiểm tra STK.");
                 lblUserInfo.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
             }
         });
 
-        Button btnReset = new Button("🛠️  Đặt lại mật khẩu user");
+        Button btnReset = new Button("Đặt lại mật khẩu user");
         btnReset.setStyle("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
         btnReset.setPrefWidth(250);
 
@@ -777,12 +777,12 @@ public class AdminDashboardController {
             try {
                 boolean ok = nguoiDungDAO.datLaiMatKhauChoUser(nd.getMaNguoiDung(), mkMoi);
                 if (ok) {
-                    lblKetQuaReset.setText("✅ Đặt lại mật khẩu thành công cho user " + nd.getTenDangNhap() + "!");
+                    lblKetQuaReset.setText("Đặt lại mật khẩu thành công cho user " + nd.getTenDangNhap() + "!");
                     lblKetQuaReset.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                     txtMatKhauMoiUser.clear();
                     txtXacNhanUser.clear();
                 } else {
-                    lblKetQuaReset.setText("❌ Đặt lại mật khẩu thất bại!");
+                    lblKetQuaReset.setText("Đặt lại mật khẩu thất bại!");
                     lblKetQuaReset.setStyle("-fx-text-fill: red;");
                 }
             } catch (Exception ex) {
@@ -811,10 +811,10 @@ public class AdminDashboardController {
         panelDanhMuc = new VBox(15);
         panelDanhMuc.setPadding(new Insets(5));
 
-        Label title = new Label("📂  Quản lý danh mục chi tiêu mặc định");
+        Label title = new Label("Quản lý danh mục chi tiêu mặc định");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
-        Label note = new Label("💡 Danh mục Chi mặc định hiển thị cho TẤT CẢ người dùng khi gửi tiền. Chỉ Admin mới có thể thêm/sửa/xóa.");
+        Label note = new Label("Danh mục Chi mặc định hiển thị cho TẤT CẢ người dùng khi gửi tiền. Chỉ Admin mới có thể thêm/sửa/xóa.");
         note.setStyle("-fx-text-fill: #7f8c8d; -fx-font-style: italic;");
 
         tableDanhMuc = new TableView<>();
@@ -837,15 +837,15 @@ public class AdminDashboardController {
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
 
-        Button btnThem = new Button("➕ Thêm");
+        Button btnThem = new Button("Thêm");
         btnThem.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;");
         btnThem.setOnAction(e -> handleThemDanhMuc());
 
-        Button btnSua = new Button("✏️ Sửa");
+        Button btnSua = new Button("Sửa");
         btnSua.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
         btnSua.setOnAction(e -> handleSuaDanhMuc());
 
-        Button btnXoa = new Button("🗑️ Xóa");
+        Button btnXoa = new Button("Xóa");
         btnXoa.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;");
         btnXoa.setOnAction(e -> handleXoaDanhMuc());
 
@@ -982,7 +982,7 @@ public class AdminDashboardController {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Xác nhận xóa");
         confirm.setHeaderText("Xóa danh mục: " + selected.getTenDanhMuc());
-        confirm.setContentText("⚠️ Các giao dịch đã dùng danh mục này sẽ mất liên kết!\nBạn có chắc chắn muốn xóa?");
+        confirm.setContentText("Các giao dịch đã dùng danh mục này sẽ mất liên kết!\nBạn có chắc chắn muốn xóa?");
 
         confirm.showAndWait().ifPresent(resp -> {
             if (resp == ButtonType.OK) {
@@ -1002,10 +1002,10 @@ public class AdminDashboardController {
         panelDanhMucThu = new VBox(15);
         panelDanhMucThu.setPadding(new Insets(5));
 
-        Label title = new Label("💰  Quản lý danh mục thu nhập mặc định");
+        Label title = new Label("Quản lý danh mục thu nhập mặc định");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
-        Label note = new Label("💡 Danh mục Thu mặc định hiển thị cho TẤT CẢ người dùng khi nhận tiền. Chỉ Admin mới có thể thêm/sửa/xóa.");
+        Label note = new Label("Danh mục Thu mặc định hiển thị cho TẤT CẢ người dùng khi nhận tiền. Chỉ Admin mới có thể thêm/sửa/xóa.");
         note.setStyle("-fx-text-fill: #7f8c8d; -fx-font-style: italic;");
 
         tableDanhMucThu = new TableView<>();
@@ -1028,15 +1028,15 @@ public class AdminDashboardController {
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
 
-        Button btnThem = new Button("➕ Thêm");
+        Button btnThem = new Button("Thêm");
         btnThem.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;");
         btnThem.setOnAction(e -> handleThemDanhMucThu());
 
-        Button btnSua = new Button("✏️ Sửa");
+        Button btnSua = new Button("Sửa");
         btnSua.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
         btnSua.setOnAction(e -> handleSuaDanhMucThu());
 
-        Button btnXoa = new Button("🗑️ Xóa");
+        Button btnXoa = new Button("Xóa");
         btnXoa.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;");
         btnXoa.setOnAction(e -> handleXoaDanhMucThu());
 
@@ -1173,7 +1173,7 @@ public class AdminDashboardController {
         panelBaoCao = new VBox(20);
         panelBaoCao.setPadding(new Insets(5));
 
-        Label title = new Label("📊  Báo cáo hệ thống");
+        Label title = new Label("Báo cáo hệ thống");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
         // Stat cards row
@@ -1186,13 +1186,13 @@ public class AdminDashboardController {
         lblBiKhoa = new Label("...");
 
         statsRow.getChildren().addAll(
-            createStatCard("👥 Tổng người dùng", lblTongNguoiDung, "#3498db"),
-            createStatCard("💸 Tổng giao dịch", lblTongGiaoDich, "#27ae60"),
-            createStatCard("💰 Tổng tiền lưu chuyển", lblTongTienLuuChuyen, "#9b59b6"),
-            createStatCard("🔒 Tài khoản bị khóa", lblBiKhoa, "#e74c3c")
+            createStatCard("Tổng người dùng", lblTongNguoiDung, "#3498db"),
+            createStatCard("Tổng giao dịch", lblTongGiaoDich, "#27ae60"),
+            createStatCard("Tổng tiền lưu chuyển", lblTongTienLuuChuyen, "#9b59b6"),
+            createStatCard("Tài khoản bị khóa", lblBiKhoa, "#e74c3c")
         );
 
-        Label lblUserTitle = new Label("📋  Chi tiết theo từng người dùng");
+        Label lblUserTitle = new Label("Chi tiết theo từng người dùng");
         lblUserTitle.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
         tableUserReport = new TableView<>();
@@ -1228,7 +1228,7 @@ public class AdminDashboardController {
 
         tableUserReport.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);
 
-        Button btnRefresh = new Button("🔄 Làm mới báo cáo");
+        Button btnRefresh = new Button("Làm mới báo cáo");
         btnRefresh.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
         btnRefresh.setOnAction(e -> refreshBaoCaoPanel());
 
