@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -247,7 +248,8 @@ public class StatisticsController {
     }
     
     private Map<String, Double> layChiTheoDanhMuc(int thang, int nam) {
-        Map<String, Double> result = new HashMap<>();
+        // MỚI - giữ thứ tự ORDER BY từ SQL
+        Map<String, Double> result = new LinkedHashMap<>();
         String sql = "SELECT dm.ten_danh_muc, SUM(gd.so_tien) as tong_chi " +
                     "FROM giao_dich gd " +
                     "JOIN danh_muc dm ON gd.danh_muc_id = dm.id " +

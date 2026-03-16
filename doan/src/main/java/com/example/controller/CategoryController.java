@@ -210,13 +210,23 @@ public class CategoryController {
             if (btn == btnOK) {
                 String ten = txtTen.getText().trim();
                 if (ten.isEmpty()) { showAlert("Lỗi", "Vui lòng nhập tên!"); return null; }
-                selected.setTenDanhMuc(ten); selected.setMoTa(txtMoTa.getText().trim());
-                return selected;
+                return new DanhMuc(
+                    selected.getId(),
+                    ten,
+                    txtMoTa.getText().trim(),
+                    selected.getLoai(),
+                    selected.getSoTaiKhoan()
+                );
             }
             return null;
         });
 
         dialog.showAndWait().ifPresent(dm -> {
+            if (tonTaiTenDanhMucBatKyChoUser(dm.getTenDanhMuc(), dm.getId())) {
+                showAlert("Lỗi", "Tên danh mục đã tồn tại (bao gồm cả Thu/Chi, mặc định hoặc riêng)!\nVui lòng nhập tên khác.");
+                return;
+            }
+
             if (danhMucDAO.suaDanhMuc(dm)) {
                 showAlert("Thành công", "Đã cập nhật danh mục!");
                 tbl.getItems().setAll(danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, dm.getLoai()));
@@ -251,6 +261,20 @@ public class CategoryController {
     private void showAlert(String title, String content) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
+    }
+
+    // Kiểm tra trùng tên trên toàn bộ danh mục user có thể nhìn thấy (Thu + Chi, mặc định + riêng)
+    private boolean tonTaiTenDanhMucBatKyChoUser(String tenDanhMuc, Integer excludeId) {
+        String ten = tenDanhMuc != null ? tenDanhMuc.trim() : "";
+        if (ten.isEmpty()) return false;
+
+        List<DanhMuc> all = danhMucDAO.layTatCaDanhMuc(soTaiKhoan);
+        for (DanhMuc dm : all) {
+            if (excludeId != null && dm.getId() == excludeId) continue;
+            String tenHienCo = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
+            if (ten.equalsIgnoreCase(tenHienCo)) return true;
+        }
+        return false;
     }
 
     public Scene getScene() { return scene; }
