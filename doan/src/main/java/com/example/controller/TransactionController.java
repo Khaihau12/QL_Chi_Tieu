@@ -37,9 +37,11 @@ public class TransactionController {
     private TextArea txtNoiDung;
     private ComboBox<DanhMuc> cbDanhMuc;
     private Button btnChuyenTien;
+    private Button btnGhiTienMat;
     private Button btnQuayLai;
     private Label lblSoTaiKhoan;
     private Label lblSoDu;
+    private Label lblSoDuTienMat;
     private Label lblTenNguoiNhan;
     private TableView<GiaoDichInfo> tableGiaoDich;
     private GiaoDichDAO giaoDichDAO = new GiaoDichDAO();
@@ -126,14 +128,21 @@ public class TransactionController {
         lblSoTaiKhoan = new Label("STK: " + soTaiKhoan);
         lblSoTaiKhoan.setFont(Font.font("Arial", FontWeight.BOLD, 15));
 
-        Label lblSoDuTitle = new Label("Số dư:");
+        Label lblSoDuTitle = new Label("Số dư TK:");
         lblSoDuTitle.setFont(Font.font("Arial", 15));
 
         lblSoDu = new Label("0 đ");
         lblSoDu.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         lblSoDu.setStyle("-fx-text-fill: #27ae60;");
 
-        accountInfo.getChildren().addAll(lblSoTaiKhoan, lblSoDuTitle, lblSoDu);
+        Label lblSoDuTienMatTitle = new Label("Ví tiền mặt:");
+        lblSoDuTienMatTitle.setFont(Font.font("Arial", 15));
+
+        lblSoDuTienMat = new Label("0 đ");
+        lblSoDuTienMat.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        lblSoDuTienMat.setStyle("-fx-text-fill: #f39c12;");
+
+        accountInfo.getChildren().addAll(lblSoTaiKhoan, lblSoDuTitle, lblSoDu, lblSoDuTienMatTitle, lblSoDuTienMat);
 
         // Form chuyển tiền
         GridPane form = new GridPane();
@@ -187,13 +196,14 @@ public class TransactionController {
         lblDanhMuc.setFont(Font.font("Arial", 13));
         cbDanhMuc = new ComboBox<>();
         
-        // Lấy danh mục CHI của user (mặc định + riêng)
+        // Lấy CHỈ danh mục CON loại CHI của user (mặc định + riêng)
         String userSoTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
-        List<DanhMuc> danhSachDanhMuc = danhMucDAO.layDanhMucTheoLoai(userSoTaiKhoan, "chi");
+        List<DanhMuc> danhSachDanhMuc = danhMucDAO.layDanhMucConTheoLoai(userSoTaiKhoan, "chi");
         cbDanhMuc.getItems().addAll(danhSachDanhMuc);
         if (!danhSachDanhMuc.isEmpty()) {
             cbDanhMuc.setValue(danhSachDanhMuc.get(0)); // Chọn mặc định
         }
+        cbDanhMuc.setPlaceholder(new Label("Chưa có danh mục con loại Chi"));
         cbDanhMuc.setPrefWidth(300);
 
         // Nội dung
@@ -211,6 +221,12 @@ public class TransactionController {
         btnChuyenTien.setPrefHeight(40);
         btnChuyenTien.setOnAction(e -> handleChuyenTien());
 
+        btnGhiTienMat = new Button("Ghi thu/chi tiền mặt");
+        btnGhiTienMat.setStyle("-fx-background-color: #16a085; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+        btnGhiTienMat.setPrefWidth(300);
+        btnGhiTienMat.setPrefHeight(40);
+        btnGhiTienMat.setOnAction(e -> handleGhiTienMat());
+
         form.add(lbl1, 0, 0);
         form.add(txtSoTaiKhoanNhan, 0, 1);
         form.add(lblTenNguoiNhan, 0, 2);
@@ -221,6 +237,7 @@ public class TransactionController {
         form.add(lbl3, 0, 7);
         form.add(txtNoiDung, 0, 8);
         form.add(btnChuyenTien, 0, 9);
+        form.add(btnGhiTienMat, 0, 10);
 
         top.getChildren().addAll(header, accountInfo, form);
         return top;
@@ -263,7 +280,7 @@ public class TransactionController {
                     setStyle("");
                 } else {
                     setText(item);
-                    setStyle(item.equals("Gửi") ? 
+                    setStyle((item.equals("Gửi") || item.equals("Chi TM")) ? 
                         "-fx-text-fill: red; -fx-font-weight: bold;" : 
                         "-fx-text-fill: green; -fx-font-weight: bold;");
                 }
@@ -302,11 +319,17 @@ public class TransactionController {
         try {
             String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
             
-            // Lấy số dư hiện tại
+            // Lấy số dư tài khoản + ví tiền mặt
             BigDecimal soDu = giaoDichDAO.laySoDu(soTaiKhoan);
+            BigDecimal soDuTienMat = giaoDichDAO.laySoDuTienMat(soTaiKhoan);
             lblSoDu.setText(df.format(soDu) + " đ");
             lblSoDu.setStyle(soDu.compareTo(BigDecimal.ZERO) >= 0 ? 
                 "-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 16px;" : 
+                "-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 16px;");
+
+            lblSoDuTienMat.setText(df.format(soDuTienMat) + " đ");
+            lblSoDuTienMat.setStyle(soDuTienMat.compareTo(BigDecimal.ZERO) >= 0 ?
+                "-fx-text-fill: #f39c12; -fx-font-weight: bold; -fx-font-size: 16px;" :
                 "-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 16px;");
             
             // Load lịch sử giao dịch
@@ -317,8 +340,17 @@ public class TransactionController {
                 String ngay = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(gd.getNgayGiaoDich());
                 String loai;
                 String taiKhoan;
+                String noiDungGoc = gd.getNoiDung() != null ? gd.getNoiDung() : "";
+                boolean laChiTienMat = GiaoDichDAO.isGiaoDichTienMatChi(noiDungGoc);
+                boolean laThuTienMat = GiaoDichDAO.isGiaoDichTienMatThu(noiDungGoc);
                 
-                if (gd.getSoTaiKhoanGui().equals(soTaiKhoan)) {
+                if (laChiTienMat) {
+                    loai = "Chi TM";
+                    taiKhoan = "Tiền mặt";
+                } else if (laThuTienMat) {
+                    loai = "Thu TM";
+                    taiKhoan = "Tiền mặt";
+                } else if (gd.getSoTaiKhoanGui().equals(soTaiKhoan)) {
                     loai = "Gửi";
                     taiKhoan = gd.getSoTaiKhoanNhan();
                     String tenNguoiNhan = giaoDichDAO.layTenNguoiDung(gd.getSoTaiKhoanNhan());
@@ -335,7 +367,7 @@ public class TransactionController {
                 }
                 
                 String soTien = df.format(gd.getSoTien()) + " đ";
-                String noiDung = gd.getNoiDung() != null ? gd.getNoiDung() : "";
+                String noiDung = GiaoDichDAO.boPrefixTienMat(noiDungGoc);
                 
                 displayList.add(new GiaoDichInfo(ngay, loai, taiKhoan, soTien, noiDung));
             }
@@ -473,6 +505,131 @@ public class TransactionController {
         stage.setWidth(1200);
         stage.setHeight(830);
         stage.centerOnScreen();
+    }
+
+    private void handleGhiTienMat() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Ghi nhận thu/chi tiền mặt");
+        dialog.setHeaderText("Thêm khoản tiền mặt để thống kê (không cần chuyển khoản)");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
+
+        ComboBox<String> cbLoai = new ComboBox<>();
+        cbLoai.getItems().addAll("Chi tiền mặt", "Thu tiền mặt");
+        cbLoai.setValue("Chi tiền mặt");
+        cbLoai.setPrefWidth(300);
+
+        ComboBox<DanhMuc> cbDanhMucTienMat = new ComboBox<>();
+        cbDanhMucTienMat.setPrefWidth(300);
+
+        TextField txtSoTienTienMat = new TextField();
+        txtSoTienTienMat.setPromptText("Nhập số tiền (VD: 3000)");
+        txtSoTienTienMat.setPrefWidth(300);
+        MoneyInputUtil.attachMoneyFormatter(txtSoTienTienMat);
+
+        TextArea txtNoiDungTienMat = new TextArea();
+        txtNoiDungTienMat.setPromptText("Ví dụ: Trả tiền giữ xe / Đi chợ / Bán đồ cũ...");
+        txtNoiDungTienMat.setPrefRowCount(3);
+        txtNoiDungTienMat.setPrefWidth(300);
+
+        Runnable reloadDanhMuc = () -> {
+            String loai = "Chi tiền mặt".equals(cbLoai.getValue()) ? "chi" : "thu";
+            String userSoTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
+            List<DanhMuc> ds = danhMucDAO.layDanhMucConTheoLoai(userSoTaiKhoan, loai);
+            cbDanhMucTienMat.getItems().setAll(ds);
+            cbDanhMucTienMat.setValue(ds.isEmpty() ? null : ds.get(0));
+        };
+        cbLoai.setOnAction(e -> reloadDanhMuc.run());
+        reloadDanhMuc.run();
+
+        grid.add(new Label("Loại giao dịch:"), 0, 0);
+        grid.add(cbLoai, 1, 0);
+        grid.add(new Label("Danh mục:"), 0, 1);
+        grid.add(cbDanhMucTienMat, 1, 1);
+        grid.add(new Label("Số tiền:"), 0, 2);
+        grid.add(txtSoTienTienMat, 1, 2);
+        grid.add(new Label("Nội dung:"), 0, 3);
+        grid.add(txtNoiDungTienMat, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+        cbDanhMucTienMat.setPlaceholder(new Label("Chưa có danh mục con phù hợp"));
+        ButtonType btnLuu = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(btnLuu, ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(clicked -> {
+            if (clicked != btnLuu) return;
+
+            try {
+                String loai = "Chi tiền mặt".equals(cbLoai.getValue()) ? "chi" : "thu";
+
+                String soTienStr = txtSoTienTienMat.getText() != null ? txtSoTienTienMat.getText().trim() : "";
+                if (soTienStr.isEmpty()) {
+                    showError("Vui lòng nhập số tiền!");
+                    return;
+                }
+
+                BigDecimal soTien = MoneyInputUtil.parseMoney(soTienStr);
+                if (soTien == null || soTien.compareTo(BigDecimal.ZERO) <= 0) {
+                    showError("Số tiền không hợp lệ!");
+                    return;
+                }
+
+                DanhMuc danhMuc = cbDanhMucTienMat.getValue();
+                if (danhMuc == null) {
+                    showError("Vui lòng chọn danh mục!");
+                    return;
+                }
+
+                String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
+                Integer danhMucId = danhMuc.getId();
+
+                // Cảnh báo vượt ngân sách cho khoản CHI tiền mặt
+                if ("chi".equals(loai) && danhMucId != null) {
+                    java.time.LocalDate today = java.time.LocalDate.now();
+                    int thangHienTai = today.getMonthValue();
+                    int namHienTai = today.getYear();
+                    BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMucId, thangHienTai, namHienTai);
+
+                    if (gioiHan != null) {
+                        double daChiHienTai = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMucId, thangHienTai, namHienTai);
+                        double tongChiSau = daChiHienTai + soTien.doubleValue();
+                        if (tongChiSau > gioiHan.doubleValue()) {
+                            Alert warning = new Alert(Alert.AlertType.WARNING);
+                            warning.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");
+                            warning.setHeaderText("Khoản chi tiền mặt này sẽ vượt ngân sách!");
+                            warning.setContentText(
+                                "Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thangHienTai + "/" + namHienTai + ")\n\n" +
+                                "Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
+                                "Đã chi: " + df.format(daChiHienTai) + " đ\n" +
+                                "Khoản chi này: " + df.format(soTien) + " đ\n" +
+                                "━━━━━━━━━━━━━━━━━━━━━━\n" +
+                                "Tổng sau ghi nhận: " + df.format(tongChiSau) + " đ\n" +
+                                "Vượt mức: " + df.format(tongChiSau - gioiHan.doubleValue()) + " đ\n\n" +
+                                "Bạn có chắc chắn muốn tiếp tục?"
+                            );
+                            warning.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+                            if (warning.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) {
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                String noiDung = txtNoiDungTienMat.getText() != null ? txtNoiDungTienMat.getText().trim() : "";
+                boolean ok = giaoDichDAO.ghiNhanTienMat(soTaiKhoan, soTien, noiDung, loai, danhMucId);
+                if (ok) {
+                    showSuccess("Đã ghi nhận " + ("chi".equals(loai) ? "khoản chi" : "khoản thu") + " tiền mặt thành công!");
+                    loadData();
+                } else {
+                    showError("Ghi nhận giao dịch tiền mặt thất bại!");
+                }
+            } catch (Exception ex) {
+                showError("Lỗi: " + ex.getMessage());
+            }
+        });
     }
 
     private void clearForm() {

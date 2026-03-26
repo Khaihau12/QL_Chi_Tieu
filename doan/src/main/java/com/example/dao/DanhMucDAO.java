@@ -53,9 +53,11 @@ public class DanhMucDAO {
     // Lấy tất cả danh mục (mặc định + riêng của user)
     public List<DanhMuc> layTatCaDanhMuc(String soTaiKhoan) {
         List<DanhMuc> danhSachDanhMuc = new ArrayList<>();
-        String sql = "SELECT * FROM danh_muc " +
-                    "WHERE so_tai_khoan IS NULL OR so_tai_khoan = ? " +
-                    "ORDER BY so_tai_khoan IS NULL DESC, ten_danh_muc";
+        String sql = "SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha " +
+                    "FROM danh_muc dm " +
+                    "LEFT JOIN danh_muc parent ON dm.parent_id = parent.id " +
+                    "WHERE dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ? " +
+                    "ORDER BY dm.so_tai_khoan IS NULL DESC, COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -69,7 +71,9 @@ public class DanhMucDAO {
                     rs.getString("ten_danh_muc"),
                     rs.getString("mo_ta"),
                     rs.getString("loai") != null ? rs.getString("loai") : "chi",
-                    rs.getString("so_tai_khoan")
+                    rs.getString("so_tai_khoan"),
+                    (Integer) rs.getObject("parent_id"),
+                    rs.getString("ten_danh_muc_cha")
                 );
                 danhSachDanhMuc.add(dm);
             }
@@ -83,9 +87,11 @@ public class DanhMucDAO {
     // Lấy danh mục theo loại (chi/thu) cho một user (mặc định + riêng)
     public List<DanhMuc> layDanhMucTheoLoai(String soTaiKhoan, String loai) {
         List<DanhMuc> result = new ArrayList<>();
-        String sql = "SELECT * FROM danh_muc " +
-                    "WHERE loai = ? AND (so_tai_khoan IS NULL OR so_tai_khoan = ?) " +
-                    "ORDER BY so_tai_khoan IS NULL DESC, ten_danh_muc";
+        String sql = "SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha " +
+                    "FROM danh_muc dm " +
+                    "LEFT JOIN danh_muc parent ON dm.parent_id = parent.id " +
+                    "WHERE dm.loai = ? AND (dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ?) " +
+                    "ORDER BY COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, loai);
@@ -97,7 +103,37 @@ public class DanhMucDAO {
                     rs.getString("ten_danh_muc"),
                     rs.getString("mo_ta"),
                     loai,
-                    rs.getString("so_tai_khoan")));
+                    rs.getString("so_tai_khoan"),
+                    (Integer) rs.getObject("parent_id"),
+                    rs.getString("ten_danh_muc_cha")));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return result;
+    }
+
+    // Lấy CHỈ danh mục con theo loại (dùng khi gán danh mục cho giao dịch)
+    public List<DanhMuc> layDanhMucConTheoLoai(String soTaiKhoan, String loai) {
+        List<DanhMuc> result = new ArrayList<>();
+        String sql = "SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha " +
+                    "FROM danh_muc dm " +
+                    "LEFT JOIN danh_muc parent ON dm.parent_id = parent.id " +
+                    "WHERE dm.loai = ? AND dm.parent_id IS NOT NULL " +
+                    "AND (dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ?) " +
+                    "ORDER BY parent.ten_danh_muc, dm.ten_danh_muc";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, loai);
+            pstmt.setString(2, soTaiKhoan);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                result.add(new DanhMuc(
+                    rs.getInt("id"),
+                    rs.getString("ten_danh_muc"),
+                    rs.getString("mo_ta"),
+                    loai,
+                    rs.getString("so_tai_khoan"),
+                    (Integer) rs.getObject("parent_id"),
+                    rs.getString("ten_danh_muc_cha")));
             }
         } catch (SQLException e) { e.printStackTrace(); }
         return result;
@@ -117,7 +153,11 @@ public class DanhMucDAO {
     // Lấy tất cả danh mục (chỉ mặc định - cho backward compatible)
     public List<DanhMuc> layTatCaDanhMuc() {
         List<DanhMuc> danhSachDanhMuc = new ArrayList<>();
-        String sql = "SELECT * FROM danh_muc WHERE so_tai_khoan IS NULL ORDER BY ten_danh_muc";
+        String sql = "SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha " +
+                    "FROM danh_muc dm " +
+                    "LEFT JOIN danh_muc parent ON dm.parent_id = parent.id " +
+                    "WHERE dm.so_tai_khoan IS NULL " +
+                    "ORDER BY COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc";
         
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -128,7 +168,10 @@ public class DanhMucDAO {
                     rs.getInt("id"),
                     rs.getString("ten_danh_muc"),
                     rs.getString("mo_ta"),
-                    rs.getString("so_tai_khoan")
+                    rs.getString("loai") != null ? rs.getString("loai") : "chi",
+                    rs.getString("so_tai_khoan"),
+                    (Integer) rs.getObject("parent_id"),
+                    rs.getString("ten_danh_muc_cha")
                 );
                 danhSachDanhMuc.add(dm);
             }
@@ -141,7 +184,10 @@ public class DanhMucDAO {
     
     // Lấy danh mục theo ID
     public DanhMuc layDanhMucTheoId(int id) {
-        String sql = "SELECT * FROM danh_muc WHERE id = ?";
+        String sql = "SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha " +
+                    "FROM danh_muc dm " +
+                    "LEFT JOIN danh_muc parent ON dm.parent_id = parent.id " +
+                    "WHERE dm.id = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -155,7 +201,9 @@ public class DanhMucDAO {
                     rs.getString("ten_danh_muc"),
                     rs.getString("mo_ta"),
                     rs.getString("loai") != null ? rs.getString("loai") : "chi",
-                    rs.getString("so_tai_khoan")
+                    rs.getString("so_tai_khoan"),
+                    (Integer) rs.getObject("parent_id"),
+                    rs.getString("ten_danh_muc_cha")
                 );
             }
         } catch (SQLException e) {
@@ -167,7 +215,7 @@ public class DanhMucDAO {
     
     // Thêm danh mục mới (hỗ trợ danh mục riêng và loại chi/thu)
     public boolean themDanhMuc(DanhMuc danhMuc) {
-        String sql = "INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES (?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -176,6 +224,8 @@ public class DanhMucDAO {
             pstmt.setString(2, danhMuc.getMoTa());
             pstmt.setString(3, danhMuc.getLoai() != null ? danhMuc.getLoai() : "chi");
             pstmt.setString(4, danhMuc.getSoTaiKhoan());
+            if (danhMuc.getParentId() != null) pstmt.setInt(5, danhMuc.getParentId());
+            else pstmt.setNull(5, Types.INTEGER);
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -186,14 +236,16 @@ public class DanhMucDAO {
     
     // Sửa danh mục
     public boolean suaDanhMuc(DanhMuc danhMuc) {
-        String sql = "UPDATE danh_muc SET ten_danh_muc = ?, mo_ta = ? WHERE id = ?";
+        String sql = "UPDATE danh_muc SET ten_danh_muc = ?, mo_ta = ?, parent_id = ? WHERE id = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, danhMuc.getTenDanhMuc());
             pstmt.setString(2, danhMuc.getMoTa());
-            pstmt.setInt(3, danhMuc.getId());
+            if (danhMuc.getParentId() != null) pstmt.setInt(3, danhMuc.getParentId());
+            else pstmt.setNull(3, Types.INTEGER);
+            pstmt.setInt(4, danhMuc.getId());
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {

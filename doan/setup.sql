@@ -18,7 +18,8 @@ CREATE TABLE nguoi_dung (
     email VARCHAR(100) NOT NULL UNIQUE,
     mat_khau VARCHAR(255) NOT NULL,
     ho_ten VARCHAR(100),
-    so_du DECIMAL(15, 2) DEFAULT 0, -- Số dư tài khoản
+    so_du DECIMAL(15, 2) DEFAULT 0, -- Số dư tài khoản ngân hàng
+    so_du_tien_mat DECIMAL(15, 2) DEFAULT 0, -- Số dư ví tiền mặt
     vai_tro VARCHAR(20) DEFAULT 'nguoi_dung', -- 'quan_ly' hoặc 'nguoi_dung'
     trang_thai VARCHAR(20) DEFAULT 'hoat_dong', -- 'hoat_dong' hoặc 'bi_khoa'
     ly_do_khoa VARCHAR(500) DEFAULT NULL,       -- Lý do khóa tài khoản (NULL nếu đang hoạt động)
@@ -36,7 +37,9 @@ CREATE TABLE danh_muc (
     mo_ta TEXT,
     loai VARCHAR(10) DEFAULT 'chi',         -- 'chi' = danh mục chi tiêu, 'thu' = danh mục thu nhập
     so_tai_khoan VARCHAR(10) DEFAULT NULL,  -- NULL = danh mục mặc định, khác NULL = danh mục riêng
+    parent_id INT DEFAULT NULL,             -- NULL = danh mục cha/gốc, khác NULL = danh mục con
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES danh_muc(id) ON DELETE SET NULL,
     FOREIGN KEY (so_tai_khoan) REFERENCES nguoi_dung(so_tai_khoan) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -83,6 +86,7 @@ CREATE INDEX idx_giao_dich_danh_muc ON giao_dich(danh_muc_id);
 CREATE INDEX idx_giao_dich_danh_muc_thu ON giao_dich(danh_muc_thu_id);
 CREATE INDEX idx_giao_dich_ngay ON giao_dich(ngay_giao_dich);
 CREATE INDEX idx_ngan_sach_thang_nam ON ngan_sach(thang, nam);
+CREATE INDEX idx_danh_muc_parent ON danh_muc(parent_id);
 
 -- =====================================================
 -- DỮ LIỆU MẶC ĐỊNH
@@ -90,36 +94,90 @@ CREATE INDEX idx_ngan_sach_thang_nam ON ngan_sach(thang, nam);
 
 -- 1. Tài khoản (Admin + User)
 -- Admin - Username: admin | Password: admin123 (MD5: 0192023a7bbd73250516f069df18b500)
-INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, vai_tro, trang_thai) 
-VALUES ('101', 'admin', 'admin@qlchitieu.com', '0192023a7bbd73250516f069df18b500', 'Quản Trị Viên', 100000000, 'quan_ly', 'hoat_dong');
+INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, so_du_tien_mat, vai_tro, trang_thai) 
+VALUES ('101', 'admin', 'admin@qlchitieu.com', '0192023a7bbd73250516f069df18b500', 'Quản Trị Viên', 100000000, 0, 'quan_ly', 'hoat_dong');
 
 -- User mẫu
 -- nguyenvana - Password: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
 -- tranthib - Password: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
-INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, vai_tro, trang_thai) 
+INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, so_du_tien_mat, vai_tro, trang_thai) 
 VALUES 
-('102', 'nguyenvana', 'nguyenvana@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Nguyễn Văn A', 10000000, 'nguoi_dung', 'hoat_dong'),
-('103', 'tranthib', 'tranthib@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Trần Thị B', 8000000, 'nguoi_dung', 'hoat_dong');
+('102', 'nguyenvana', 'nguyenvana@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Nguyễn Văn A', 10000000, 0, 'nguoi_dung', 'hoat_dong'),
+('103', 'tranthib', 'tranthib@email.com', 'e10adc3949ba59abbe56e057f20f883e', 'Trần Thị B', 8000000, 0, 'nguoi_dung', 'hoat_dong');
 
--- 2a. Danh mục chi mặc định (8 loại - loai='chi')
-INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES
-('Ăn uống',   'Chi phí ăn uống, nhà hàng, cafe',           'chi', NULL),
-('Di chuyển', 'Xe bus, taxi, xăng xe',                     'chi', NULL),
-('Mua sắm',   'Quần áo, đồ dùng cá nhân',                  'chi', NULL),
-('Giải trí',  'Xem phim, du lịch, sở thích',               'chi', NULL),
-('Học tập',   'Sách, khóa học, văn phòng phẩm',            'chi', NULL),
-('Sức khỏe',  'Thuốc men, khám bệnh',                      'chi', NULL),
-('Hóa đơn',   'Điện, nước, internet, điện thoại',          'chi', NULL),
-('Chi khác',  'Các khoản chi tiêu khác',                   'chi', NULL);
+-- 2a. Danh mục chi mặc định theo nhóm (cha/con) - loai='chi'
+-- Nhóm cha
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES
+('Chi tiêu - sinh hoạt', 'Nhóm chi tiêu sinh hoạt hằng ngày', 'chi', NULL, NULL),
+('Chi phí phát sinh',    'Nhóm chi phí phát sinh theo nhu cầu', 'chi', NULL, NULL),
+('Chi phí cố định',      'Nhóm chi phí cố định định kỳ', 'chi', NULL, NULL),
+('Đầu tư - tiết kiệm',   'Nhóm đầu tư và tiết kiệm', 'chi', NULL, NULL);
 
--- 2b. Danh mục thu mặc định (5 loại - loai='thu')
--- LƯU Ý: 'Thu khác' là danh mục THU MẶC ĐỊNH khi nhận tiền chuyển khoản
-INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan) VALUES
-('Lương',      'Thu nhập từ lương, thù lao',                'thu', NULL),
-('Thưởng',     'Thưởng, bonus, hoa hồng',                   'thu', NULL),
-('Hoàn tiền',  'Hoàn tiền mua hàng, trả nợ nhận lại',      'thu', NULL),
-('Đầu tư',     'Lợi nhuận đầu tư, cổ tức',                 'thu', NULL),
-('Thu khác',   'Các khoản thu nhập khác (mặc định nhận tiền)', 'thu', NULL);
+-- Danh mục con của "Chi tiêu - sinh hoạt"
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Chợ, siêu thị', 'Đi chợ, mua thực phẩm, đồ gia dụng', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi tiêu - sinh hoạt' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Ăn uống', 'Ăn uống, nhà hàng, cafe', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi tiêu - sinh hoạt' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Di chuyển', 'Xe bus, taxi, xăng xe', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi tiêu - sinh hoạt' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+-- Danh mục con của "Chi phí phát sinh"
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Mua sắm', 'Mua sắm hàng hóa, đồ dùng cá nhân', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí phát sinh' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Giải trí', 'Xem phim, du lịch, sở thích', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí phát sinh' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Làm đẹp', 'Mỹ phẩm, làm tóc, chăm sóc cá nhân', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí phát sinh' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Sức khỏe', 'Khám bệnh, thuốc men, chăm sóc sức khỏe', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí phát sinh' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Từ thiện', 'Ủng hộ, quyên góp, hoạt động cộng đồng', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí phát sinh' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+-- Danh mục con của "Chi phí cố định"
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Hóa đơn', 'Điện, nước, internet, điện thoại', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí cố định' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Nhà cửa', 'Chi phí nhà cửa, sửa chữa, thuê nhà', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí cố định' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Người thân', 'Chu cấp, hỗ trợ người thân', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Chi phí cố định' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Đầu tư', 'Chi phí góp vốn, tích lũy đầu tư', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Đầu tư - tiết kiệm' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT 'Học tập', 'Chi phí học tập, khóa học, kỹ năng', 'chi', NULL, id
+FROM danh_muc WHERE ten_danh_muc = 'Đầu tư - tiết kiệm' AND loai = 'chi' AND so_tai_khoan IS NULL LIMIT 1;
+
+-- 2b. Danh mục thu mặc định theo hình - loai='thu'
+-- LƯU Ý: giữ "Thu khác" để gán tự động khi nhận tiền chuyển khoản
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES
+('Thu hồi nợ', 'Nhận lại tiền đã cho vay', 'thu', NULL, NULL),
+('Kinh doanh', 'Thu nhập từ kinh doanh', 'thu', NULL, NULL),
+('Lợi nhuận',  'Lợi nhuận, cổ tức, đầu tư', 'thu', NULL, NULL),
+('Thưởng',     'Tiền thưởng, bonus', 'thu', NULL, NULL),
+('Trợ cấp',    'Trợ cấp, hỗ trợ tài chính', 'thu', NULL, NULL),
+('Lương',      'Thu nhập từ lương, thù lao', 'thu', NULL, NULL),
+('Thu khác',   'Các khoản thu nhập khác (mặc định nhận tiền)', 'thu', NULL, NULL);
 
 -- 3. Giao dịch mẫu (Chuyển tiền giữa các tài khoản với danh mục)
 INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, ngay_giao_dich) VALUES
@@ -138,7 +196,13 @@ INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, d
 -- ALTER TABLE ngan_sach ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 -- ALTER TABLE ngan_sach ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 
+-- Ví tiền mặt: bổ sung cột cho DB cũ nếu chưa có
+-- ALTER TABLE nguoi_dung ADD COLUMN IF NOT EXISTS so_du_tien_mat DECIMAL(15,2) DEFAULT 0 AFTER so_du;
+-- UPDATE nguoi_dung SET so_du_tien_mat = 0 WHERE so_du_tien_mat IS NULL;
+
 -- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS loai VARCHAR(10) DEFAULT 'chi';
+-- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS parent_id INT DEFAULT NULL;
+-- ALTER TABLE danh_muc ADD CONSTRAINT fk_danh_muc_parent FOREIGN KEY (parent_id) REFERENCES danh_muc(id) ON DELETE SET NULL;
 -- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS danh_muc_thu_id INT DEFAULT NULL;
 -- ALTER TABLE giao_dich ADD CONSTRAINT fk_dmthu FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL;
 -- UPDATE danh_muc SET loai='chi' WHERE loai IS NULL;

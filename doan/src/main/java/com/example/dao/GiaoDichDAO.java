@@ -15,6 +15,28 @@ import java.util.Map;
  */
 public class GiaoDichDAO {
 
+    public static final String TIEN_MAT_CHI_PREFIX = "[TIEN_MAT_CHI]";
+    public static final String TIEN_MAT_THU_PREFIX = "[TIEN_MAT_THU]";
+
+    public static boolean isGiaoDichTienMatChi(String noiDung) {
+        return noiDung != null && noiDung.startsWith(TIEN_MAT_CHI_PREFIX);
+    }
+
+    public static boolean isGiaoDichTienMatThu(String noiDung) {
+        return noiDung != null && noiDung.startsWith(TIEN_MAT_THU_PREFIX);
+    }
+
+    public static String boPrefixTienMat(String noiDung) {
+        if (noiDung == null) return "";
+        if (isGiaoDichTienMatChi(noiDung)) {
+            return noiDung.substring(TIEN_MAT_CHI_PREFIX.length()).trim();
+        }
+        if (isGiaoDichTienMatThu(noiDung)) {
+            return noiDung.substring(TIEN_MAT_THU_PREFIX.length()).trim();
+        }
+        return noiDung;
+    }
+
     /**
      * Chuyển tiền giữa 2 tài khoản (Transaction có rollback)
      */
@@ -206,6 +228,46 @@ public class GiaoDichDAO {
     }
 
     /**
+     * Tách nguồn thu theo tháng:
+     * - thu_tien_mat: thu do người dùng tự ghi nhận tiền mặt
+     * - thu_chuyen_khoan: thu do người khác chuyển khoản
+     */
+    public Map<String, Double> layTongThuTheoNguon(String soTaiKhoan, int thang, int nam) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        String sql = "SELECT " +
+                "COALESCE(SUM(CASE WHEN so_tai_khoan_nhan = ? AND noi_dung LIKE ? THEN so_tien ELSE 0 END), 0) AS thu_tien_mat, " +
+                "COALESCE(SUM(CASE WHEN so_tai_khoan_nhan = ? AND (noi_dung IS NULL OR noi_dung NOT LIKE ?) THEN so_tien ELSE 0 END), 0) AS thu_chuyen_khoan " +
+                "FROM giao_dich " +
+                "WHERE so_tai_khoan_nhan = ? AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            String marker = TIEN_MAT_THU_PREFIX + "%";
+            stmt.setString(1, soTaiKhoan);
+            stmt.setString(2, marker);
+            stmt.setString(3, soTaiKhoan);
+            stmt.setString(4, marker);
+            stmt.setString(5, soTaiKhoan);
+            stmt.setInt(6, thang);
+            stmt.setInt(7, nam);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                result.put("thu_tien_mat", rs.getDouble("thu_tien_mat"));
+                result.put("thu_chuyen_khoan", rs.getDouble("thu_chuyen_khoan"));
+            } else {
+                result.put("thu_tien_mat", 0.0);
+                result.put("thu_chuyen_khoan", 0.0);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result.put("thu_tien_mat", 0.0);
+            result.put("thu_chuyen_khoan", 0.0);
+        }
+        return result;
+    }
+
+    /**
      * Lấy số dư hiện tại của tài khoản
      */
     public BigDecimal laySoDu(String soTaiKhoan) throws SQLException {
@@ -219,6 +281,26 @@ public class GiaoDichDAO {
             
             if (rs.next()) {
                 return rs.getBigDecimal("so_du");
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Lấy số dư ví tiền mặt hiện tại của tài khoản
+     */
+    public BigDecimal laySoDuTienMat(String soTaiKhoan) throws SQLException {
+        String sql = "SELECT so_du_tien_mat FROM nguoi_dung WHERE so_tai_khoan = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, soTaiKhoan);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                BigDecimal soDuTienMat = rs.getBigDecimal("so_du_tien_mat");
+                return soDuTienMat != null ? soDuTienMat : BigDecimal.ZERO;
             }
         }
         return BigDecimal.ZERO;
@@ -314,5 +396,109 @@ public class GiaoDichDAO {
             }
         }
         return null;
+    }
+
+    /**
+     * Ghi nhận giao dịch tiền mặt (không chuyển khoản cho người khác) để thống kê thu/chi.
+     * loai = "chi" hoặc "thu"
+     */
+    public boolean ghiNhanTienMat(String soTaiKhoanUser, BigDecimal soTien, String noiDung,
+                                  String loai, Integer danhMucId) throws SQLException {
+        if (soTaiKhoanUser == null || soTaiKhoanUser.isBlank()) {
+            throw new SQLException("Không xác định được tài khoản người dùng!");
+        }
+        if (soTien == null || soTien.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new SQLException("Số tiền phải lớn hơn 0!");
+        }
+        if (!("chi".equals(loai) || "thu".equals(loai))) {
+            throw new SQLException("Loại giao dịch không hợp lệ!");
+        }
+
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            // 1) Khóa tài khoản user để cập nhật số dư ví tiền mặt an toàn
+            BigDecimal soDuHienTai;
+            String sqlLockUser = "SELECT so_du_tien_mat FROM nguoi_dung WHERE so_tai_khoan = ? FOR UPDATE";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlLockUser)) {
+                stmt.setString(1, soTaiKhoanUser);
+                ResultSet rs = stmt.executeQuery();
+                if (!rs.next()) {
+                    conn.rollback();
+                    throw new SQLException("Tài khoản người dùng không tồn tại!");
+                }
+                soDuHienTai = rs.getBigDecimal("so_du_tien_mat");
+                if (soDuHienTai == null) {
+                    soDuHienTai = BigDecimal.ZERO;
+                }
+            }
+
+            if ("chi".equals(loai) && soDuHienTai.compareTo(soTien) < 0) {
+                conn.rollback();
+                throw new SQLException("Số dư không đủ để ghi nhận khoản chi!");
+            }
+
+                // 2) Cập nhật ví tiền mặt user
+                String sqlCapNhatSoDu = "UPDATE nguoi_dung SET so_du_tien_mat = so_du_tien_mat " +
+                    ("chi".equals(loai) ? "-" : "+") + " ? WHERE so_tai_khoan = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlCapNhatSoDu)) {
+                stmt.setBigDecimal(1, soTien);
+                stmt.setString(2, soTaiKhoanUser);
+                stmt.executeUpdate();
+            }
+
+            // 3) Lấy STK admin làm tài khoản đối ứng kỹ thuật để tránh đếm thu/chi bị nhân đôi
+            String soTaiKhoanAdmin = null;
+            String sqlAdmin = "SELECT so_tai_khoan FROM nguoi_dung WHERE vai_tro = 'quan_ly' ORDER BY ma_nguoi_dung LIMIT 1";
+            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sqlAdmin)) {
+                if (rs.next()) {
+                    soTaiKhoanAdmin = rs.getString("so_tai_khoan");
+                }
+            }
+            if (soTaiKhoanAdmin == null || soTaiKhoanAdmin.isBlank()) {
+                conn.rollback();
+                throw new SQLException("Không tìm thấy tài khoản Admin để ghi nhận giao dịch!");
+            }
+
+            // 4) Lưu giao dịch tiền mặt
+            String soTaiKhoanGui = "chi".equals(loai) ? soTaiKhoanUser : soTaiKhoanAdmin;
+            String soTaiKhoanNhan = "chi".equals(loai) ? soTaiKhoanAdmin : soTaiKhoanUser;
+            String noiDungPrefix = "chi".equals(loai) ? TIEN_MAT_CHI_PREFIX : TIEN_MAT_THU_PREFIX;
+            String noiDungDayDu = noiDungPrefix + (noiDung != null && !noiDung.isBlank() ? (" " + noiDung.trim()) : "");
+
+            String sqlInsert = "INSERT INTO giao_dich " +
+                    "(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, danh_muc_thu_id, trang_thai) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, 'thanh_cong')";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlInsert)) {
+                stmt.setString(1, soTaiKhoanGui);
+                stmt.setString(2, soTaiKhoanNhan);
+                stmt.setBigDecimal(3, soTien);
+                stmt.setString(4, noiDungDayDu);
+
+                if ("chi".equals(loai)) {
+                    if (danhMucId != null) stmt.setInt(5, danhMucId);
+                    else stmt.setNull(5, Types.INTEGER);
+                    stmt.setNull(6, Types.INTEGER);
+                } else {
+                    stmt.setNull(5, Types.INTEGER);
+                    if (danhMucId != null) stmt.setInt(6, danhMucId);
+                    else stmt.setNull(6, Types.INTEGER);
+                }
+                stmt.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally {
+            if (conn != null) {
+                conn.setAutoCommit(true);
+                conn.close();
+            }
+        }
     }
 }

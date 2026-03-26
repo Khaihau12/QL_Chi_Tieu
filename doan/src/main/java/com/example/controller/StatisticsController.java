@@ -32,6 +32,8 @@ public class StatisticsController {
     private VBox chartThuBox;
     private Label lblTongChi;
     private Label lblTongThu;
+    private Label lblThuTienMat;
+    private Label lblThuChuyenKhoan;
     private GiaoDichDAO giaoDichDAO;
     private DanhMucDAO danhMucDAO;
     
@@ -143,8 +145,14 @@ public class StatisticsController {
         
         lblTongThu = new Label("Tổng Thu: 0 VNĐ");
         lblTongThu.setStyle("-fx-font-size: 16px; -fx-text-fill: green; -fx-font-weight: bold;");
+
+        lblThuTienMat = new Label("Thu tiền mặt: 0 VNĐ");
+        lblThuTienMat.setStyle("-fx-font-size: 14px; -fx-text-fill: #16a085; -fx-font-weight: bold;");
+
+        lblThuChuyenKhoan = new Label("Thu chuyển khoản: 0 VNĐ");
+        lblThuChuyenKhoan.setStyle("-fx-font-size: 14px; -fx-text-fill: #2980b9; -fx-font-weight: bold;");
         
-        box.getChildren().addAll(lblTongChi, lblTongThu);
+        box.getChildren().addAll(lblTongChi, lblTongThu, lblThuTienMat, lblThuChuyenKhoan);
         return box;
     }
     
@@ -156,9 +164,15 @@ public class StatisticsController {
         Map<String, Double> summary = layTongQuanTheoThang(thang, nam);
         double tongChi = summary.getOrDefault("chi", 0.0);
         double tongThu = summary.getOrDefault("thu", 0.0);
+
+        Map<String, Double> thuTheoNguon = giaoDichDAO.layTongThuTheoNguon(soTaiKhoan, thang, nam);
+        double thuTienMat = thuTheoNguon.getOrDefault("thu_tien_mat", 0.0);
+        double thuChuyenKhoan = thuTheoNguon.getOrDefault("thu_chuyen_khoan", 0.0);
         
         lblTongChi.setText(String.format("Tổng Chi: %,.0f VNĐ", tongChi));
         lblTongThu.setText(String.format("Tổng Thu: %,.0f VNĐ", tongThu));
+        lblThuTienMat.setText(String.format("Thu tiền mặt: %,.0f VNĐ", thuTienMat));
+        lblThuChuyenKhoan.setText(String.format("Thu chuyển khoản: %,.0f VNĐ", thuChuyenKhoan));
         
         // Lấy chi tiêu theo danh mục
         Map<String, Double> chiTheoDanhMuc = layChiTheoDanhMuc(thang, nam);

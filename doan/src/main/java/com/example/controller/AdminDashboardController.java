@@ -827,12 +827,54 @@ public class AdminDashboardController {
         TableColumn<DanhMuc, String> colTen = new TableColumn<>("Tên danh mục");
         colTen.setCellValueFactory(new PropertyValueFactory<>("tenDanhMuc"));
         colTen.setPrefWidth(220);
+        colTen.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                DanhMuc dm = getTableView().getItems().get(getIndex());
+                if (dm.isDanhMucCon()) {
+                    setText("   ↳ " + (item != null ? item : "") + " (con)");
+                    setStyle("-fx-text-fill: #2c3e50;");
+                } else {
+                    setText("▣ " + (item != null ? item : "") + " (cha)");
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #1f6fb2;");
+                }
+            }
+        });
 
         TableColumn<DanhMuc, String> colMoTa = new TableColumn<>("Mô tả");
         colMoTa.setCellValueFactory(new PropertyValueFactory<>("moTa"));
-        colMoTa.setPrefWidth(500);
+        colMoTa.setPrefWidth(360);
 
-        tableDanhMuc.getColumns().addAll(colId, colTen, colMoTa);
+        TableColumn<DanhMuc, String> colCha = new TableColumn<>("Danh mục cha");
+        colCha.setCellValueFactory(new PropertyValueFactory<>("tenDanhMucCha"));
+        colCha.setPrefWidth(200);
+        colCha.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                DanhMuc dm = getTableView().getItems().get(getIndex());
+                if (dm.isDanhMucCon()) {
+                    setText(dm.getTenDanhMucCha() != null ? dm.getTenDanhMucCha() : "");
+                    setStyle("-fx-text-fill: #5b6b7a;");
+                } else {
+                    setText("Danh mục cha");
+                    setStyle("-fx-text-fill: #1f6fb2; -fx-font-weight: bold;");
+                }
+            }
+        });
+
+        tableDanhMuc.getColumns().addAll(colId, colTen, colMoTa, colCha);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -880,10 +922,17 @@ public class AdminDashboardController {
         txtMoTa.setPrefRowCount(3);
         txtMoTa.setPrefWidth(300);
 
+        ComboBox<DanhMuc> cbCha = new ComboBox<>();
+        cbCha.setPrefWidth(300);
+        cbCha.setPromptText("(Không có - danh mục gốc)");
+        cbCha.getItems().setAll(layDanhMucChaMacDinh("chi", null));
+
         grid.add(new Label("Tên danh mục:"), 0, 0);
         grid.add(txtTen, 1, 0);
         grid.add(new Label("Mô tả:"), 0, 1);
         grid.add(txtMoTa, 1, 1);
+        grid.add(new Label("Danh mục cha:"), 0, 2);
+        grid.add(cbCha, 1, 2);
 
         dialog.getDialogPane().setContent(grid);
         ButtonType btnOK = new ButtonType("Thêm", ButtonBar.ButtonData.OK_DONE);
@@ -893,7 +942,8 @@ public class AdminDashboardController {
             if (btn == btnOK) {
                 String ten = txtTen.getText().trim();
                 if (ten.isEmpty()) { showAlert("Lỗi", "Vui lòng nhập tên danh mục!"); return null; }
-                return new DanhMuc(ten, txtMoTa.getText().trim(), null); // null so_tai_khoan = mặc định
+                Integer parentId = cbCha.getValue() != null ? cbCha.getValue().getId() : null;
+                return new DanhMuc(ten, txtMoTa.getText().trim(), "chi", null, parentId);
             }
             return null;
         });
@@ -934,10 +984,26 @@ public class AdminDashboardController {
         txtMoTa.setPrefRowCount(3);
         txtMoTa.setPrefWidth(300);
 
+        ComboBox<DanhMuc> cbCha = new ComboBox<>();
+        cbCha.setPrefWidth(300);
+        cbCha.setPromptText("(Không có - danh mục gốc)");
+        List<DanhMuc> dsCha = layDanhMucChaMacDinh("chi", selected.getId());
+        cbCha.getItems().setAll(dsCha);
+        if (selected.getParentId() != null) {
+            for (DanhMuc dm : dsCha) {
+                if (dm.getId() == selected.getParentId()) {
+                    cbCha.setValue(dm);
+                    break;
+                }
+            }
+        }
+
         grid.add(new Label("Tên danh mục:"), 0, 0);
         grid.add(txtTen, 1, 0);
         grid.add(new Label("Mô tả:"), 0, 1);
         grid.add(txtMoTa, 1, 1);
+        grid.add(new Label("Danh mục cha:"), 0, 2);
+        grid.add(cbCha, 1, 2);
 
         dialog.getDialogPane().setContent(grid);
         ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
@@ -952,7 +1018,9 @@ public class AdminDashboardController {
                     ten,
                     txtMoTa.getText().trim(),
                     selected.getLoai(),
-                    selected.getSoTaiKhoan()
+                    selected.getSoTaiKhoan(),
+                    cbCha.getValue() != null ? cbCha.getValue().getId() : null,
+                    null
                 );
             }
             return null;
@@ -1018,12 +1086,54 @@ public class AdminDashboardController {
         TableColumn<DanhMuc, String> colTen = new TableColumn<>("Tên danh mục");
         colTen.setCellValueFactory(new PropertyValueFactory<>("tenDanhMuc"));
         colTen.setPrefWidth(220);
+        colTen.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                DanhMuc dm = getTableView().getItems().get(getIndex());
+                if (dm.isDanhMucCon()) {
+                    setText("   ↳ " + (item != null ? item : "") + " (con)");
+                    setStyle("-fx-text-fill: #2c3e50;");
+                } else {
+                    setText("▣ " + (item != null ? item : "") + " (cha)");
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: #1f6fb2;");
+                }
+            }
+        });
 
         TableColumn<DanhMuc, String> colMoTa = new TableColumn<>("Mô tả");
         colMoTa.setCellValueFactory(new PropertyValueFactory<>("moTa"));
-        colMoTa.setPrefWidth(500);
+        colMoTa.setPrefWidth(360);
 
-        tableDanhMucThu.getColumns().addAll(colId, colTen, colMoTa);
+        TableColumn<DanhMuc, String> colCha = new TableColumn<>("Danh mục cha");
+        colCha.setCellValueFactory(new PropertyValueFactory<>("tenDanhMucCha"));
+        colCha.setPrefWidth(200);
+        colCha.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+                DanhMuc dm = getTableView().getItems().get(getIndex());
+                if (dm.isDanhMucCon()) {
+                    setText(dm.getTenDanhMucCha() != null ? dm.getTenDanhMucCha() : "");
+                    setStyle("-fx-text-fill: #5b6b7a;");
+                } else {
+                    setText("Danh mục cha");
+                    setStyle("-fx-text-fill: #1f6fb2; -fx-font-weight: bold;");
+                }
+            }
+        });
+
+        tableDanhMucThu.getColumns().addAll(colId, colTen, colMoTa, colCha);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -1064,8 +1174,14 @@ public class AdminDashboardController {
         TextArea txtMoTa = new TextArea();
         txtMoTa.setPromptText("Mô tả chi tiết..."); txtMoTa.setPrefRowCount(3); txtMoTa.setPrefWidth(300);
 
+        ComboBox<DanhMuc> cbCha = new ComboBox<>();
+        cbCha.setPrefWidth(300);
+        cbCha.setPromptText("(Không có - danh mục gốc)");
+        cbCha.getItems().setAll(layDanhMucChaMacDinh("thu", null));
+
         grid.add(new Label("Tên danh mục:"), 0, 0); grid.add(txtTen, 1, 0);
         grid.add(new Label("Mô tả:"), 0, 1); grid.add(txtMoTa, 1, 1);
+        grid.add(new Label("Danh mục cha:"), 0, 2); grid.add(cbCha, 1, 2);
         dialog.getDialogPane().setContent(grid);
 
         ButtonType btnOK = new ButtonType("Thêm", ButtonBar.ButtonData.OK_DONE);
@@ -1074,7 +1190,8 @@ public class AdminDashboardController {
             if (btn == btnOK) {
                 String ten = txtTen.getText().trim();
                 if (ten.isEmpty()) { showAlert("Lỗi", "Vui lòng nhập tên danh mục!"); return null; }
-                return new DanhMuc(ten, txtMoTa.getText().trim(), "thu", null);
+                Integer parentId = cbCha.getValue() != null ? cbCha.getValue().getId() : null;
+                return new DanhMuc(ten, txtMoTa.getText().trim(), "thu", null, parentId);
             }
             return null;
         });
@@ -1110,8 +1227,23 @@ public class AdminDashboardController {
         TextArea txtMoTa = new TextArea(selected.getMoTa() != null ? selected.getMoTa() : "");
         txtMoTa.setPrefRowCount(3); txtMoTa.setPrefWidth(300);
 
+        ComboBox<DanhMuc> cbCha = new ComboBox<>();
+        cbCha.setPrefWidth(300);
+        cbCha.setPromptText("(Không có - danh mục gốc)");
+        List<DanhMuc> dsCha = layDanhMucChaMacDinh("thu", selected.getId());
+        cbCha.getItems().setAll(dsCha);
+        if (selected.getParentId() != null) {
+            for (DanhMuc dm : dsCha) {
+                if (dm.getId() == selected.getParentId()) {
+                    cbCha.setValue(dm);
+                    break;
+                }
+            }
+        }
+
         grid.add(new Label("Tên danh mục:"), 0, 0); grid.add(txtTen, 1, 0);
         grid.add(new Label("Mô tả:"), 0, 1); grid.add(txtMoTa, 1, 1);
+        grid.add(new Label("Danh mục cha:"), 0, 2); grid.add(cbCha, 1, 2);
         dialog.getDialogPane().setContent(grid);
 
         ButtonType btnOK = new ButtonType("Lưu", ButtonBar.ButtonData.OK_DONE);
@@ -1125,7 +1257,9 @@ public class AdminDashboardController {
                     ten,
                     txtMoTa.getText().trim(),
                     selected.getLoai(),
-                    selected.getSoTaiKhoan()
+                    selected.getSoTaiKhoan(),
+                    cbCha.getValue() != null ? cbCha.getValue().getId() : null,
+                    null
                 );
             }
             return null;
@@ -1165,6 +1299,17 @@ public class AdminDashboardController {
                 }
             }
         });
+    }
+
+    // Chỉ cho chọn danh mục cha là danh mục gốc mặc định (1 cấp cha/con)
+    private List<DanhMuc> layDanhMucChaMacDinh(String loai, Integer excludeId) {
+        List<DanhMuc> all = danhMucDAO.layDanhMucTheoLoai(null, loai);
+        List<DanhMuc> result = new java.util.ArrayList<>();
+        for (DanhMuc dm : all) {
+            if (excludeId != null && dm.getId() == excludeId) continue;
+            if (dm.getParentId() == null) result.add(dm);
+        }
+        return result;
     }
 
     // ==================== PANEL: BÁO CÁO HỆ THỐNG ====================

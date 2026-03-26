@@ -14,6 +14,7 @@ public class NguoiDung {
     private String hoTen;
     private String email;
     private BigDecimal soDu; // Số dư tài khoản
+    private BigDecimal soDuTienMat; // Số dư ví tiền mặt
     private String vaiTro; // 'quan_ly' hoặc 'nguoi_dung'
     private String trangThai; // 'hoat_dong' hoặc 'bi_khoa'
     private String lyDoKhoa; // Lý do khóa (null nếu đang hoạt động)
@@ -32,6 +33,7 @@ public class NguoiDung {
         this.hoTen = hoTen;
         this.email = email;
         this.soDu = BigDecimal.ZERO;
+        this.soDuTienMat = BigDecimal.ZERO;
     }
 
     // Getters và Setters
@@ -91,6 +93,14 @@ public class NguoiDung {
         this.soDu = soDu;
     }
 
+    public BigDecimal getSoDuTienMat() {
+        return soDuTienMat;
+    }
+
+    public void setSoDuTienMat(BigDecimal soDuTienMat) {
+        this.soDuTienMat = soDuTienMat;
+    }
+
     public String getVaiTro() {
         return vaiTro;
     }
@@ -146,6 +156,7 @@ public class NguoiDung {
                 ", tenDangNhap='" + tenDangNhap + '\'' +
                 ", hoTen='" + hoTen + '\'' +
                 ", soDu=" + soDu +
+                ", soDuTienMat=" + soDuTienMat +
                 '}';
     }
 }

@@ -62,8 +62,8 @@ public class NguoiDungDAO {
             // Tạo số tài khoản mới (10 chữ số bắt đầu từ 1000000001)
             String soTaiKhoan = taoSoTaiKhoanMoi(conn);
             
-            String sql = "INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, vai_tro) " +
-                         "VALUES (?, ?, ?, ?, ?, 0, 'nguoi_dung')";
+            String sql = "INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, so_du_tien_mat, vai_tro) " +
+                         "VALUES (?, ?, ?, ?, ?, 0, 0, 'nguoi_dung')";
             
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, soTaiKhoan);
@@ -332,6 +332,7 @@ public class NguoiDungDAO {
         nd.setHoTen(rs.getString("ho_ten"));
         nd.setEmail(rs.getString("email"));
         nd.setSoDu(rs.getBigDecimal("so_du"));
+        nd.setSoDuTienMat(getBigDecimalIfColumnExists(rs, "so_du_tien_mat"));
         nd.setVaiTro(rs.getString("vai_tro"));
         nd.setTrangThai(rs.getString("trang_thai"));
         nd.setLyDoKhoa(rs.getString("ly_do_khoa"));
@@ -339,6 +340,17 @@ public class NguoiDungDAO {
         nd.setLanDangNhapCuoi(rs.getTimestamp("lan_dang_nhap_cuoi"));
         nd.setNgayTao(rs.getTimestamp("ngay_tao"));
         return nd;
+    }
+
+    private java.math.BigDecimal getBigDecimalIfColumnExists(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData meta = rs.getMetaData();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            if (columnName.equalsIgnoreCase(meta.getColumnLabel(i)) || columnName.equalsIgnoreCase(meta.getColumnName(i))) {
+                java.math.BigDecimal value = rs.getBigDecimal(columnName);
+                return value != null ? value : java.math.BigDecimal.ZERO;
+            }
+        }
+        return java.math.BigDecimal.ZERO;
     }
     
     // Mã hóa MD5

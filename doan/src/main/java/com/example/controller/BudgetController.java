@@ -226,8 +226,9 @@ public class BudgetController {
         grid.setPadding(new Insets(20));
         
         ComboBox<DanhMuc> cbDanhMuc = new ComboBox<>();
-        List<DanhMuc> danhSachDM = danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, "chi");
+        List<DanhMuc> danhSachDM = danhMucDAO.layDanhMucConTheoLoai(soTaiKhoan, "chi");
         cbDanhMuc.getItems().addAll(danhSachDM);
+        cbDanhMuc.setPlaceholder(new Label("Chưa có danh mục con loại Chi"));
         
         TextField txtGioiHan = new TextField();
         txtGioiHan.setPromptText("Nhập số tiền giới hạn (tối đa 9,999,999,999)");

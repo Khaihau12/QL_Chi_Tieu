@@ -36,6 +36,7 @@ public class DashboardController {
     private Label lblXinChao;
     private Label lblSoTaiKhoan;
     private Label lblSoDu;
+    private Label lblSoDuTienMat;
     private TableView<GiaoDichInfo> tableGiaoDich;
     private Button btnGiaoDich;
     private Button btnRefresh;
@@ -149,7 +150,7 @@ public class DashboardController {
 
         row1.getChildren().addAll(lblXinChao, spacer1, btnDangXuat);
 
-        // Hàng 2: Số tài khoản + Số dư
+        // Hàng 2: Số tài khoản + số dư tài khoản + ví tiền mặt
         HBox row2 = new HBox(30);
         row2.setAlignment(Pos.CENTER_LEFT);
 
@@ -157,7 +158,7 @@ public class DashboardController {
         lblSoTaiKhoan.setFont(Font.font("Arial", 16));
         lblSoTaiKhoan.setStyle("-fx-text-fill: #ecf0f1;");
 
-        Label lblSoDuTitle = new Label("Số dư: ");
+        Label lblSoDuTitle = new Label("Số dư TK: ");
         lblSoDuTitle.setFont(Font.font("Arial", 16));
         lblSoDuTitle.setStyle("-fx-text-fill: #ecf0f1;");
 
@@ -165,7 +166,15 @@ public class DashboardController {
         lblSoDu.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         lblSoDu.setStyle("-fx-text-fill: #2ecc71;");
 
-        row2.getChildren().addAll(lblSoTaiKhoan, lblSoDuTitle, lblSoDu);
+        Label lblSoDuTienMatTitle = new Label("Ví tiền mặt: ");
+        lblSoDuTienMatTitle.setFont(Font.font("Arial", 16));
+        lblSoDuTienMatTitle.setStyle("-fx-text-fill: #ecf0f1;");
+
+        lblSoDuTienMat = new Label("0 đ");
+        lblSoDuTienMat.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        lblSoDuTienMat.setStyle("-fx-text-fill: #f1c40f;");
+
+        row2.getChildren().addAll(lblSoTaiKhoan, lblSoDuTitle, lblSoDu, lblSoDuTienMatTitle, lblSoDuTienMat);
 
         // Hàng 3: Các nút chức năng
         HBox row3 = new HBox(15);
@@ -272,7 +281,7 @@ public class DashboardController {
                     setStyle("");
                 } else {
                     setText(item);
-                    setStyle(item.equals("Gửi") ? 
+                    setStyle((item.equals("Gửi") || item.equals("Chi TM")) ? 
                         "-fx-text-fill: red; -fx-font-weight: bold;" : 
                         "-fx-text-fill: green; -fx-font-weight: bold;");
                 }
@@ -318,7 +327,7 @@ public class DashboardController {
                 else {
                     // Thu thì xanh lá, Chi thì cam
                     GiaoDichInfo row = getTableView().getItems().get(getIndex());
-                    if ("Nhận".equals(row.getLoai()))
+                    if ("Nhận".equals(row.getLoai()) || "Thu TM".equals(row.getLoai()))
                         setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold;");
                     else
                         setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
@@ -334,11 +343,18 @@ public class DashboardController {
         try {
             String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
             
-            // Lấy số dư hiện tại
+            // Lấy số dư tài khoản + ví tiền mặt
             BigDecimal soDu = giaoDichDAO.laySoDu(soTaiKhoan);
+            BigDecimal soDuTienMat = giaoDichDAO.laySoDuTienMat(soTaiKhoan);
+
             lblSoDu.setText(df.format(soDu) + " đ");
-            lblSoDu.setStyle(soDu.compareTo(BigDecimal.ZERO) >= 0 ? 
+            lblSoDu.setStyle(soDu.compareTo(BigDecimal.ZERO) >= 0 ?
                 "-fx-text-fill: #2ecc71; -fx-font-weight: bold; -fx-font-size: 20px;" : 
+                "-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 20px;");
+
+            lblSoDuTienMat.setText(df.format(soDuTienMat) + " đ");
+            lblSoDuTienMat.setStyle(soDuTienMat.compareTo(BigDecimal.ZERO) >= 0 ?
+                "-fx-text-fill: #f1c40f; -fx-font-weight: bold; -fx-font-size: 20px;" :
                 "-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 20px;");
             
             // Load 15 giao dịch gần nhất
@@ -351,8 +367,19 @@ public class DashboardController {
                 String loai;
                 String taiKhoan;
                 String danhMucHienThi;
+                String noiDungGoc = gd.getNoiDung() != null ? gd.getNoiDung() : "";
+                boolean laChiTienMat = GiaoDichDAO.isGiaoDichTienMatChi(noiDungGoc);
+                boolean laThuTienMat = GiaoDichDAO.isGiaoDichTienMatThu(noiDungGoc);
 
-                if (gd.getSoTaiKhoanGui().equals(soTaiKhoan)) {
+                if (laChiTienMat) {
+                    loai = "Chi TM";
+                    taiKhoan = "Tiền mặt";
+                    danhMucHienThi = gd.getTenDanhMucChi() != null ? gd.getTenDanhMucChi() : "";
+                } else if (laThuTienMat) {
+                    loai = "Thu TM";
+                    taiKhoan = "Tiền mặt";
+                    danhMucHienThi = gd.getTenDanhMucThu() != null ? gd.getTenDanhMucThu() : "";
+                } else if (gd.getSoTaiKhoanGui().equals(soTaiKhoan)) {
                     loai = "Gửi";
                     taiKhoan = gd.getSoTaiKhoanNhan();
                     String tenNguoiNhan = giaoDichDAO.layTenNguoiDung(gd.getSoTaiKhoanNhan());
@@ -367,7 +394,7 @@ public class DashboardController {
                 }
                 
                 String soTien = df.format(gd.getSoTien()) + " đ";
-                String noiDung = gd.getNoiDung() != null ? gd.getNoiDung() : "";
+                String noiDung = GiaoDichDAO.boPrefixTienMat(noiDungGoc);
                 
                 displayList.add(new GiaoDichInfo(
                     gd.getMaGiaoDich(), ngay, loai, taiKhoan, soTien, noiDung,
@@ -481,14 +508,22 @@ public class DashboardController {
             return;
         }
 
-        boolean isGui = "Gửi".equals(selected.getLoai());
+        boolean isChi = "Gửi".equals(selected.getLoai()) || "Chi TM".equals(selected.getLoai());
         String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
-        String loaiDM = isGui ? "chi" : "thu";
-        List<DanhMuc> dsDanhMuc = danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, loaiDM);
+        String loaiDM = isChi ? "chi" : "thu";
+        List<DanhMuc> dsDanhMuc = danhMucDAO.layDanhMucConTheoLoai(soTaiKhoan, loaiDM);
+
+        if (dsDanhMuc.isEmpty()) {
+            new Alert(Alert.AlertType.WARNING,
+                "Chưa có danh mục con loại " + (isChi ? "Chi" : "Thu") + ".\n" +
+                "Vui lòng tạo danh mục con trước khi đổi danh mục giao dịch.",
+                ButtonType.OK).showAndWait();
+            return;
+        }
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Đổi danh mục");
-        dialog.setHeaderText((isGui ? "Danh mục Chi" : "Danh mục Thu") +
+        dialog.setHeaderText((isChi ? "Danh mục Chi" : "Danh mục Thu") +
                 " — Giao dịch ngày " + selected.getNgay());
 
         ComboBox<DanhMuc> cbDM = new ComboBox<>();
@@ -496,7 +531,7 @@ public class DashboardController {
         cbDM.setPrefWidth(300);
 
         // Chọn danh mục hiện tại
-        Integer curId = isGui ? selected.getDanhMucId() : selected.getDanhMucThuId();
+        Integer curId = isChi ? selected.getDanhMucId() : selected.getDanhMucThuId();
         if (curId != null) {
             dsDanhMuc.stream().filter(d -> d.getId() == curId).findFirst()
                     .ifPresent(cbDM::setValue);
@@ -514,7 +549,7 @@ public class DashboardController {
             if (newDM == null) return;
 
             // === Kiểm tra ngân sách (chỉ áp dụng cho giao dịch gửi = chi tiêu) ===
-            if (isGui) {
+            if (isChi) {
                 try {
                     java.sql.Timestamp ts = selected.getNgayGiaoDichRaw();
                     LocalDate ngayGD = ts != null
