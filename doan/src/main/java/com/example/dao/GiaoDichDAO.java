@@ -307,39 +307,16 @@ public class GiaoDichDAO {
     }
 
     /**
-     * Đếm tổng số giao dịch trong hệ thống (dùng cho báo cáo admin)
+     * Đếm tổng số giao dịch CHUYỂN KHOẢN trong hệ thống (dùng cho báo cáo admin)
+     * Loại trừ các giao dịch tiền mặt nội bộ có marker [TIEN_MAT_*].
      */
     public long demTatCaGiaoDich() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM giao_dich";
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) return rs.getLong(1);
-        }
-        return 0;
-    }
-
-    /**
-     * Tính tổng số tiền đã lưu chuyển trong hệ thống (dùng cho báo cáo admin)
-     */
-    public BigDecimal tongSoTienGiaoDich() throws SQLException {
-        String sql = "SELECT COALESCE(SUM(so_tien), 0) FROM giao_dich";
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) return rs.getBigDecimal(1);
-        }
-        return BigDecimal.ZERO;
-    }
-
-    /**
-     * Đếm số giao dịch đã gửi của một tài khoản
-     */
-    public long demGDGui(String soTaiKhoan) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM giao_dich WHERE so_tai_khoan_gui = ?";
+        String sql = "SELECT COUNT(*) FROM giao_dich " +
+                "WHERE noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?)";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, soTaiKhoan);
+            stmt.setString(1, TIEN_MAT_CHI_PREFIX + "%");
+            stmt.setString(2, TIEN_MAT_THU_PREFIX + "%");
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) return rs.getLong(1);
         }
@@ -347,13 +324,52 @@ public class GiaoDichDAO {
     }
 
     /**
-     * Đếm số giao dịch đã nhận của một tài khoản
+     * Tính tổng số tiền chuyển khoản đã lưu chuyển trong hệ thống (dùng cho báo cáo admin)
+     * Loại trừ các giao dịch tiền mặt nội bộ có marker [TIEN_MAT_*].
      */
-    public long demGDNhan(String soTaiKhoan) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM giao_dich WHERE so_tai_khoan_nhan = ?";
+    public BigDecimal tongSoTienGiaoDich() throws SQLException {
+        String sql = "SELECT COALESCE(SUM(so_tien), 0) FROM giao_dich " +
+                "WHERE noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, TIEN_MAT_CHI_PREFIX + "%");
+            stmt.setString(2, TIEN_MAT_THU_PREFIX + "%");
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getBigDecimal(1);
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Đếm số giao dịch CHUYỂN KHOẢN đã gửi của một tài khoản
+     */
+    public long demGDGui(String soTaiKhoan) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM giao_dich " +
+                "WHERE so_tai_khoan_gui = ? " +
+                "AND (noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?))";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, soTaiKhoan);
+            stmt.setString(2, TIEN_MAT_CHI_PREFIX + "%");
+            stmt.setString(3, TIEN_MAT_THU_PREFIX + "%");
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getLong(1);
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm số giao dịch CHUYỂN KHOẢN đã nhận của một tài khoản
+     */
+    public long demGDNhan(String soTaiKhoan) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM giao_dich " +
+                "WHERE so_tai_khoan_nhan = ? " +
+                "AND (noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?))";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, soTaiKhoan);
+            stmt.setString(2, TIEN_MAT_CHI_PREFIX + "%");
+            stmt.setString(3, TIEN_MAT_THU_PREFIX + "%");
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) return rs.getLong(1);
         }

@@ -1332,8 +1332,8 @@ public class AdminDashboardController {
 
         statsRow.getChildren().addAll(
             createStatCard("Tổng người dùng", lblTongNguoiDung, "#3498db"),
-            createStatCard("Tổng giao dịch", lblTongGiaoDich, "#27ae60"),
-            createStatCard("Tổng tiền lưu chuyển", lblTongTienLuuChuyen, "#9b59b6"),
+            createStatCard("Tổng GD chuyển khoản", lblTongGiaoDich, "#27ae60"),
+            createStatCard("Tổng tiền chuyển khoản", lblTongTienLuuChuyen, "#9b59b6"),
             createStatCard("Tài khoản bị khóa", lblBiKhoa, "#e74c3c")
         );
 
@@ -1359,11 +1359,11 @@ public class AdminDashboardController {
         c4.setCellValueFactory(new PropertyValueFactory<>("soDu"));
         c4.setPrefWidth(140);
 
-        TableColumn<UserReportRow, String> c5 = new TableColumn<>("GD đã gửi");
+        TableColumn<UserReportRow, String> c5 = new TableColumn<>("GD CK đã gửi");
         c5.setCellValueFactory(new PropertyValueFactory<>("soGDDaGui"));
         c5.setPrefWidth(100);
 
-        TableColumn<UserReportRow, String> c6 = new TableColumn<>("GD đã nhận");
+        TableColumn<UserReportRow, String> c6 = new TableColumn<>("GD CK đã nhận");
         c6.setCellValueFactory(new PropertyValueFactory<>("soGDDaNhan"));
         c6.setPrefWidth(100);
 

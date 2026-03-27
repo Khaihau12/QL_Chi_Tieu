@@ -95,7 +95,7 @@ CREATE INDEX idx_danh_muc_parent ON danh_muc(parent_id);
 -- 1. Tài khoản (Admin + User)
 -- Admin - Username: admin | Password: admin123 (MD5: 0192023a7bbd73250516f069df18b500)
 INSERT INTO nguoi_dung (so_tai_khoan, ten_dang_nhap, email, mat_khau, ho_ten, so_du, so_du_tien_mat, vai_tro, trang_thai) 
-VALUES ('101', 'admin', 'admin@qlchitieu.com', '0192023a7bbd73250516f069df18b500', 'Quản Trị Viên', 100000000, 0, 'quan_ly', 'hoat_dong');
+VALUES ('101', 'admin', 'admin@qlchitieu.com', '0192023a7bbd73250516f069df18b500', 'Quản Trị Viên',  0, 0, 'quan_ly', 'hoat_dong');
 
 -- User mẫu
 -- nguyenvana - Password: 123456 (MD5: e10adc3949ba59abbe56e057f20f883e)
