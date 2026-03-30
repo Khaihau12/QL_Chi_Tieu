@@ -24,12 +24,15 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller cho màn hình Dashboard (JavaFX thuần)
  */
 public class DashboardController {
+
+    private static final String LOC_TAT_CA = "Tất cả các ngày";
+    private static final String LOC_THANG = "Chọn tháng";
+    private static final String LOC_NGAY = "Chọn ngày";
 
     private Stage stage;
     private Scene scene;
@@ -41,6 +44,15 @@ public class DashboardController {
     private Button btnGiaoDich;
     private Button btnRefresh;
     private Button btnDangXuat;
+    private ComboBox<String> cbLoaiLoc;
+    private ComboBox<Integer> cbThangLoc;
+    private ComboBox<Integer> cbNamLoc;
+    private ComboBox<Integer> cbNgayLoc;
+    private ComboBox<Integer> cbThangNgayLoc;
+    private ComboBox<Integer> cbNamNgayLoc;
+    private HBox boxLocThang;
+    private HBox boxLocNgay;
+    private boolean dangCapNhatBoLoc = false;
     private GiaoDichDAO giaoDichDAO = new GiaoDichDAO();
     private NguoiDungDAO nguoiDungDAO = new NguoiDungDAO();
     private DanhMucDAO danhMucDAO = new DanhMucDAO();
@@ -142,13 +154,23 @@ public class DashboardController {
         Region spacer1 = new Region();
         HBox.setHgrow(spacer1, Priority.ALWAYS);
 
+        Button btnDoiMatKhau = new Button("Đổi mật khẩu");
+        btnDoiMatKhau.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
+        btnDoiMatKhau.setPrefHeight(35);
+        btnDoiMatKhau.setPrefWidth(130);
+        btnDoiMatKhau.setOnAction(e -> handleDoiMatKhau());
+
         btnDangXuat = new Button("Đăng xuất");
         btnDangXuat.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
         btnDangXuat.setPrefHeight(35);
         btnDangXuat.setPrefWidth(120);
         btnDangXuat.setOnAction(e -> handleDangXuat());
 
-        row1.getChildren().addAll(lblXinChao, spacer1, btnDangXuat);
+        HBox boxActionTop = new HBox(10);
+        boxActionTop.setAlignment(Pos.CENTER_RIGHT);
+        boxActionTop.getChildren().addAll(btnDoiMatKhau, btnDangXuat);
+
+        row1.getChildren().addAll(lblXinChao, spacer1, boxActionTop);
 
         // Hàng 2: Số tài khoản + số dư tài khoản + ví tiền mặt
         HBox row2 = new HBox(30);
@@ -186,29 +208,17 @@ public class DashboardController {
         btnGiaoDich.setPrefWidth(150);
         btnGiaoDich.setOnAction(e -> handleGiaoDich());
 
-        btnRefresh = new Button("Làm mới");
-        btnRefresh.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
-        btnRefresh.setPrefHeight(40);
-        btnRefresh.setPrefWidth(130);
-        btnRefresh.setOnAction(e -> handleRefresh());
-        
         Button btnNganSach = new Button("Ngân sách");
         btnNganSach.setStyle("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnNganSach.setPrefHeight(40);
         btnNganSach.setPrefWidth(150);
-        btnNganSach.setOnAction(e -> {
-            System.out.println("DEBUG: Nút Ngân sách được click!");
-            handleNganSach();
-        });
+        btnNganSach.setOnAction(e -> handleNganSach());
         
         Button btnThongKe = new Button("Thống kê");
         btnThongKe.setStyle("-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         btnThongKe.setPrefHeight(40);
         btnThongKe.setPrefWidth(150);
-        btnThongKe.setOnAction(e -> {
-            System.out.println("DEBUG: Nút Thống kê được click!");
-            handleThongKe();
-        });
+        btnThongKe.setOnAction(e -> handleThongKe());
         
         Button btnDanhMuc = new Button("Danh mục");
         btnDanhMuc.setStyle("-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
@@ -216,13 +226,7 @@ public class DashboardController {
         btnDanhMuc.setPrefWidth(150);
         btnDanhMuc.setOnAction(e -> handleDanhMuc());
 
-        Button btnDoiMatKhau = new Button("Đổi mật khẩu");
-        btnDoiMatKhau.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
-        btnDoiMatKhau.setPrefHeight(40);
-        btnDoiMatKhau.setPrefWidth(160);
-        btnDoiMatKhau.setOnAction(e -> handleDoiMatKhau());
-
-        row3.getChildren().addAll(btnGiaoDich, btnRefresh, btnNganSach, btnThongKe, btnDanhMuc, btnDoiMatKhau);
+        row3.getChildren().addAll(btnGiaoDich, btnNganSach, btnThongKe, btnDanhMuc);
 
         header.getChildren().addAll(row1, row2, row3);
         return header;
@@ -233,7 +237,7 @@ public class DashboardController {
         center.setPadding(new Insets(20));
 
         // Tiêu đề
-        Label lblTitle = new Label("Lịch sử giao dịch gần đây");
+        Label lblTitle = new Label("Lịch sử giao dịch");
         lblTitle.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         lblTitle.setStyle("-fx-text-fill: #2c3e50;");
 
@@ -243,19 +247,204 @@ public class DashboardController {
         btnDoiDanhMuc.setPrefHeight(35);
         btnDoiDanhMuc.setOnAction(e -> handleDoiDanhMuc());
 
+        btnRefresh = new Button("Làm mới");
+        btnRefresh.setStyle("-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
+        btnRefresh.setPrefHeight(35);
+        btnRefresh.setPrefWidth(120);
+        btnRefresh.setOnAction(e -> handleRefresh());
+
         HBox titleRow = new HBox(15);
         titleRow.setAlignment(Pos.CENTER_LEFT);
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
-        titleRow.getChildren().addAll(lblTitle, sp, btnDoiDanhMuc);
+        titleRow.getChildren().addAll(lblTitle, sp, btnRefresh, btnDoiDanhMuc);
+
+        // Bộ lọc lịch sử giao dịch
+        HBox filterRow = createFilterRow();
 
         // TableView
         tableGiaoDich = createTable();
 
-        center.getChildren().addAll(titleRow, tableGiaoDich);
+        center.getChildren().addAll(titleRow, filterRow, tableGiaoDich);
         VBox.setVgrow(tableGiaoDich, Priority.ALWAYS);
 
         return center;
+    }
+
+    private HBox createFilterRow() {
+        HBox row = new HBox(10);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label lblLoc = new Label("Lọc giao dịch:");
+        lblLoc.setStyle("-fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        cbLoaiLoc = new ComboBox<>();
+        cbLoaiLoc.getItems().addAll(LOC_TAT_CA, LOC_THANG, LOC_NGAY);
+        cbLoaiLoc.setValue(LOC_TAT_CA);
+        cbLoaiLoc.setPrefWidth(170);
+
+        cbThangLoc = new ComboBox<>();
+        cbThangLoc.setPrefWidth(90);
+
+        cbNamLoc = new ComboBox<>();
+        int namHienTai = LocalDate.now().getYear();
+        for (int y = namHienTai - 4; y <= namHienTai; y++) cbNamLoc.getItems().add(y);
+        cbNamLoc.setPrefWidth(100);
+
+        cbNamLoc.setValue(namHienTai);
+        capNhatDanhSachThangLoc();
+        cbThangLoc.setValue(LocalDate.now().getMonthValue());
+
+        cbNgayLoc = new ComboBox<>();
+        cbNgayLoc.setPrefWidth(90);
+
+        cbThangNgayLoc = new ComboBox<>();
+        cbThangNgayLoc.setPrefWidth(90);
+
+        cbNamNgayLoc = new ComboBox<>();
+        for (int y = namHienTai - 4; y <= namHienTai; y++) cbNamNgayLoc.getItems().add(y);
+        cbNamNgayLoc.setPrefWidth(100);
+
+        cbNamNgayLoc.setValue(namHienTai);
+        capNhatDanhSachThangNgayLoc();
+        cbThangNgayLoc.setValue(LocalDate.now().getMonthValue());
+        capNhatDanhSachNgayLoc();
+        cbNgayLoc.setValue(LocalDate.now().getDayOfMonth());
+
+        boxLocThang = new HBox(8, new Label("Tháng"), cbThangLoc, new Label("Năm"), cbNamLoc);
+        boxLocThang.setAlignment(Pos.CENTER_LEFT);
+
+        boxLocNgay = new HBox(8,
+            new Label("Ngày"), cbNgayLoc,
+            new Label("Tháng"), cbThangNgayLoc,
+            new Label("Năm"), cbNamNgayLoc);
+        boxLocNgay.setAlignment(Pos.CENTER_LEFT);
+
+        cbLoaiLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            capNhatHienThiBoLoc();
+            loadDashboardData();
+        });
+        cbThangLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            if (LOC_THANG.equals(cbLoaiLoc.getValue())) loadDashboardData();
+        });
+        cbNamLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            capNhatDanhSachThangLoc();
+            if (LOC_THANG.equals(cbLoaiLoc.getValue())) loadDashboardData();
+        });
+
+        cbNgayLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();
+        });
+
+        cbThangNgayLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            capNhatDanhSachNgayLoc();
+            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();
+        });
+
+        cbNamNgayLoc.setOnAction(e -> {
+            if (dangCapNhatBoLoc) return;
+            capNhatDanhSachThangNgayLoc();
+            capNhatDanhSachNgayLoc();
+            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();
+        });
+
+        row.getChildren().addAll(lblLoc, cbLoaiLoc, boxLocThang, boxLocNgay);
+        capNhatHienThiBoLoc();
+        return row;
+    }
+
+    private void capNhatHienThiBoLoc() {
+        if (cbLoaiLoc == null || boxLocThang == null || boxLocNgay == null) return;
+        boolean locThang = LOC_THANG.equals(cbLoaiLoc.getValue());
+        boolean locNgay = LOC_NGAY.equals(cbLoaiLoc.getValue());
+
+        boxLocThang.setVisible(locThang);
+        boxLocThang.setManaged(locThang);
+
+        boxLocNgay.setVisible(locNgay);
+        boxLocNgay.setManaged(locNgay);
+    }
+
+    private void capNhatDanhSachThangLoc() {
+        if (cbThangLoc == null || cbNamLoc == null || cbNamLoc.getValue() == null) return;
+
+        boolean oldFlag = dangCapNhatBoLoc;
+        dangCapNhatBoLoc = true;
+        try {
+            int nam = cbNamLoc.getValue();
+            int namHienTai = LocalDate.now().getYear();
+            int thangMax = (nam == namHienTai) ? LocalDate.now().getMonthValue() : 12;
+
+            Integer thangCu = cbThangLoc.getValue();
+            cbThangLoc.getItems().clear();
+            for (int i = 1; i <= thangMax; i++) cbThangLoc.getItems().add(i);
+
+            int thangMoi = (thangCu != null) ? Math.min(thangCu, thangMax) : thangMax;
+            cbThangLoc.getSelectionModel().select(Integer.valueOf(thangMoi));
+            if (cbThangLoc.getValue() == null && !cbThangLoc.getItems().isEmpty()) {
+                cbThangLoc.getSelectionModel().selectLast();
+            }
+        } finally {
+            dangCapNhatBoLoc = oldFlag;
+        }
+    }
+
+    private void capNhatDanhSachThangNgayLoc() {
+        if (cbThangNgayLoc == null || cbNamNgayLoc == null || cbNamNgayLoc.getValue() == null) return;
+
+        boolean oldFlag = dangCapNhatBoLoc;
+        dangCapNhatBoLoc = true;
+        try {
+            int nam = cbNamNgayLoc.getValue();
+            int namHienTai = LocalDate.now().getYear();
+            int thangMax = (nam == namHienTai) ? LocalDate.now().getMonthValue() : 12;
+
+            Integer thangCu = cbThangNgayLoc.getValue();
+            cbThangNgayLoc.getItems().clear();
+            for (int i = 1; i <= thangMax; i++) cbThangNgayLoc.getItems().add(i);
+
+            int thangMoi = (thangCu != null) ? Math.min(thangCu, thangMax) : thangMax;
+            cbThangNgayLoc.getSelectionModel().select(Integer.valueOf(thangMoi));
+            if (cbThangNgayLoc.getValue() == null && !cbThangNgayLoc.getItems().isEmpty()) {
+                cbThangNgayLoc.getSelectionModel().selectLast();
+            }
+        } finally {
+            dangCapNhatBoLoc = oldFlag;
+        }
+    }
+
+    private void capNhatDanhSachNgayLoc() {
+        if (cbNgayLoc == null || cbThangNgayLoc == null || cbNamNgayLoc == null) return;
+        Integer thang = cbThangNgayLoc.getValue();
+        Integer nam = cbNamNgayLoc.getValue();
+        if (thang == null || nam == null) return;
+
+        boolean oldFlag = dangCapNhatBoLoc;
+        dangCapNhatBoLoc = true;
+        try {
+            Integer ngayCu = cbNgayLoc.getValue();
+            int maxNgay = LocalDate.of(nam, thang, 1).lengthOfMonth();
+            LocalDate homNay = LocalDate.now();
+            if (nam == homNay.getYear() && thang == homNay.getMonthValue()) {
+                maxNgay = Math.min(maxNgay, homNay.getDayOfMonth());
+            }
+
+            cbNgayLoc.getItems().clear();
+            for (int d = 1; d <= maxNgay; d++) cbNgayLoc.getItems().add(d);
+
+            int ngayMoi = (ngayCu != null) ? Math.min(ngayCu, maxNgay) : 1;
+            cbNgayLoc.getSelectionModel().select(Integer.valueOf(ngayMoi));
+            if (cbNgayLoc.getValue() == null && !cbNgayLoc.getItems().isEmpty()) {
+                cbNgayLoc.getSelectionModel().selectLast();
+            }
+        } finally {
+            dangCapNhatBoLoc = oldFlag;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -357,12 +546,49 @@ public class DashboardController {
                 "-fx-text-fill: #f1c40f; -fx-font-weight: bold; -fx-font-size: 20px;" :
                 "-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 20px;");
             
-            // Load 15 giao dịch gần nhất
-            List<GiaoDich> danhSach = giaoDichDAO.layLichSuGiaoDich(soTaiKhoan);
+            // Load lịch sử giao dịch theo bộ lọc
+            List<GiaoDich> danhSach;
+            String loaiLoc = cbLoaiLoc != null ? cbLoaiLoc.getValue() : LOC_TAT_CA;
+            if (LOC_THANG.equals(loaiLoc)) {
+                int thang = cbThangLoc != null && cbThangLoc.getValue() != null
+                        ? cbThangLoc.getValue() : LocalDate.now().getMonthValue();
+                int nam = cbNamLoc != null && cbNamLoc.getValue() != null
+                        ? cbNamLoc.getValue() : LocalDate.now().getYear();
+                danhSach = giaoDichDAO.layLichSuGiaoDichTheoThang(soTaiKhoan, thang, nam);
+            } else if (LOC_NGAY.equals(loaiLoc)) {
+                int thang = cbThangNgayLoc != null && cbThangNgayLoc.getValue() != null
+                    ? cbThangNgayLoc.getValue() : LocalDate.now().getMonthValue();
+                int nam = cbNamNgayLoc != null && cbNamNgayLoc.getValue() != null
+                    ? cbNamNgayLoc.getValue() : LocalDate.now().getYear();
+
+                LocalDate homNay = LocalDate.now();
+                int maxNgay = LocalDate.of(nam, thang, 1).lengthOfMonth();
+                if (nam == homNay.getYear() && thang == homNay.getMonthValue()) {
+                    maxNgay = Math.min(maxNgay, homNay.getDayOfMonth());
+                }
+
+                Integer ngayDaChon = cbNgayLoc != null ? cbNgayLoc.getValue() : null;
+                int ngay = (ngayDaChon != null)
+                        ? ngayDaChon
+                        : Math.min(homNay.getDayOfMonth(), maxNgay);
+                if (ngay < 1) ngay = 1;
+                if (ngay > maxNgay) ngay = maxNgay;
+
+                // Đồng bộ lại UI nếu ngày đang chọn không hợp lệ sau khi đổi tháng/năm.
+                if (cbNgayLoc != null && (ngayDaChon == null || !ngayDaChon.equals(ngay))) {
+                    cbNgayLoc.setValue(ngay);
+                }
+
+                LocalDate ngayLoc = LocalDate.of(nam, thang, ngay);
+                danhSach = giaoDichDAO.layLichSuGiaoDichTheoNgay(soTaiKhoan, ngayLoc);
+            } else {
+                danhSach = giaoDichDAO.layLichSuGiaoDich(soTaiKhoan);
+            }
+
             rawGiaoDichList = new ArrayList<>(danhSach);
             List<GiaoDichInfo> displayList = new ArrayList<>();
             
-            for (GiaoDich gd : danhSach.stream().limit(15).collect(Collectors.toList())) {
+            for (GiaoDich gd : danhSach) {
                 String ngay = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(gd.getNgayGiaoDich());
                 String loai;
                 String taiKhoan;
@@ -423,13 +649,8 @@ public class DashboardController {
     
     private void handleNganSach() {
         try {
-            System.out.println("DEBUG: Bắt đầu handleNganSach()");
             String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
-            System.out.println("DEBUG: Số tài khoản = " + soTaiKhoan);
-            
-            System.out.println("DEBUG: Đang tạo BudgetController...");
             BudgetController budgetController = new BudgetController(stage, soTaiKhoan);
-            System.out.println("DEBUG: Đã tạo BudgetController thành công!");
             
             stage.setScene(budgetController.getScene());
             stage.setTitle("Quản Lý Ngân Sách");
@@ -437,23 +658,15 @@ public class DashboardController {
             stage.setWidth(1200);
             stage.setHeight(830);
             stage.centerOnScreen();
-            System.out.println("DEBUG: Đã chuyển scene thành công!");
         } catch (Exception e) {
-            System.err.println("DEBUG LỖI: " + e.getMessage());
-            e.printStackTrace();
             showError("Lỗi khi mở Ngân sách: " + e.getMessage());
         }
     }
     
     private void handleThongKe() {
         try {
-            System.out.println("DEBUG: Bắt đầu handleThongKe()");
             String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
-            System.out.println("DEBUG: Số tài khoản = " + soTaiKhoan);
-            
-            System.out.println("DEBUG: Đang tạo StatisticsController...");
             StatisticsController statisticsController = new StatisticsController(stage, soTaiKhoan);
-            System.out.println("DEBUG: Đã tạo StatisticsController thành công!");
             
             stage.setScene(statisticsController.getScene());
             stage.setTitle("Thống Kê Chi Tiêu");
@@ -461,10 +674,7 @@ public class DashboardController {
             stage.setWidth(1200);
             stage.setHeight(830);
             stage.centerOnScreen();
-            System.out.println("DEBUG: Đã chuyển scene thành công!");
         } catch (Exception e) {
-            System.err.println("DEBUG LỖI: " + e.getMessage());
-            e.printStackTrace();
             showError("Lỗi khi mở Thống kê: " + e.getMessage());
         }
     }

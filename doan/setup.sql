@@ -170,14 +170,27 @@ FROM danh_muc WHERE ten_danh_muc = 'Đầu tư - tiết kiệm' AND loai = 'chi'
 
 -- 2b. Danh mục thu mặc định theo hình - loai='thu'
 -- LƯU Ý: giữ "Thu khác" để gán tự động khi nhận tiền chuyển khoản
-INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES
-('Thu hồi nợ', 'Nhận lại tiền đã cho vay', 'thu', NULL, NULL),
-('Kinh doanh', 'Thu nhập từ kinh doanh', 'thu', NULL, NULL),
-('Lợi nhuận',  'Lợi nhuận, cổ tức, đầu tư', 'thu', NULL, NULL),
-('Thưởng',     'Tiền thưởng, bonus', 'thu', NULL, NULL),
-('Trợ cấp',    'Trợ cấp, hỗ trợ tài chính', 'thu', NULL, NULL),
-('Lương',      'Thu nhập từ lương, thù lao', 'thu', NULL, NULL),
-('Thu khác',   'Các khoản thu nhập khác (mặc định nhận tiền)', 'thu', NULL, NULL);
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+VALUES ('Thu', 'Nhóm danh mục thu nhập', 'thu', NULL, NULL);
+
+INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id)
+SELECT x.ten_danh_muc, x.mo_ta, 'thu', NULL, p.id
+FROM (
+    SELECT 'Thu hồi nợ' AS ten_danh_muc, 'Nhận lại tiền đã cho vay' AS mo_ta
+    UNION ALL SELECT 'Kinh doanh', 'Thu nhập từ kinh doanh'
+    UNION ALL SELECT 'Lợi nhuận', 'Lợi nhuận, cổ tức, đầu tư'
+    UNION ALL SELECT 'Thưởng', 'Tiền thưởng, bonus'
+    UNION ALL SELECT 'Trợ cấp', 'Trợ cấp, hỗ trợ tài chính'
+    UNION ALL SELECT 'Lương', 'Thu nhập từ lương, thù lao'
+    UNION ALL SELECT 'Thu khác', 'Các khoản thu nhập khác (mặc định nhận tiền)'
+) x
+JOIN (
+    SELECT id
+    FROM danh_muc
+    WHERE ten_danh_muc = 'Thu' AND loai = 'thu' AND so_tai_khoan IS NULL AND parent_id IS NULL
+    ORDER BY id DESC
+    LIMIT 1
+) p;
 
 -- 3. Giao dịch mẫu (Chuyển tiền giữa các tài khoản với danh mục)
 INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, ngay_giao_dich) VALUES

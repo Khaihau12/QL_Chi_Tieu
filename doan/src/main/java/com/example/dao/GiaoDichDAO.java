@@ -5,6 +5,7 @@ import com.example.util.DatabaseConnection;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -142,21 +143,55 @@ public class GiaoDichDAO {
      * Lấy lịch sử giao dịch của 1 tài khoản (cả gửi và nhận), JOIN danh mục chi + thu
      */
     public List<GiaoDich> layLichSuGiaoDich(String soTaiKhoan) throws SQLException {
-        String sql = "SELECT gd.*, " +
-                     "dc.ten_danh_muc AS ten_dm_chi, " +
-                     "dt.ten_danh_muc AS ten_dm_thu " +
-                     "FROM giao_dich gd " +
-                     "LEFT JOIN danh_muc dc ON gd.danh_muc_id    = dc.id " +
-                     "LEFT JOIN danh_muc dt ON gd.danh_muc_thu_id = dt.id " +
-                     "WHERE gd.so_tai_khoan_gui = ? OR gd.so_tai_khoan_nhan = ? " +
-                     "ORDER BY gd.ngay_giao_dich DESC LIMIT 100";
+        return layLichSuGiaoDich(soTaiKhoan, null, null, null);
+    }
+
+    /**
+     * Lấy lịch sử giao dịch theo tháng/năm (mới nhất trước)
+     */
+    public List<GiaoDich> layLichSuGiaoDichTheoThang(String soTaiKhoan, int thang, int nam) throws SQLException {
+        return layLichSuGiaoDich(soTaiKhoan, thang, nam, null);
+    }
+
+    /**
+     * Lấy lịch sử giao dịch theo ngày cụ thể (mới nhất trước)
+     */
+    public List<GiaoDich> layLichSuGiaoDichTheoNgay(String soTaiKhoan, LocalDate ngay) throws SQLException {
+        return layLichSuGiaoDich(soTaiKhoan, null, null, ngay);
+    }
+
+    private List<GiaoDich> layLichSuGiaoDich(String soTaiKhoan, Integer thang, Integer nam, LocalDate ngay) throws SQLException {
+        StringBuilder sql = new StringBuilder(
+                "SELECT gd.*, " +
+                        "dc.ten_danh_muc AS ten_dm_chi, " +
+                        "dt.ten_danh_muc AS ten_dm_thu " +
+                        "FROM giao_dich gd " +
+                        "LEFT JOIN danh_muc dc ON gd.danh_muc_id    = dc.id " +
+                        "LEFT JOIN danh_muc dt ON gd.danh_muc_thu_id = dt.id " +
+                        "WHERE (gd.so_tai_khoan_gui = ? OR gd.so_tai_khoan_nhan = ?) ");
+
+        if (ngay != null) {
+            sql.append("AND DATE(gd.ngay_giao_dich) = ? ");
+        } else if (thang != null && nam != null) {
+            sql.append("AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? ");
+        }
+        sql.append("ORDER BY gd.ngay_giao_dich DESC");
+
         List<GiaoDich> danhSach = new ArrayList<>();
         
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
             
-            stmt.setString(1, soTaiKhoan);
-            stmt.setString(2, soTaiKhoan);
+            int idx = 1;
+            stmt.setString(idx++, soTaiKhoan);
+            stmt.setString(idx++, soTaiKhoan);
+
+            if (ngay != null) {
+                stmt.setDate(idx, Date.valueOf(ngay));
+            } else if (thang != null && nam != null) {
+                stmt.setInt(idx++, thang);
+                stmt.setInt(idx, nam);
+            }
             
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {

@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,6 +50,7 @@ public class AdminDashboardController {
     private TableView<DanhMuc> tableDanhMuc;
     private TableView<DanhMuc> tableDanhMucThu;
     private TableView<UserReportRow> tableUserReport;
+    private TextField txtTimStkTaiKhoan;
 
     // Report stat labels
     private Label lblTongNguoiDung;
@@ -206,6 +208,27 @@ public class AdminDashboardController {
         Label title = new Label("Quản lý tài khoản người dùng");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label lblTim = new Label("Tìm theo STK:");
+        lblTim.setStyle("-fx-font-weight: bold;");
+
+        txtTimStkTaiKhoan = new TextField();
+        txtTimStkTaiKhoan.setPromptText("Nhập số tài khoản user...");
+        txtTimStkTaiKhoan.setPrefWidth(260);
+        MoneyInputUtil.attachDigitsOnly(txtTimStkTaiKhoan);
+
+        Button btnXoaLoc = new Button("Xóa lọc");
+        btnXoaLoc.setStyle("-fx-background-color: #7f8c8d; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnXoaLoc.setOnAction(e -> {
+            txtTimStkTaiKhoan.clear();
+            loadDanhSachTaiKhoan();
+        });
+
+        txtTimStkTaiKhoan.textProperty().addListener((obs, oldV, newV) -> loadDanhSachTaiKhoan(newV));
+        searchBox.getChildren().addAll(lblTim, txtTimStkTaiKhoan, btnXoaLoc);
+
         tableTaiKhoan = new TableView<>();
         VBox.setVgrow(tableTaiKhoan, Priority.ALWAYS);
 
@@ -228,6 +251,23 @@ public class AdminDashboardController {
         TableColumn<NguoiDung, String> colVaiTro = new TableColumn<>("Vai trò");
         colVaiTro.setCellValueFactory(new PropertyValueFactory<>("vaiTro"));
         colVaiTro.setPrefWidth(100);
+        colVaiTro.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+                if ("quan_ly".equals(item)) {
+                    setText("Quản lý");
+                } else if ("nguoi_dung".equals(item)) {
+                    setText("Người dùng");
+                } else {
+                    setText(item);
+                }
+            }
+        });
 
         TableColumn<NguoiDung, String> colTrangThai = new TableColumn<>("Trạng thái");
         colTrangThai.setPrefWidth(130);
@@ -251,54 +291,7 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<NguoiDung, String> colLyDo = new TableColumn<>("Lý do khóa");
-        colLyDo.setCellValueFactory(new PropertyValueFactory<>("lyDoKhoa"));
-        colLyDo.setPrefWidth(180);
-        colLyDo.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) { setText(null); setStyle(""); return; }
-                if (item == null || item.isBlank()) {
-                    setText("-");
-                    setStyle("-fx-text-fill: #bdc3c7;");
-                } else {
-                    setText(item);
-                    setStyle("-fx-text-fill: #c0392b;");
-                }
-            }
-        });
-
-        TableColumn<NguoiDung, Object> colThoiGian = new TableColumn<>("Hết khóa lúc");
-        colThoiGian.setCellValueFactory(new PropertyValueFactory<>("thoiGianMoKhoa"));
-        colThoiGian.setPrefWidth(150);
-        colThoiGian.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Object item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getIndex() >= getTableView().getItems().size()) { setText(null); return; }
-                NguoiDung nd = getTableView().getItems().get(getIndex());
-                if (nd.getThoiGianMoKhoa() == null) {
-                    if ("bi_khoa".equals(nd.getTrangThai())) {
-                        setText("♾ Vĩnh viễn");
-                        setStyle("-fx-text-fill: #e74c3c;");
-                    } else {
-                        setText("-");
-                        setStyle("-fx-text-fill: #bdc3c7;");
-                    }
-                } else {
-                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
-                    setText(sdf.format(nd.getThoiGianMoKhoa()));
-                    setStyle("-fx-text-fill: #e67e22;");
-                }
-            }
-        });
-
-        TableColumn<NguoiDung, Object> colNgayTao = new TableColumn<>("Ngày tạo");
-        colNgayTao.setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
-        colNgayTao.setPrefWidth(140);
-
-        tableTaiKhoan.getColumns().addAll(colSTK, colTenDN, colHoTen, colEmail, colVaiTro, colTrangThai, colLyDo, colThoiGian, colNgayTao);
+        tableTaiKhoan.getColumns().addAll(colSTK, colTenDN, colHoTen, colEmail, colVaiTro, colTrangThai);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -319,16 +312,36 @@ public class AdminDashboardController {
         btnNapTien.setStyle("-fx-background-color: #16a085; -fx-text-fill: white; -fx-font-weight: bold;");
         btnNapTien.setOnAction(e -> handleNapTienChoUser());
 
-        buttonBox.getChildren().addAll(btnRefresh, btnKhoa, btnMoKhoa, btnNapTien);
+        Button btnXemThongTin = new Button("Xem thông tin user");
+        btnXemThongTin.setStyle("-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-weight: bold;");
+        btnXemThongTin.setOnAction(e -> handleXemThongTinTaiKhoan());
+
+        buttonBox.getChildren().addAll(btnRefresh, btnKhoa, btnMoKhoa, btnNapTien, btnXemThongTin);
 
         loadDanhSachTaiKhoan();
-        panelTaiKhoan.getChildren().addAll(title, tableTaiKhoan, buttonBox);
+        panelTaiKhoan.getChildren().addAll(title, searchBox, tableTaiKhoan, buttonBox);
     }
 
     private void loadDanhSachTaiKhoan() {
+        loadDanhSachTaiKhoan(txtTimStkTaiKhoan != null ? txtTimStkTaiKhoan.getText() : null);
+    }
+
+    private void loadDanhSachTaiKhoan(String keywordStk) {
         try {
             List<NguoiDung> list = nguoiDungDAO.layTatCa();
-            tableTaiKhoan.getItems().setAll(list);
+            String keyword = keywordStk != null ? keywordStk.trim() : "";
+            if (!keyword.isEmpty()) {
+                List<NguoiDung> filtered = new ArrayList<>();
+                for (NguoiDung nd : list) {
+                    String stk = nd.getSoTaiKhoan() != null ? nd.getSoTaiKhoan() : "";
+                    if (stk.contains(keyword)) {
+                        filtered.add(nd);
+                    }
+                }
+                tableTaiKhoan.getItems().setAll(filtered);
+            } else {
+                tableTaiKhoan.getItems().setAll(list);
+            }
         } catch (Exception e) {
             showAlert("Lỗi", "Không thể tải danh sách: " + e.getMessage());
         }
@@ -593,6 +606,114 @@ public class AdminDashboardController {
         });
     }
 
+    private void handleXemThongTinTaiKhoan() {
+        NguoiDung selected = tableTaiKhoan.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showAlert("Lỗi", "Vui lòng chọn user cần xem thông tin!");
+            return;
+        }
+
+        try {
+            NguoiDung nd = nguoiDungDAO.layTheoId(selected.getMaNguoiDung());
+            if (nd == null) {
+                showAlert("Lỗi", "Không tìm thấy thông tin người dùng trong cơ sở dữ liệu!");
+                return;
+            }
+
+            Dialog<Void> dialog = new Dialog<>();
+            dialog.setTitle("Thông tin người dùng");
+            dialog.setHeaderText("Chi tiết tài khoản STK: " + nd.getSoTaiKhoan());
+            dialog.getDialogPane().setPrefWidth(680);
+
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm:ss dd/MM/yyyy");
+
+            VBox content = new VBox(14);
+            content.setPadding(new Insets(16));
+            content.setStyle("-fx-background-color: white;");
+
+            Label secCoBan = createInfoSectionTitle("Thông tin cơ bản");
+            GridPane gridCoBan = new GridPane();
+            gridCoBan.setHgap(14);
+            gridCoBan.setVgap(10);
+            int rCoBan = 0;
+            addInfoRow(gridCoBan, rCoBan++, "Số tài khoản", safeText(nd.getSoTaiKhoan()));
+            addInfoRow(gridCoBan, rCoBan++, "Tên đăng nhập", safeText(nd.getTenDangNhap()));
+            addInfoRow(gridCoBan, rCoBan++, "Họ tên", safeText(nd.getHoTen()));
+            addInfoRow(gridCoBan, rCoBan++, "Email", safeText(nd.getEmail()));
+            addInfoRow(gridCoBan, rCoBan++, "Vai trò", formatVaiTro(nd.getVaiTro()));
+            addInfoRow(gridCoBan, rCoBan++, "Trạng thái", formatTrangThai(nd));
+            if (!"quan_ly".equals(nd.getVaiTro())) {
+                addInfoRow(gridCoBan, rCoBan, "Số dư tài khoản", df.format(nd.getSoDu() != null ? nd.getSoDu() : BigDecimal.ZERO) + " đ");
+            }
+
+            content.getChildren().addAll(secCoBan, gridCoBan);
+
+            if ("bi_khoa".equals(nd.getTrangThai())) {
+                Label secKhoa = createInfoSectionTitle("Thông tin khóa");
+                GridPane gridKhoa = new GridPane();
+                gridKhoa.setHgap(14);
+                gridKhoa.setVgap(10);
+                addInfoRow(gridKhoa, 0, "Lý do khóa", safeText(nd.getLyDoKhoa()));
+                addInfoRow(gridKhoa, 1, "Hết khóa lúc", nd.getThoiGianMoKhoa() != null ? sdf.format(nd.getThoiGianMoKhoa()) : "Khóa vĩnh viễn");
+                content.getChildren().addAll(secKhoa, gridKhoa);
+            }
+
+            Label secMoc = createInfoSectionTitle("Mốc thời gian");
+            GridPane gridMoc = new GridPane();
+            gridMoc.setHgap(14);
+            gridMoc.setVgap(10);
+            addInfoRow(gridMoc, 0, "Lần đăng nhập cuối", nd.getLanDangNhapCuoi() != null ? sdf.format(nd.getLanDangNhapCuoi()) : "-");
+            addInfoRow(gridMoc, 1, "Ngày tạo", nd.getNgayTao() != null ? sdf.format(nd.getNgayTao()) : "-");
+            content.getChildren().addAll(secMoc, gridMoc);
+
+            ScrollPane scroll = new ScrollPane(content);
+            scroll.setFitToWidth(true);
+            scroll.setPrefViewportHeight(430);
+
+            dialog.getDialogPane().setContent(scroll);
+            dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+            dialog.showAndWait();
+        } catch (Exception ex) {
+            showAlert("Lỗi", "Không thể tải thông tin user: " + ex.getMessage());
+        }
+    }
+
+    private String safeText(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private Label createInfoSectionTitle(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        return label;
+    }
+
+    private void addInfoRow(GridPane grid, int row, String key, String value) {
+        Label lblKey = new Label(key + ":");
+        lblKey.setStyle("-fx-text-fill: #5d6d7e; -fx-font-weight: bold;");
+
+        Label lblVal = new Label(value);
+        lblVal.setStyle("-fx-text-fill: #2c3e50;");
+        lblVal.setWrapText(true);
+        lblVal.setMaxWidth(460);
+
+        grid.add(lblKey, 0, row);
+        grid.add(lblVal, 1, row);
+    }
+
+    private String formatVaiTro(String vaiTro) {
+        if ("quan_ly".equals(vaiTro)) return "Quản lý";
+        if ("nguoi_dung".equals(vaiTro)) return "Người dùng";
+        return safeText(vaiTro);
+    }
+
+    private String formatTrangThai(NguoiDung nd) {
+        if (nd == null) return "-";
+        if ("hoat_dong".equals(nd.getTrangThai())) return "Hoạt động";
+        if ("bi_khoa".equals(nd.getTrangThai())) return "Bị khóa";
+        return safeText(nd.getTrangThai());
+    }
+
     // ==================== PANEL: ĐỔI MẬT KHẨU ====================
 
     private void buildPanelDoiMatKhau() {
@@ -820,10 +941,6 @@ public class AdminDashboardController {
         tableDanhMuc = new TableView<>();
         VBox.setVgrow(tableDanhMuc, Priority.ALWAYS);
 
-        TableColumn<DanhMuc, Integer> colId = new TableColumn<>("ID");
-        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        colId.setPrefWidth(60);
-
         TableColumn<DanhMuc, String> colTen = new TableColumn<>("Tên danh mục");
         colTen.setCellValueFactory(new PropertyValueFactory<>("tenDanhMuc"));
         colTen.setPrefWidth(220);
@@ -874,7 +991,7 @@ public class AdminDashboardController {
             }
         });
 
-        tableDanhMuc.getColumns().addAll(colId, colTen, colMoTa, colCha);
+        tableDanhMuc.getColumns().addAll(colTen, colMoTa, colCha);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -949,7 +1066,14 @@ public class AdminDashboardController {
         });
 
         dialog.showAndWait().ifPresent(dm -> {
-            if (danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), dm.getLoai(), null)) {
+            boolean biTrung;
+            if (dm.getParentId() != null) {
+                biTrung = danhMucDAO.tonTaiTenDanhMucCon(dm.getTenDanhMuc(), dm.getLoai(), null, null);
+            } else {
+                biTrung = danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), dm.getLoai(), null);
+            }
+
+            if (biTrung) {
                 showAlert("Lỗi", "Tên danh mục Chi mặc định đã tồn tại!\nVui lòng nhập tên khác.");
                 return;
             }
@@ -967,6 +1091,7 @@ public class AdminDashboardController {
         DanhMuc selected = tableDanhMuc.getSelectionModel().getSelectedItem();
         if (selected == null) { showAlert("Lỗi", "Vui lòng chọn danh mục cần sửa!"); return; }
         final String tenCu = selected.getTenDanhMuc() != null ? selected.getTenDanhMuc().trim() : "";
+        final Integer parentCu = selected.getParentId();
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Sửa danh mục");
@@ -1029,9 +1154,20 @@ public class AdminDashboardController {
         dialog.showAndWait().ifPresent(dm -> {
             String tenMoi = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
             boolean daDoiTen = !tenMoi.equalsIgnoreCase(tenCu);
-            if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
-                showAlert("Lỗi", "Tên danh mục Chi mặc định đã tồn tại!\nVui lòng nhập tên khác.");
-                return;
+            boolean daDoiCha = (parentCu == null && dm.getParentId() != null)
+                    || (parentCu != null && !parentCu.equals(dm.getParentId()));
+
+            if (dm.getParentId() != null) {
+                if ((daDoiTen || daDoiCha)
+                        && danhMucDAO.tonTaiTenDanhMucCon(tenMoi, dm.getLoai(), null, dm.getId())) {
+                    showAlert("Lỗi", "Tên danh mục con Chi mặc định đã tồn tại (kể cả khác danh mục cha)!\nVui lòng nhập tên khác.");
+                    return;
+                }
+            } else {
+                if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
+                    showAlert("Lỗi", "Tên danh mục Chi mặc định đã tồn tại!\nVui lòng nhập tên khác.");
+                    return;
+                }
             }
 
             if (danhMucDAO.suaDanhMuc(dm)) {
@@ -1078,10 +1214,6 @@ public class AdminDashboardController {
 
         tableDanhMucThu = new TableView<>();
         VBox.setVgrow(tableDanhMucThu, Priority.ALWAYS);
-
-        TableColumn<DanhMuc, Integer> colId = new TableColumn<>("ID");
-        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
-        colId.setPrefWidth(60);
 
         TableColumn<DanhMuc, String> colTen = new TableColumn<>("Tên danh mục");
         colTen.setCellValueFactory(new PropertyValueFactory<>("tenDanhMuc"));
@@ -1133,7 +1265,7 @@ public class AdminDashboardController {
             }
         });
 
-        tableDanhMucThu.getColumns().addAll(colId, colTen, colMoTa, colCha);
+        tableDanhMucThu.getColumns().addAll(colTen, colMoTa, colCha);
 
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER_LEFT);
@@ -1197,7 +1329,14 @@ public class AdminDashboardController {
         });
 
         dialog.showAndWait().ifPresent(dm -> {
-            if (danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), dm.getLoai(), null)) {
+            boolean biTrung;
+            if (dm.getParentId() != null) {
+                biTrung = danhMucDAO.tonTaiTenDanhMucCon(dm.getTenDanhMuc(), dm.getLoai(), null, null);
+            } else {
+                biTrung = danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), dm.getLoai(), null);
+            }
+
+            if (biTrung) {
                 showAlert("Lỗi", "Tên danh mục Thu mặc định đã tồn tại!\nVui lòng nhập tên khác.");
                 return;
             }
@@ -1215,6 +1354,7 @@ public class AdminDashboardController {
         DanhMuc selected = tableDanhMucThu.getSelectionModel().getSelectedItem();
         if (selected == null) { showAlert("Lỗi", "Vui lòng chọn danh mục cần sửa!"); return; }
         final String tenCu = selected.getTenDanhMuc() != null ? selected.getTenDanhMuc().trim() : "";
+        final Integer parentCu = selected.getParentId();
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Sửa danh mục Thu");
@@ -1268,9 +1408,20 @@ public class AdminDashboardController {
         dialog.showAndWait().ifPresent(dm -> {
             String tenMoi = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
             boolean daDoiTen = !tenMoi.equalsIgnoreCase(tenCu);
-            if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
-                showAlert("Lỗi", "Tên danh mục Thu mặc định đã tồn tại!\nVui lòng nhập tên khác.");
-                return;
+            boolean daDoiCha = (parentCu == null && dm.getParentId() != null)
+                    || (parentCu != null && !parentCu.equals(dm.getParentId()));
+
+            if (dm.getParentId() != null) {
+                if ((daDoiTen || daDoiCha)
+                        && danhMucDAO.tonTaiTenDanhMucCon(tenMoi, dm.getLoai(), null, dm.getId())) {
+                    showAlert("Lỗi", "Tên danh mục con Thu mặc định đã tồn tại (kể cả khác danh mục cha)!\nVui lòng nhập tên khác.");
+                    return;
+                }
+            } else {
+                if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), null)) {
+                    showAlert("Lỗi", "Tên danh mục Thu mặc định đã tồn tại!\nVui lòng nhập tên khác.");
+                    return;
+                }
             }
 
             if (danhMucDAO.suaDanhMuc(dm)) {

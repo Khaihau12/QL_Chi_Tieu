@@ -229,7 +229,14 @@ public class CategoryController {
         });
 
         dialog.showAndWait().ifPresent(dm -> {
-            if (danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), loai, soTaiKhoan)) {
+            boolean biTrung;
+            if (dm.getParentId() != null) {
+                biTrung = danhMucDAO.tonTaiTenDanhMucCon(dm.getTenDanhMuc(), loai, soTaiKhoan, null);
+            } else {
+                biTrung = danhMucDAO.tonTaiTenDanhMuc(dm.getTenDanhMuc(), loai, soTaiKhoan);
+            }
+
+            if (biTrung) {
                 showAlert("Lỗi", "Tên danh mục đã tồn tại trong nhóm " + loaiLabel + "!\nVui lòng nhập tên khác.");
                 return;
             }
@@ -247,6 +254,8 @@ public class CategoryController {
         DanhMuc selected = tbl.getSelectionModel().getSelectedItem();
         if (selected == null) { showAlert("Lỗi", "Vui lòng chọn danh mục!"); return; }
         if (selected.isDanhMucMacDinh()) { showAlert("Lỗi", "Không thể sửa danh mục mặc định!"); return; }
+        final String tenCu = selected.getTenDanhMuc() != null ? selected.getTenDanhMuc().trim() : "";
+        final Integer parentCu = selected.getParentId();
 
         Dialog<DanhMuc> dialog = new Dialog<>();
         dialog.setTitle("Sửa Danh Mục");
@@ -300,9 +309,24 @@ public class CategoryController {
         });
 
         dialog.showAndWait().ifPresent(dm -> {
-            if (tonTaiTenDanhMucBatKyChoUser(dm.getTenDanhMuc(), dm.getId())) {
-                showAlert("Lỗi", "Tên danh mục đã tồn tại (bao gồm cả Thu/Chi, mặc định hoặc riêng)!\nVui lòng nhập tên khác.");
-                return;
+            String tenMoi = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
+            boolean daDoiTen = !tenMoi.equalsIgnoreCase(tenCu);
+            boolean daDoiCha = (parentCu == null && dm.getParentId() != null)
+                    || (parentCu != null && !parentCu.equals(dm.getParentId()));
+
+            if (dm.getParentId() != null) {
+                if ((daDoiTen || daDoiCha)
+                        && danhMucDAO.tonTaiTenDanhMucCon(tenMoi, dm.getLoai(), soTaiKhoan, dm.getId())) {
+                    showAlert("Lỗi", "Tên danh mục con đã tồn tại trong nhóm " + dm.getLoai().toUpperCase() +
+                            " (kể cả khác danh mục cha)!\nVui lòng nhập tên khác.");
+                    return;
+                }
+            } else {
+                if (daDoiTen && danhMucDAO.tonTaiTenDanhMuc(tenMoi, dm.getLoai(), soTaiKhoan)) {
+                    showAlert("Lỗi", "Tên danh mục đã tồn tại trong nhóm " + dm.getLoai().toUpperCase() +
+                            "!\nVui lòng nhập tên khác.");
+                    return;
+                }
             }
 
             if (danhMucDAO.suaDanhMuc(dm)) {
@@ -339,20 +363,6 @@ public class CategoryController {
     private void showAlert(String title, String content) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, content, ButtonType.OK);
         a.setTitle(title); a.setHeaderText(null); a.showAndWait();
-    }
-
-    // Kiểm tra trùng tên trên toàn bộ danh mục user có thể nhìn thấy (Thu + Chi, mặc định + riêng)
-    private boolean tonTaiTenDanhMucBatKyChoUser(String tenDanhMuc, Integer excludeId) {
-        String ten = tenDanhMuc != null ? tenDanhMuc.trim() : "";
-        if (ten.isEmpty()) return false;
-
-        List<DanhMuc> all = danhMucDAO.layTatCaDanhMuc(soTaiKhoan);
-        for (DanhMuc dm : all) {
-            if (excludeId != null && dm.getId() == excludeId) continue;
-            String tenHienCo = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc().trim() : "";
-            if (ten.equalsIgnoreCase(tenHienCo)) return true;
-        }
-        return false;
     }
 
     // Chỉ cho chọn danh mục cha là danh mục gốc (1 cấp cha/con)

@@ -4,8 +4,10 @@ import com.example.model.DanhMuc;
 import com.example.util.DatabaseConnection;
 
 import java.sql.*;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class DanhMucDAO {
 
@@ -48,6 +50,44 @@ public class DanhMucDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Kiểm tra trùng tên CHỈ trong danh mục con (parent_id IS NOT NULL),
+     * bất kể danh mục con thuộc cha nào.
+     *
+     * scopeUserSoTaiKhoan:
+     * - null: chỉ kiểm tra danh mục mặc định
+     * - có giá trị: kiểm tra cả mặc định + danh mục riêng của user đó
+     */
+    public boolean tonTaiTenDanhMucCon(String tenDanhMuc, String loai, String scopeUserSoTaiKhoan, Integer excludeId) {
+        String ten = tenDanhMuc != null ? tenDanhMuc.trim() : "";
+        String loaiCheck = (loai == null || loai.isBlank()) ? "chi" : loai.trim().toLowerCase();
+        if (ten.isEmpty()) return false;
+
+        // So sánh mềm: không phân biệt hoa/thường, có dấu/không dấu, khoảng trắng/ký tự đặc biệt.
+        String tenChuan = normalizeCategoryName(ten);
+        List<DanhMuc> dsTheoLoai = layDanhMucTheoLoai(scopeUserSoTaiKhoan, loaiCheck);
+        for (DanhMuc dm : dsTheoLoai) {
+            if (dm.getParentId() == null) continue; // Chỉ xét danh mục con
+            if (excludeId != null && dm.getId() == excludeId) continue;
+
+            String tenHienCo = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc() : "";
+            if (tenChuan.equals(normalizeCategoryName(tenHienCo))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeCategoryName(String input) {
+        if (input == null) return "";
+        String s = input.trim().toLowerCase(Locale.ROOT)
+                .replace('đ', 'd')
+                .replace('Đ', 'd');
+        s = Normalizer.normalize(s, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        return s.replaceAll("[^a-z0-9]", "");
     }
     
     // Lấy tất cả danh mục (mặc định + riêng của user)
@@ -215,6 +255,12 @@ public class DanhMucDAO {
     
     // Thêm danh mục mới (hỗ trợ danh mục riêng và loại chi/thu)
     public boolean themDanhMuc(DanhMuc danhMuc) {
+        // Chặn cứng ở DAO: danh mục con cùng loại không được trùng tên dù khác cha.
+        if (danhMuc.getParentId() != null &&
+                tonTaiTenDanhMucCon(danhMuc.getTenDanhMuc(), danhMuc.getLoai(), danhMuc.getSoTaiKhoan(), null)) {
+            return false;
+        }
+
         String sql = "INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES (?, ?, ?, ?, ?)";
         
         try (Connection conn = DatabaseConnection.getConnection();
@@ -236,6 +282,12 @@ public class DanhMucDAO {
     
     // Sửa danh mục
     public boolean suaDanhMuc(DanhMuc danhMuc) {
+        // Chặn cứng ở DAO: danh mục con cùng loại không được trùng tên dù khác cha.
+        if (danhMuc.getParentId() != null &&
+                tonTaiTenDanhMucCon(danhMuc.getTenDanhMuc(), danhMuc.getLoai(), danhMuc.getSoTaiKhoan(), danhMuc.getId())) {
+            return false;
+        }
+
         String sql = "UPDATE danh_muc SET ten_danh_muc = ?, mo_ta = ?, parent_id = ? WHERE id = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();
