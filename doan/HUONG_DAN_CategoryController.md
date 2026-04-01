@@ -2,289 +2,337 @@
 
 > **Dự án:** QL_Chi_Tieu — Quản lý chi tiêu cá nhân
 > **File:** `src/main/java/com/example/controller/CategoryController.java`
-> **Vai trò:** Quản lý toàn bộ màn hình **Quản Lý Danh Mục** (Chi + Thu)
+> **Vai trò:** Màn hình Quản lý Danh mục — phân loại giao dịch Chi và Thu
 
 ---
 
-## 1. Tổng Quan
+## 1. CategoryController là gì?
 
-`CategoryController` là một lớp JavaFX controller chịu trách nhiệm xây dựng và điều khiển màn hình **Quản lý Danh Mục**. Màn hình này cho phép người dùng xem, thêm, sửa, xóa các danh mục chi tiêu và thu nhập của mình.
+`CategoryController` là màn hình **Quản lý Danh mục** — nơi người dùng có thể xem, thêm, sửa, xóa các danh mục phân loại giao dịch của mình.
+
+Nó làm những việc:
+
+- Hiển thị danh sách danh mục **Chi** và **Thu** trong 2 tab riêng
+- Cho phép **thêm** danh mục riêng tư của từng user
+- Cho phép **sửa / xóa** danh mục riêng tư (không được đụng vào danh mục mặc định)
+- Hỗ trợ cấu trúc **cha → con** (2 cấp)
+
+---
+
+## 2. Khái Niệm Quan Trọng Cần Hiểu Trước
+
+### 2.1 Danh mục Mặc định vs Riêng tư
+
+| Loại | `soTaiKhoan` trong DB | Ai thấy | Có sửa/xóa không |
+|---|---|---|---|
+| Mặc định | `NULL` | Tất cả user | ❌ Không |
+| Riêng tư | STK của user | Chỉ user đó | ✅ Có |
+
+```java
+// Trong model DanhMuc.java
+public boolean isDanhMucMacDinh() {
+    return soTaiKhoan == null;  // NULL = mặc định
+}
+```
+
+### 2.2 Danh mục Cha vs Con
+
+Hệ thống chỉ hỗ trợ **2 cấp** (cha → con), không có cấp 3:
+
+```
+▣ Ăn uống              ← Danh mục cha (parentId = NULL)
+   ↳ Ăn sáng           ← Danh mục con (parentId = ID của "Ăn uống")
+   ↳ Ăn trưa           ← Danh mục con
+▣ Di chuyển            ← Danh mục cha
+   ↳ Xăng xe           ← Danh mục con
+```
+
+```java
+// Trong model DanhMuc.java
+public boolean isDanhMucCon() {
+    return parentId != null;  // Có cha = danh mục con
+}
+```
+
+### 2.3 Loại Chi vs Thu
+
+```
+loai = "chi"  →  Tab "Danh mục Chi"   (phân loại tiền ra)
+loai = "thu"  →  Tab "Danh mục Thu"   (phân loại tiền vào)
+```
+
+---
+
+## 3. Các Thành Phần Trong Class
 
 ```
 CategoryController
-│
-├── Tab "Danh mục Chi"   ──► TableView (hiển thị danh mục chi)
-│                              └── Nút: Thêm | Sửa | Xóa
-│
-└── Tab "Danh mục Thu"   ──► TableView (hiển thị danh mục thu)
-                               └── Nút: Thêm | Sửa | Xóa
-```
-
----
-
-## 2. Các Thuộc Tính (Fields)
-
-```java
-private Stage stage;               // Cửa sổ JavaFX chính
-private Scene scene;               // Màn hình hiển thị
-private String soTaiKhoan;         // Mã tài khoản người dùng đang đăng nhập
-
-private TableView<DanhMuc> tablechi;   // Bảng danh mục Chi
-private TableView<DanhMuc> tableThu;   // Bảng danh mục Thu
-private DanhMucDAO danhMucDAO;         // Lớp truy xuất dữ liệu (DAO)
+ ├── stage         → Cửa sổ ứng dụng
+ ├── scene         → Nội dung màn hình
+ ├── soTaiKhoan    → STK của user đang đăng nhập (để phân biệt danh mục riêng)
+ ├── tableChi      → TableView hiển thị danh mục Chi
+ ├── tableThu      → TableView hiển thị danh mục Thu
+ └── danhMucDAO    → Kết nối database để CRUD danh mục
 ```
 
 | Thuộc tính | Kiểu | Mục đích |
 |---|---|---|
-| `stage` | `Stage` | Giữ tham chiếu cửa sổ để điều hướng màn hình |
+| `stage` | `Stage` | Giữ cửa sổ để điều hướng về Dashboard |
 | `soTaiKhoan` | `String` | Lọc danh mục theo từng người dùng |
-| `tablechi` | `TableView` | Hiển thị danh mục Chi |
-| `tableThu` | `TableView` | Hiển thị danh mục Thu |
-| `danhMucDAO` | `DanhMucDAO` | Cầu nối với cơ sở dữ liệu |
+| `tableChi` / `tableThu` | `TableView` | Hiển thị dữ liệu 2 tab |
+| `danhMucDAO` | `DanhMucDAO` | Cầu nối thực hiện các câu SQL |
 
 ---
 
-## 3. Constructor
+## 4. Luồng Hoạt Động Tổng Quan
 
-```java
-public CategoryController(Stage stage, String soTaiKhoan) {
-    this.stage = stage;
-    this.soTaiKhoan = soTaiKhoan;
-    this.danhMucDAO = new DanhMucDAO();
-    createUI();   // ← Gọi ngay để vẽ giao diện
-}
 ```
-
-> **Lưu ý:** Ngay khi khởi tạo, `createUI()` được gọi để xây dựng toàn bộ giao diện. Controller này **tự xây UI** thay vì dùng file FXML.
+DashboardController → handleDanhMuc()
+        │
+        ▼
+CategoryController(stage, soTaiKhoan)
+        │
+        ├── createUI()
+        │       │
+        │       ├── buildTabContent("chi")  → Tab "Danh mục Chi"
+        │       └── buildTabContent("thu")  → Tab "Danh mục Thu"
+        │
+        └── [User tương tác]
+                │
+                ├── Bấm "Thêm"      → handleThem()
+                ├── Bấm "Sửa"       → handleSua()
+                ├── Bấm "Xóa"       → handleXoa()
+                └── Bấm "Quay lại"  → về DashboardController
+```
 
 ---
 
-## 4. Phương Thức `createUI()` — Xây Dựng Giao Diện Chính
+## 5. Giao Diện (Layout)
 
 ```
-createUI()
-│
-├── VBox root (layout chính, padding 20px, khoảng cách 15px)
-│   ├── Label "QUẢN LÝ DANH MỤC"    ← Tiêu đề
-│   ├── Label hướng dẫn (italic)    ← Ghi chú mặc định vs riêng tư
-│   ├── TabPane
-│   │   ├── Tab "Danh mục Chi"  → buildTabContent("chi")
-│   │   └── Tab "Danh mục Thu"  → buildTabContent("thu")
-│   └── Button "Quay Lại"           ← Điều hướng về Dashboard
-│
-└── Scene (1200 x 800)
+VBox (root, padding 20px, khoảng cách 15px)
+ │
+ ├── Label "QUẢN LÝ DANH MỤC"       (22px, đậm)
+ ├── Label hướng dẫn                 (italic, xám — ghi chú mặc định/riêng tư)
+ ├── TabPane
+ │    ├── Tab "Danh mục Chi"
+ │    │    ├── TableView (danh sách danh mục chi)
+ │    │    └── HBox: [Thêm Chi] [Sửa] [Xóa]
+ │    │
+ │    └── Tab "Danh mục Thu"
+ │         ├── TableView (danh sách danh mục thu)
+ │         └── HBox: [Thêm Thu] [Sửa] [Xóa]
+ │
+ └── Button "Quay Lại"               (xám, điều hướng về Dashboard)
 ```
 
-### Nút "Quay Lại"
-```java
-btnQuayLai.setOnAction(e -> {
-    DashboardController dashboard = new DashboardController(stage);
-    stage.setScene(dashboard.getScene());
-    stage.setWidth(1200);
-    stage.setHeight(830);
-    stage.centerOnScreen();
-});
-```
-> Khi nhấn, tạo một `DashboardController` mới và chuyển `Scene` về trang chủ Dashboard.
+**Kích thước cửa sổ:** `1200 × 800 px`
 
 ---
 
-## 5. Phương Thức `buildTabContent(String loai)` — Tạo Nội Dung Từng Tab
+## 6. Bảng TableView — 4 Cột
 
-Được gọi 2 lần: một lần với `"chi"`, một lần với `"thu"`.
+| Cột | Hiển thị | Định dạng đặc biệt |
+|---|---|---|
+| Tên Danh Mục | Tên danh mục | Cha: `▣ Ăn uống` (xanh đậm, bold) · Con: `   ↳ Ăn sáng` (thụt vào) |
+| Mô Tả | Mô tả ngắn | — |
+| Nhóm | Tên danh mục cha | Cha hiển thị: `Danh mục cha` · Con hiển thị: tên cha |
+| Phân loại | Mặc định / Riêng tư | 🔵 Xanh = Mặc định · 🟠 Cam = Riêng tư |
+
+---
+
+## 7. Chi Tiết Các Method
+
+### 7.1 `buildTabContent(loai)` — Xây Nội Dung Tab
+
+Được gọi **2 lần**: 1 cho `"chi"`, 1 cho `"thu"`.
 
 ```
 buildTabContent("chi")
-│
-├── TableView ← buildTable()          // Tạo bảng 4 cột
-├── Gán tablechi hoặc tableThu
-├── HBox chứa 3 nút:
-│   ├── "Thêm danh mục Chi"  → handleThem(tbl, loai, loaiLabel)
-│   ├── "Sửa"                → handleSua(tbl)
-│   └── "Xóa"                → handleXoa(tbl)
-└── Load dữ liệu:
-    tbl.getItems().setAll(danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, loai))
+      │
+      ├── buildTable()           → tạo TableView với 4 cột
+      ├── Tạo các nút: [Thêm] [Sửa] [Xóa]
+      └── Load dữ liệu ngay:
+            danhMucDAO.layDanhMucTheoLoai(soTaiKhoan, "chi")
 ```
 
-> Dữ liệu được tải từ database **ngay khi tab được tạo**, thông qua `layDanhMucTheoLoai()`.
+> Mỗi tab **load dữ liệu ngay khi tạo**, không cần đợi user click.
 
----
-
-## 6. Phương Thức `buildTable()` — Xây Dựng Bảng Dữ Liệu
-
-Tạo `TableView<DanhMuc>` với **4 cột**:
-
-### Cột 1: Tên Danh Mục (`colTen`)
-```
-Danh mục CHA  →  "▣ Ăn uống"        (chữ in đậm, màu xanh đậm)
-Danh mục CON  →  "   ↳ Cà phê"      (thụt vào, màu tối)
-```
-- Dùng `isDanhMucCon()` để phân biệt cha/con và hiển thị ký hiệu tương ứng.
-
-### Cột 2: Mô Tả (`colMoTa`)
-- Hiển thị nội dung mô tả của danh mục.
-- Màu văn bản: `#2c3e50` (xanh đen).
-
-### Cột 3: Nhóm (`colCha`)
-```
-Danh mục CHA  →  "Danh mục cha"      (màu xanh, in đậm)
-Danh mục CON  →  "Tên danh mục cha"  (hiển thị tên nhóm thuộc về)
-```
-
-### Cột 4: Phân Loại (`colPhanLoai`)
-```
-isDanhMucMacDinh() == true   →  "Mặc định"  (màu xanh dương)
-isDanhMucMacDinh() == false  →  "Riêng tư"  (màu cam)
-```
-
----
-
-## 7. Phương Thức `handleThem()` — Thêm Danh Mục Mới
+### 7.2 `handleThem()` — Thêm Danh Mục Mới ⭐
 
 ```
-Người dùng nhấn "Thêm"
-│
-├── Mở Dialog với form:
-│   ├── TextField: Tên danh mục  (bắt buộc)
-│   ├── TextArea:  Mô tả         (tùy chọn)
-│   └── ComboBox:  Chọn danh mục cha (tùy chọn — nếu bỏ trống = danh mục gốc)
-│
-├── Nhấn "Thêm" → Validate:
-│   ├── Tên rỗng?          → Báo lỗi, dừng
-│   ├── Là danh mục con?   → Kiểm tra trùng tên CON (tonTaiTenDanhMucCon)
-│   └── Là danh mục gốc?   → Kiểm tra trùng tên (tonTaiTenDanhMuc)
-│
-└── Nếu hợp lệ → danhMucDAO.themDanhMuc(dm) → Reload bảng
+handleThem()
+      │
+      ├── Mở Dialog gồm 3 trường:
+      │     [Tên danh mục]  ← bắt buộc
+      │     [Mô tả]         ← tùy chọn
+      │     [Danh mục cha]  ← ComboBox chọn cha (để trống = danh mục gốc)
+      │
+      ├── User bấm "Thêm"
+      │     │
+      │     ├── Tên rỗng? → báo lỗi, hủy
+      │     │
+      │     ├── Kiểm tra trùng tên:
+      │     │     Có chọn cha (danh mục con)?
+      │     │       → tonTaiTenDanhMucCon()  (tên con không được trùng trong toàn bộ loại)
+      │     │     Không chọn cha (danh mục gốc)?
+      │     │       → tonTaiTenDanhMuc()     (tên gốc không được trùng)
+      │     │
+      │     ├── Trùng tên? → báo lỗi, hủy
+      │     │
+      │     └── OK → danhMucDAO.themDanhMuc() → reload bảng
 ```
 
-> **Chú ý quan trọng:** Danh mục chỉ có **1 cấp** (cha → con). Không hỗ trợ đa cấp.
+> **Lưu ý:** Danh mục mới luôn là **riêng tư** (`soTaiKhoan` = STK của user). User không thể tạo danh mục mặc định.
 
----
-
-## 8. Phương Thức `handleSua()` — Sửa Danh Mục
+### 7.3 `handleSua()` — Sửa Danh Mục ⭐
 
 ```
-Người dùng chọn 1 dòng → nhấn "Sửa"
-│
-├── Không chọn?          → Báo lỗi "Vui lòng chọn danh mục!"
-├── Danh mục mặc định?   → Báo lỗi "Không thể sửa danh mục mặc định!"
-│
-├── Mở Dialog với form điền sẵn thông tin cũ:
-│   ├── TextField: Tên (đã điền sẵn)
-│   ├── TextArea:  Mô tả (đã điền sẵn)
-│   └── ComboBox:  Danh mục cha (đã chọn sẵn nếu là danh mục con)
-│
-├── Nhấn "Lưu" → Validate:
-│   ├── Kiểm tra xem tên / cha có thay đổi không (daDoiTen, daDoiCha)
-│   ├── Là danh mục con?  → Kiểm tra trùng tên với exclude ID hiện tại
-│   └── Là danh mục gốc? → Kiểm tra trùng tên danh mục gốc
-│
-└── Nếu hợp lệ → danhMucDAO.suaDanhMuc(dm) → Reload bảng
+handleSua()
+      │
+      ├── Không chọn dòng nào?         → báo lỗi
+      ├── Chọn danh mục MẶC ĐỊNH?      → báo lỗi "Không thể sửa danh mục mặc định!"
+      │
+      ├── Mở Dialog (điền sẵn dữ liệu hiện tại):
+      │     [Tên danh mục]  ← có sẵn tên cũ
+      │     [Mô tả]         ← có sẵn mô tả cũ
+      │     [Danh mục cha]  ← chọn sẵn cha cũ (nếu có)
+      │
+      ├── User bấm "Lưu"
+      │     │
+      │     ├── Kiểm tra có thay đổi tên hoặc cha không?
+      │     │     daDoiTen = tenMoi != tenCu
+      │     │     daDoiCha = cha mới != cha cũ
+      │     │
+      │     ├── Nếu có thay đổi → kiểm tra trùng tên (giống handleThem)
+      │     │
+      │     └── OK → danhMucDAO.suaDanhMuc() → reload bảng
 ```
 
----
+> **Lưu ý khi chọn danh mục cha:** ComboBox cha chỉ hiện các danh mục **gốc** (không có cha), và **loại trừ chính danh mục đang sửa** để tránh tự làm cha của mình.
 
-## 9. Phương Thức `handleXoa()` — Xóa Danh Mục
+### 7.4 `handleXoa()` — Xóa Danh Mục
 
 ```
-Người dùng chọn 1 dòng → nhấn "Xóa"
-│
-├── Không chọn?          → Báo lỗi
-├── Danh mục mặc định?   → Báo lỗi "Không thể xóa danh mục mặc định!"
-│
-├── Hiển thị hộp thoại xác nhận:
-│   "Xóa danh mục: [Tên]
-│    Các giao dịch dùng danh mục này sẽ mất liên kết!"
-│
-└── Nếu xác nhận OK → danhMucDAO.xoaDanhMuc(id) → Reload bảng
+handleXoa()
+      │
+      ├── Không chọn dòng nào?         → báo lỗi
+      ├── Chọn danh mục MẶC ĐỊNH?      → báo lỗi "Không thể xóa danh mục mặc định!"
+      │
+      ├── Hiện Dialog xác nhận:
+      │     "Xóa danh mục: [tên]"
+      │     "Các giao dịch dùng danh mục này sẽ mất liên kết!"
+      │
+      └── User bấm OK → danhMucDAO.xoaDanhMuc() → reload bảng
 ```
 
-> ⚠️ **Cảnh báo:** Khi xóa, các giao dịch liên kết với danh mục đó sẽ mất liên kết nhưng **không bị xóa**.
+> ⚠️ **Cảnh báo quan trọng:** Xóa danh mục **không xóa** các giao dịch liên quan, nhưng các giao dịch đó sẽ mất liên kết danh mục (hiển thị `— Chưa phân loại`).
 
----
-
-## 10. Phương Thức `layDanhMucChaUngVien()` — Lấy Danh Sách Danh Mục Cha
+### 7.5 `layDanhMucChaUngVien()` — Lấy Danh Sách Cha Có Thể Chọn
 
 ```java
-private List<DanhMuc> layDanhMucChaUngVien(String loai, Integer excludeId) {
-    // Lấy tất cả danh mục theo loại
-    // Lọc: chỉ giữ danh mục GỐC (parentId == null)
-    // Loại bỏ chính danh mục đang sửa (tránh chọn chính mình làm cha)
-}
+private List<DanhMuc> layDanhMucChaUngVien(String loai, Integer excludeId)
 ```
 
-> **Mục đích:** Khi tạo/sửa danh mục con, chỉ cho phép chọn danh mục **gốc** làm cha, đảm bảo cây chỉ có **1 cấp**.
-
----
-
-## 11. Luồng Dữ Liệu Tổng Quát
+Dùng trong Dialog Thêm/Sửa để hiện ComboBox chọn cha:
 
 ```
-[Database]
-    │
-    ▼ layDanhMucTheoLoai(soTaiKhoan, loai)
-[DanhMucDAO]
-    │
-    ▼ List<DanhMuc>
-[TableView]  ──► Hiển thị ra màn hình
-    │
-    ▼ Người dùng tương tác (thêm/sửa/xóa)
-[handleThem / handleSua / handleXoa]
-    │
-    ▼ themDanhMuc / suaDanhMuc / xoaDanhMuc
-[DanhMucDAO]
-    │
-    ▼ Commit xuống Database
-    ▼ Reload lại TableView
+Lấy tất cả danh mục theo loại
+      │
+      └── Lọc chỉ giữ lại danh mục GỐC (parentId == null)
+            + Loại trừ danh mục đang sửa (tránh tự làm cha mình)
+```
+
+> **Tại sao chỉ lấy danh mục gốc?**
+> Vì hệ thống chỉ hỗ trợ 2 cấp. Danh mục con **không được** làm cha của danh mục khác.
+
+---
+
+## 8. Quy Tắc Kiểm Tra Trùng Tên
+
+| Trường hợp | Hàm kiểm tra | Quy tắc |
+|---|---|---|
+| Thêm/Sửa danh mục gốc | `tonTaiTenDanhMuc()` | Không trùng tên trong cùng loại (chi/thu) |
+| Thêm/Sửa danh mục con | `tonTaiTenDanhMucCon()` | Không trùng tên với **BẤT KỲ** danh mục con nào trong cùng loại, dù khác cha |
+
+**Ví dụ:**
+
+```
+▣ Ăn uống
+   ↳ Ăn sáng   ← đã có
+▣ Nhà cửa
+   ↳ Ăn sáng   ← ❌ KHÔNG cho phép! (tên con trùng dù khác cha)
 ```
 
 ---
 
-## 12. Các Lớp Liên Quan
+## 9. Model `DanhMuc` — Các Field Quan Trọng
 
-| Lớp | Vai trò |
-|---|---|
-| `DanhMuc` | Model — đối tượng đại diện cho 1 danh mục |
-| `DanhMucDAO` | Data Access Object — thực hiện các câu SQL |
-| `DashboardController` | Màn hình chính — điều hướng quay lại |
-| `Stage` / `Scene` | JavaFX — quản lý cửa sổ và màn hình |
+```
+DanhMuc
+ ├── id             → Khóa chính trong DB
+ ├── tenDanhMuc     → Tên hiển thị
+ ├── moTa           → Mô tả ngắn
+ ├── loai           → "chi" hoặc "thu"
+ ├── soTaiKhoan     → NULL = mặc định | STK = riêng tư
+ ├── parentId       → NULL = danh mục gốc | ID = danh mục con
+ └── tenDanhMucCha  → Tên cha (JOIN từ DB, chỉ để hiển thị)
+```
+
+Các method helper trong `DanhMuc`:
+
+```java
+isDanhMucMacDinh()  → soTaiKhoan == null
+isDanhMucCon()      → parentId != null
+isLoaiChi()         → loai.equals("chi")
+isLoaiThu()         → loai.equals("thu")
+toString()          → trả về tenDanhMuc   // để ComboBox hiển thị đúng
+```
 
 ---
 
-## 13. Các Quy Tắc Nghiệp Vụ Quan Trọng
-
-| # | Quy tắc |
-|---|---|
-| 1 | **Danh mục mặc định** không được sửa hoặc xóa |
-| 2 | **Danh mục riêng tư** mỗi người dùng tự tạo, có thể sửa/xóa |
-| 3 | Cây danh mục chỉ có **1 cấp** (cha → con, không có cháu) |
-| 4 | **Không được trùng tên** trong cùng loại (chi/thu) và nhóm |
-| 5 | Xóa danh mục sẽ **mất liên kết giao dịch**, không xóa giao dịch |
-| 6 | Danh mục **thuộc về từng tài khoản** (`soTaiKhoan`), không chia sẻ giữa người dùng |
-
----
-
-## 14. Sơ Đồ Phương Thức (Method Map)
+## 10. Liên Kết Với Các Class Khác
 
 ```
 CategoryController
-│
-├── CategoryController(stage, soTaiKhoan)   ← Constructor
-│
-├── createUI()                               ← Vẽ toàn bộ giao diện
-│   └── buildTabContent(loai)               ← Tạo nội dung mỗi tab
-│       └── buildTable()                    ← Tạo TableView 4 cột
-│
-├── handleThem(tbl, loai, loaiLabel)         ← Xử lý thêm mới
-├── handleSua(tbl)                           ← Xử lý sửa
-├── handleXoa(tbl)                           ← Xử lý xóa
-│
-├── layDanhMucChaUngVien(loai, excludeId)    ← Lấy danh sách cha hợp lệ
-├── showAlert(title, content)                ← Hiển thị hộp thoại thông báo
-│
-└── getScene()                               ← Trả về Scene để gán vào Stage
+      │
+      │  truy vấn DB
+      └──────────────────► DanhMucDAO
+                                │
+                                ├── layDanhMucTheoLoai()     → lấy danh sách hiển thị
+                                ├── tonTaiTenDanhMuc()       → kiểm tra trùng tên gốc
+                                ├── tonTaiTenDanhMucCon()    → kiểm tra trùng tên con
+                                ├── themDanhMuc()            → INSERT vào DB
+                                ├── suaDanhMuc()             → UPDATE trong DB
+                                └── xoaDanhMuc()             → DELETE trong DB
+      │  điều hướng
+      └──────────────────► DashboardController  (khi bấm "Quay lại")
 ```
 
 ---
 
-*Tài liệu được tạo tự động dựa trên phân tích mã nguồn `CategoryController.java`*
+## 11. Tóm Tắt Nhanh
+
+| Method | Làm gì |
+|---|---|
+| `CategoryController(stage, stk)` | Khởi tạo, tạo UI |
+| `createUI()` | Dựng layout VBox + TabPane |
+| `buildTabContent(loai)` | Tạo nội dung 1 tab (chi hoặc thu) |
+| `buildTable()` | Tạo TableView với 4 cột |
+| `handleThem(tbl, loai, label)` | Dialog thêm danh mục mới |
+| `handleSua(tbl)` | Dialog sửa danh mục đã chọn |
+| `handleXoa(tbl)` | Xác nhận rồi xóa danh mục |
+| `layDanhMucChaUngVien(loai, excludeId)` | Lấy danh sách cha để chọn trong ComboBox |
+| `showAlert(title, content)` | Hiện hộp thoại thông báo |
+| `getScene()` | Trả về scene để điều hướng |
+
+| Quy tắc | Mô tả |
+|---|---|
+| Danh mục mặc định | Chỉ đọc, không sửa/xóa được |
+| Danh mục riêng tư | User tự tạo, tự sửa/xóa |
+| Tối đa 2 cấp | Chỉ có cha và con, không có cháu |
+| Tên con không trùng | Trong cùng loại, dù khác cha |
+
+---
+
+*Tài liệu được tạo dựa trên phân tích mã nguồn `CategoryController.java`*
