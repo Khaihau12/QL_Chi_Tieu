@@ -181,41 +181,6 @@ public class NganSachDAO {
         }
     }
     
-    // Kiểm tra vượt ngân sách
-    public boolean kiemTraVuotNganSach(String soTaiKhoan, int danhMucId, int thang, int nam) {
-        String sql = "SELECT ns.gioi_han, " +
-                    "COALESCE(SUM(CASE WHEN gd.so_tai_khoan_gui = ? THEN gd.so_tien ELSE 0 END), 0) as da_chi " +
-                    "FROM ngan_sach ns " +
-                    "LEFT JOIN giao_dich gd ON gd.danh_muc_id = ns.danh_muc_id " +
-                    "AND gd.so_tai_khoan_gui = ns.so_tai_khoan " +
-                    "AND MONTH(gd.ngay_giao_dich) = ns.thang " +
-                    "AND YEAR(gd.ngay_giao_dich) = ns.nam " +
-                    "WHERE ns.so_tai_khoan = ? AND ns.danh_muc_id = ? " +
-                    "AND ns.thang = ? AND ns.nam = ? " +
-                    "GROUP BY ns.id, ns.gioi_han";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, soTaiKhoan);
-            pstmt.setString(2, soTaiKhoan);
-            pstmt.setInt(3, danhMucId);
-            pstmt.setInt(4, thang);
-            pstmt.setInt(5, nam);
-            ResultSet rs = pstmt.executeQuery();
-            
-            if (rs.next()) {
-                double gioiHan = rs.getDouble("gioi_han");
-                double daChi = rs.getDouble("da_chi");
-                return daChi >= gioiHan; // Trả về true nếu đã vượt ngân sách
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return false;
-    }
-    
     // Lấy số tiền đã chi theo danh mục
     public double layTongChiTheoDanhMuc(String soTaiKhoan, int danhMucId, int thang, int nam) {
         String sql = "SELECT COALESCE(SUM(so_tien), 0) as tong_chi " +

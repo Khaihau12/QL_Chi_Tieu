@@ -430,43 +430,7 @@ public class TransactionController {
             Integer danhMucId = (danhMuc != null) ? danhMuc.getId() : null;
             
             // Kiểm tra vượt ngân sách (nếu có đặt ngân sách cho danh mục này)
-            if (danhMucId != null) {
-                java.time.LocalDate today = java.time.LocalDate.now();
-                int thangHienTai = today.getMonthValue();
-                int namHienTai = today.getYear();
-                
-                // Lấy giới hạn ngân sách
-                BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoanGui, danhMucId, thangHienTai, namHienTai);
-                
-                if (gioiHan != null) {
-                    // Lấy tổng chi hiện tại của danh mục trong tháng
-                    double daChiHienTai = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoanGui, danhMucId, thangHienTai, namHienTai);
-                    double tongChiSauGiaoDich = daChiHienTai + soTien.doubleValue();
-                    
-                    // Nếu vượt ngân sách → cảnh báo
-                    if (tongChiSauGiaoDich > gioiHan.doubleValue()) {
-                        Alert warningAlert = new Alert(Alert.AlertType.WARNING);
-                        warningAlert.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");
-                        warningAlert.setHeaderText("Giao dịch này sẽ vượt quá ngân sách đã đặt!");
-                        warningAlert.setContentText(
-                            "Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thangHienTai + "/" + namHienTai + ")\n\n" +
-                            "Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
-                            "Đã chi: " + df.format(daChiHienTai) + " đ\n" +
-                            "Số tiền này: " + df.format(soTien) + " đ\n" +
-                            "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                            "Tổng sau giao dịch: " + df.format(tongChiSauGiaoDich) + " đ\n" +
-                            "Vượt mức: " + df.format(tongChiSauGiaoDich - gioiHan.doubleValue()) + " đ\n\n" +
-                            "Bạn có chắc chắn muốn tiếp tục?"
-                        );
-                        warningAlert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-                        
-                        // Nếu user chọn NO → dừng lại
-                        if (warningAlert.showAndWait().get() != ButtonType.YES) {
-                            return;
-                        }
-                    }
-                }
-            }
+            if (!xacNhanNeuVuotNganSach(soTaiKhoanGui, danhMuc, soTien)) return;
             
             // Xác nhận chuyển tiền
             Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -586,37 +550,8 @@ public class TransactionController {
                 String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();
                 Integer danhMucId = danhMuc.getId();
 
-                // Cảnh báo vượt ngân sách cho khoản CHI tiền mặt
-                if ("chi".equals(loai) && danhMucId != null) {
-                    java.time.LocalDate today = java.time.LocalDate.now();
-                    int thangHienTai = today.getMonthValue();
-                    int namHienTai = today.getYear();
-                    BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMucId, thangHienTai, namHienTai);
-
-                    if (gioiHan != null) {
-                        double daChiHienTai = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMucId, thangHienTai, namHienTai);
-                        double tongChiSau = daChiHienTai + soTien.doubleValue();
-                        if (tongChiSau > gioiHan.doubleValue()) {
-                            Alert warning = new Alert(Alert.AlertType.WARNING);
-                            warning.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");
-                            warning.setHeaderText("Khoản chi tiền mặt này sẽ vượt ngân sách!");
-                            warning.setContentText(
-                                "Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thangHienTai + "/" + namHienTai + ")\n\n" +
-                                "Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
-                                "Đã chi: " + df.format(daChiHienTai) + " đ\n" +
-                                "Khoản chi này: " + df.format(soTien) + " đ\n" +
-                                "━━━━━━━━━━━━━━━━━━━━━━\n" +
-                                "Tổng sau ghi nhận: " + df.format(tongChiSau) + " đ\n" +
-                                "Vượt mức: " + df.format(tongChiSau - gioiHan.doubleValue()) + " đ\n\n" +
-                                "Bạn có chắc chắn muốn tiếp tục?"
-                            );
-                            warning.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
-                            if (warning.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) {
-                                return;
-                            }
-                        }
-                    }
-                }
+                // Cảnh báo vượt ngân sách chỉ cho khoản CHI tiền mặt
+                if ("chi".equals(loai) && !xacNhanNeuVuotNganSach(soTaiKhoan, danhMuc, soTien)) return;
 
                 String noiDung = txtNoiDungTienMat.getText() != null ? txtNoiDungTienMat.getText().trim() : "";
                 boolean ok = giaoDichDAO.ghiNhanTienMat(soTaiKhoan, soTien, noiDung, loai, danhMucId);
@@ -630,6 +565,41 @@ public class TransactionController {
                 showError("Lỗi: " + ex.getMessage());
             }
         });
+    }
+
+    // Helper dùng chung: kiểm tra vượt ngân sách và hỏi user có tiếp tục không
+    // Trả về true = tiếp tục, false = hủy
+    private boolean xacNhanNeuVuotNganSach(String soTaiKhoan, DanhMuc danhMuc, BigDecimal soTien) {
+        if (danhMuc == null) return true;
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        int thang = today.getMonthValue();
+        int nam = today.getYear();
+
+        // Lấy giới hạn và tổng đã chi — dùng cho cả check lẫn hiển thị dialog (2 query, không gọi lại)
+        BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMuc.getId(), thang, nam);
+        if (gioiHan == null) return true; // Không đặt ngân sách → cho phép tiếp tục
+
+        double daChi = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMuc.getId(), thang, nam);
+        double tongChiSau = daChi + soTien.doubleValue();
+
+        if (tongChiSau <= gioiHan.doubleValue()) return true; // Không vượt → cho phép tiếp tục
+
+        Alert warning = new Alert(Alert.AlertType.WARNING);
+        warning.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");
+        warning.setHeaderText("Giao dịch này sẽ vượt quá ngân sách đã đặt!");
+        warning.setContentText(
+            "Danh mục: " + danhMuc.getTenDanhMuc() + " (Tháng " + thang + "/" + nam + ")\n\n" +
+            "Giới hạn: " + df.format(gioiHan.doubleValue()) + " đ\n" +
+            "Đã chi: " + df.format(daChi) + " đ\n" +
+            "Số tiền này: " + df.format(soTien) + " đ\n" +
+            "━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "Tổng sau giao dịch: " + df.format(tongChiSau) + " đ\n" +
+            "Vượt mức: " + df.format(tongChiSau - gioiHan.doubleValue()) + " đ\n\n" +
+            "Bạn có chắc chắn muốn tiếp tục?"
+        );
+        warning.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+        return warning.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
     private void clearForm() {

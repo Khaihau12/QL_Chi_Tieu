@@ -159,15 +159,11 @@ public class RegisterController {
                 lblThongBao.setText("Đăng ký thành công! Đang chuyển về đăng nhập...");
                 lblThongBao.setStyle("-fx-text-fill: green;");
 
-                // Delay 1.5s rồi chuyển về màn hình đăng nhập
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(1500);
-                        javafx.application.Platform.runLater(this::chuyenVeDangNhap);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }).start();
+                // Delay 1.5s rồi chuyển về màn hình đăng nhập (dùng PauseTransition như LoginController)
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.millis(1500));
+                pause.setOnFinished(ev -> chuyenVeDangNhap());
+                pause.play();
             }
         } catch (Exception e) {
             if (e.getMessage().contains("Duplicate entry")) {
