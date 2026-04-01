@@ -576,14 +576,14 @@ public class TransactionController {
         int thang = today.getMonthValue();
         int nam = today.getYear();
 
-        if (!nganSachDAO.kiemTraVuotNganSach(soTaiKhoan, danhMuc.getId(), thang, nam, soTien)) {
-            return true; // Không vượt → cho phép tiếp tục
-        }
-
-        // Lấy chi tiết để hiển thị trong dialog cảnh báo
+        // Lấy giới hạn và tổng đã chi — dùng cho cả check lẫn hiển thị dialog (2 query, không gọi lại)
         BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMuc.getId(), thang, nam);
+        if (gioiHan == null) return true; // Không đặt ngân sách → cho phép tiếp tục
+
         double daChi = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMuc.getId(), thang, nam);
         double tongChiSau = daChi + soTien.doubleValue();
+
+        if (tongChiSau <= gioiHan.doubleValue()) return true; // Không vượt → cho phép tiếp tục
 
         Alert warning = new Alert(Alert.AlertType.WARNING);
         warning.setTitle("CẢNH BÁO VƯỢT NGÂN SÁCH");

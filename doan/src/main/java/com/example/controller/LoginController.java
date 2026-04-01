@@ -141,11 +141,11 @@ public class LoginController {
             if (thoiGianMoKhoa != null) {
                 long conLaiMs = thoiGianMoKhoa.getTime() - System.currentTimeMillis();
                 if (conLaiMs > 0) {
-                    long tong = conLaiMs / 1000;
-                    long ngay  = tong / 86400;
-                    long gio   = (tong % 86400) / 3600;
-                    long phut  = (tong % 3600) / 60;
-                    long giay  = tong % 60;
+                    java.time.Duration d = java.time.Duration.ofMillis(conLaiMs);
+                    long ngay = d.toDays();
+                    long gio  = d.toHoursPart();
+                    long phut = d.toMinutesPart();
+                    long giay = d.toSecondsPart();
                     StringBuilder thoiGian = new StringBuilder("\n⏳ Tự mở khóa sau: ");
                     if (ngay > 0)  thoiGian.append(ngay).append(" ngày ");
                     if (gio > 0)   thoiGian.append(gio).append(" giờ ");

@@ -321,19 +321,4 @@ public class DanhMucDAO {
         }
     }
     
-    // Method test để kiểm tra kết nối
-    public static void main(String[] args) {
-        System.out.println("Testing DanhMucDAO...");
-        DanhMucDAO dao = new DanhMucDAO();
-        try {
-            List<DanhMuc> list = dao.layTatCaDanhMuc();
-            System.out.println("Số danh mục: " + list.size());
-            for (DanhMuc dm : list) {
-                System.out.println("- " + dm.getTenDanhMuc());
-            }
-        } catch (Exception e) {
-            System.err.println("LỖI: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 }

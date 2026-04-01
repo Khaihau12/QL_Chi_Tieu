@@ -761,43 +761,13 @@ public class DashboardController {
             // === Kiểm tra ngân sách (chỉ áp dụng cho giao dịch gửi = chi tiêu) ===
             if (isChi) {
                 try {
+                    // Lấy tháng/năm từ giao dịch — KHÔNG dùng tháng hiện tại
                     java.sql.Timestamp ts = selected.getNgayGiaoDichRaw();
-                    LocalDate ngayGD = ts != null
-                            ? ts.toLocalDateTime().toLocalDate()
-                            : LocalDate.now();
+                    LocalDate ngayGD = ts != null ? ts.toLocalDateTime().toLocalDate() : LocalDate.now();
                     int thang = ngayGD.getMonthValue();
                     int nam   = ngayGD.getYear();
 
-                    BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(
-                            soTaiKhoan, newDM.getId(), thang, nam);
-
-                    if (gioiHan != null) {
-                        double daChi = nganSachDAO.layTongChiTheoDanhMuc(
-                                soTaiKhoan, newDM.getId(), thang, nam);
-                        BigDecimal tongSau = BigDecimal.valueOf(daChi).add(selected.getSoTienRaw());
-                        if (tongSau.compareTo(gioiHan) > 0) {
-                            String msg = String.format(
-                                    "Cảnh báo ngân sách!%n" +
-                                    "Danh mục: %s%n" +
-                                    "Hạn mức tháng %d/%d: %s đ%n" +
-                                    "Đã chi: %s đ%n" +
-                                    "Giao dịch này: +%s đ%n" +
-                                    "→ Tổng sau khi chuyển: %s đ (vượt %s đ)%n%n" +
-                                    "Bạn vẫn muốn chuyển sang danh mục này?",
-                                    newDM.getTenDanhMuc(), thang, nam,
-                                    df.format(gioiHan),
-                                    df.format(daChi),
-                                    df.format(selected.getSoTienRaw()),
-                                    df.format(tongSau),
-                                    df.format(tongSau.subtract(gioiHan)));
-                            Alert warn = new Alert(Alert.AlertType.CONFIRMATION, msg,
-                                    ButtonType.YES, ButtonType.NO);
-                            warn.setTitle("Vượt hạn mức ngân sách");
-                            warn.setHeaderText(null);
-                            java.util.Optional<ButtonType> ans = warn.showAndWait();
-                            if (ans.isEmpty() || ans.get() != ButtonType.YES) return;
-                        }
-                    }
+                    if (!xacNhanNeuVuotNganSach(soTaiKhoan, newDM, selected.getSoTienRaw(), thang, nam)) return;
 
                     giaoDichDAO.capNhatDanhMucChi(selected.getMaGiaoDich(), newDM.getId());
                 } catch (Exception ex) {
@@ -915,6 +885,37 @@ public class DashboardController {
             ok.setContentText("✅ Đổi mật khẩu thành công!");
             ok.showAndWait();
         }
+    }
+
+    // Helper kiểm tra vượt ngân sách — nhận thang/nam từ ngoài vì có thể là tháng của giao dịch cũ
+    // Trả về true = tiếp tục, false = hủy
+    private boolean xacNhanNeuVuotNganSach(String soTaiKhoan, DanhMuc danhMuc, BigDecimal soTien, int thang, int nam) {
+        BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMuc.getId(), thang, nam);
+        if (gioiHan == null) return true; // Không đặt ngân sách → cho phép tiếp tục
+
+        double daChi = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMuc.getId(), thang, nam);
+        BigDecimal tongSau = BigDecimal.valueOf(daChi).add(soTien);
+
+        if (tongSau.compareTo(gioiHan) <= 0) return true; // Không vượt → cho phép tiếp tục
+
+        String msg = String.format(
+                "Cảnh báo ngân sách!%n" +
+                "Danh mục: %s%n" +
+                "Hạn mức tháng %d/%d: %s đ%n" +
+                "Đã chi: %s đ%n" +
+                "Giao dịch này: +%s đ%n" +
+                "→ Tổng sau khi chuyển: %s đ (vượt %s đ)%n%n" +
+                "Bạn vẫn muốn chuyển sang danh mục này?",
+                danhMuc.getTenDanhMuc(), thang, nam,
+                df.format(gioiHan),
+                df.format(daChi),
+                df.format(soTien),
+                df.format(tongSau),
+                df.format(tongSau.subtract(gioiHan)));
+        Alert warn = new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.YES, ButtonType.NO);
+        warn.setTitle("Vượt hạn mức ngân sách");
+        warn.setHeaderText(null);
+        return warn.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
     private void showError(String message) {

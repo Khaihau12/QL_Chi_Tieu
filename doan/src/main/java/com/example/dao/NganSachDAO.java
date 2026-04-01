@@ -181,15 +181,6 @@ public class NganSachDAO {
         }
     }
     
-    // Kiểm tra nếu thêm khoản chi mới có vượt ngân sách không
-    public boolean kiemTraVuotNganSach(String soTaiKhoan, int danhMucId, int thang, int nam, BigDecimal soTienMoi) {
-        BigDecimal gioiHan = layGioiHanNganSach(soTaiKhoan, danhMucId, thang, nam);
-        if (gioiHan == null) return false; // Không đặt ngân sách → không vượt
-
-        double daChi = layTongChiTheoDanhMuc(soTaiKhoan, danhMucId, thang, nam);
-        return (daChi + soTienMoi.doubleValue()) > gioiHan.doubleValue();
-    }
-    
     // Lấy số tiền đã chi theo danh mục
     public double layTongChiTheoDanhMuc(String soTaiKhoan, int danhMucId, int thang, int nam) {
         String sql = "SELECT COALESCE(SUM(so_tien), 0) as tong_chi " +
