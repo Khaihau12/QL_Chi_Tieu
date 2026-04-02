@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.controller.admin.AdminDashboardController;
 import com.example.dao.NguoiDungDAO;
 import com.example.exception.TaiKhoanBiKhoaException;
 import com.example.model.NguoiDung;
@@ -59,6 +60,7 @@ public class LoginController {
         txtTenDangNhap.setPromptText("Nhập tên đăng nhập");
         txtTenDangNhap.setPrefWidth(350);
         txtTenDangNhap.setStyle("-fx-font-size: 13px;");
+        txtTenDangNhap.setOnAction(e -> txtMatKhau.requestFocus());
 
         Label lblMatKhau = new Label("Mật khẩu:");
         lblMatKhau.setFont(Font.font("Arial", 13));
@@ -66,6 +68,7 @@ public class LoginController {
         txtMatKhau.setPromptText("Nhập mật khẩu");
         txtMatKhau.setPrefWidth(350);
         txtMatKhau.setStyle("-fx-font-size: 13px;");
+        txtMatKhau.setOnAction(e -> handleDangNhap());
 
         // Nút đăng nhập
         btnDangNhap = new Button("Đăng nhập");

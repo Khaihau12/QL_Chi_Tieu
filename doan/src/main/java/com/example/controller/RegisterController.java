@@ -81,6 +81,13 @@ public class RegisterController {
         txtXacNhanMatKhau.setPrefWidth(350);
         txtXacNhanMatKhau.setStyle("-fx-font-size: 13px;");
 
+        // Hỗ trợ thao tác Enter liên tục không cần dùng chuột
+        txtHoTen.setOnAction(e -> txtTenDangNhap.requestFocus());
+        txtTenDangNhap.setOnAction(e -> txtEmail.requestFocus());
+        txtEmail.setOnAction(e -> txtMatKhau.requestFocus());
+        txtMatKhau.setOnAction(e -> txtXacNhanMatKhau.requestFocus());
+        txtXacNhanMatKhau.setOnAction(e -> handleDangKy());
+
         // Nút đăng ký
         btnDangKy = new Button("Đăng ký");
         btnDangKy.setPrefWidth(350);
