@@ -102,7 +102,7 @@ public class AdminReportController {
                 long gui = giaoDichDAO.demGDGui(nd.getSoTaiKhoan());
                 long nhan = giaoDichDAO.demGDNhan(nd.getSoTaiKhoan());
                 String soDuFmt = nd.getSoDu() != null ? df.format(nd.getSoDu()) + " đ" : "0 đ";
-                String tt = "hoat_dong".equals(nd.getTrangThai()) ? "✅ Hoạt động" : "🔒 Bị khóa";
+                String tt = "hoat_dong".equals(nd.getTrangThai()) ? " Hoạt động" : " Bị khóa";
                 tableUserReport.getItems().add(new UserReportRow(
                         nd.getTenDangNhap(), nd.getHoTen(), nd.getSoTaiKhoan(),
                         soDuFmt, String.valueOf(gui), String.valueOf(nhan), tt));

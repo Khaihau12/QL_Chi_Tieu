@@ -1,8 +1,6 @@
 package com.example.controller;
 
 import com.example.dao.GiaoDichDAO;
-import com.example.dao.DanhMucDAO;
-import com.example.model.DanhMuc;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,14 +10,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 
-import java.sql.*;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-
-import com.example.util.DatabaseConnection;
 
 public class StatisticsController {
     private Stage stage;
@@ -35,13 +27,11 @@ public class StatisticsController {
     private Label lblThuTienMat;
     private Label lblThuChuyenKhoan;
     private GiaoDichDAO giaoDichDAO;
-    private DanhMucDAO danhMucDAO;
     
     public StatisticsController(Stage stage, String soTaiKhoan) {
         this.stage = stage;
         this.soTaiKhoan = soTaiKhoan;
         this.giaoDichDAO = new GiaoDichDAO();
-        this.danhMucDAO = new DanhMucDAO();
         
         createUI();
     }
@@ -161,7 +151,7 @@ public class StatisticsController {
         int nam = cbNam.getValue();
         
         // Tính tổng chi và tổng thu
-        Map<String, Double> summary = layTongQuanTheoThang(thang, nam);
+        Map<String, Double> summary = giaoDichDAO.layTongQuanTheoThang(soTaiKhoan, thang, nam);
         double tongChi = summary.getOrDefault("chi", 0.0);
         double tongThu = summary.getOrDefault("thu", 0.0);
 
@@ -175,7 +165,7 @@ public class StatisticsController {
         lblThuChuyenKhoan.setText(String.format("Thu chuyển khoản: %,.0f VNĐ", thuChuyenKhoan));
         
         // Lấy chi tiêu theo danh mục
-        Map<String, Double> chiTheoDanhMuc = layChiTheoDanhMuc(thang, nam);
+        Map<String, Double> chiTheoDanhMuc = giaoDichDAO.layChiTheoDanhMuc(soTaiKhoan, thang, nam);
         
         // Vẽ biểu đồ chi
         chartBox.getChildren().clear();
@@ -228,66 +218,6 @@ public class StatisticsController {
 
         barBox.getChildren().addAll(lblDM, bar, lblVal, lblPct);
         return barBox;
-    }
-    
-    private Map<String, Double> layTongQuanTheoThang(int thang, int nam) {
-        Map<String, Double> result = new HashMap<>();
-        String sql = "SELECT " +
-                    "SUM(CASE WHEN so_tai_khoan_gui = ? THEN so_tien ELSE 0 END) as tong_chi, " +
-                    "SUM(CASE WHEN so_tai_khoan_nhan = ? THEN so_tien ELSE 0 END) as tong_thu " +
-                    "FROM giao_dich " +
-                    "WHERE (so_tai_khoan_gui = ? OR so_tai_khoan_nhan = ?) " +
-                    "AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, soTaiKhoan);
-            pstmt.setString(2, soTaiKhoan);
-            pstmt.setString(3, soTaiKhoan);
-            pstmt.setString(4, soTaiKhoan);
-            pstmt.setInt(5, thang);
-            pstmt.setInt(6, nam);
-            
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                result.put("chi", rs.getDouble("tong_chi"));
-                result.put("thu", rs.getDouble("tong_thu"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return result;
-    }
-    
-    private Map<String, Double> layChiTheoDanhMuc(int thang, int nam) {
-        // MỚI - giữ thứ tự ORDER BY từ SQL
-        Map<String, Double> result = new LinkedHashMap<>();
-        String sql = "SELECT dm.ten_danh_muc, SUM(gd.so_tien) as tong_chi " +
-                    "FROM giao_dich gd " +
-                    "JOIN danh_muc dm ON gd.danh_muc_id = dm.id " +
-                    "WHERE gd.so_tai_khoan_gui = ? " +
-                    "AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? " +
-                    "GROUP BY dm.id, dm.ten_danh_muc " +
-                    "ORDER BY tong_chi DESC";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
-            pstmt.setString(1, soTaiKhoan);
-            pstmt.setInt(2, thang);
-            pstmt.setInt(3, nam);
-            
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.put(rs.getString("ten_danh_muc"), rs.getDouble("tong_chi"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        return result;
     }
     
     public Scene getScene() {

@@ -239,6 +239,70 @@ public class GiaoDichDAO {
         }
     }
 
+    /** Tổng quan chi/thu theo tháng của 1 tài khoản */
+    public Map<String, Double> layTongQuanTheoThang(String soTaiKhoan, int thang, int nam) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        String sql = "SELECT " +
+                "SUM(CASE WHEN so_tai_khoan_gui = ? THEN so_tien ELSE 0 END) AS tong_chi, " +
+                "SUM(CASE WHEN so_tai_khoan_nhan = ? THEN so_tien ELSE 0 END) AS tong_thu " +
+                "FROM giao_dich " +
+                "WHERE (so_tai_khoan_gui = ? OR so_tai_khoan_nhan = ?) " +
+                "AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, soTaiKhoan);
+            stmt.setString(2, soTaiKhoan);
+            stmt.setString(3, soTaiKhoan);
+            stmt.setString(4, soTaiKhoan);
+            stmt.setInt(5, thang);
+            stmt.setInt(6, nam);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                result.put("chi", rs.getDouble("tong_chi"));
+                result.put("thu", rs.getDouble("tong_thu"));
+            } else {
+                result.put("chi", 0.0);
+                result.put("thu", 0.0);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            result.put("chi", 0.0);
+            result.put("thu", 0.0);
+        }
+
+        return result;
+    }
+
+    /** Thống kê chi tiêu theo danh mục chi trong tháng */
+    public Map<String, Double> layChiTheoDanhMuc(String soTaiKhoan, int thang, int nam) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        String sql = "SELECT dm.ten_danh_muc, SUM(gd.so_tien) AS tong_chi " +
+                "FROM giao_dich gd " +
+                "JOIN danh_muc dm ON gd.danh_muc_id = dm.id " +
+                "WHERE gd.so_tai_khoan_gui = ? " +
+                "AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? " +
+                "GROUP BY dm.id, dm.ten_danh_muc " +
+                "ORDER BY tong_chi DESC";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, soTaiKhoan);
+            stmt.setInt(2, thang);
+            stmt.setInt(3, nam);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                result.put(rs.getString("ten_danh_muc"), rs.getDouble("tong_chi"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
     /** Thống kê thu nhập theo danh mục thu trong tháng */
     public Map<String, Double> layThuTheoDanhMuc(String soTaiKhoan, int thang, int nam) {
         Map<String, Double> result = new LinkedHashMap<>();
