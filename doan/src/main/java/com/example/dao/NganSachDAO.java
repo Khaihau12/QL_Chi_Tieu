@@ -185,7 +185,7 @@ public class NganSachDAO {
     public double layTongChiTheoDanhMuc(String soTaiKhoan, int danhMucId, int thang, int nam) {
         String sql = "SELECT COALESCE(SUM(so_tien), 0) as tong_chi " +
                     "FROM giao_dich " +
-                    "WHERE so_tai_khoan_gui = ? AND danh_muc_id = ? " +
+                    "WHERE so_tai_khoan_gui = ? AND danh_muc_chi_id = ? " +
                     "AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?";
         
         try (Connection conn = DatabaseConnection.getConnection();

@@ -134,6 +134,32 @@ public class NguoiDungDAO {
         return null;
     }
 
+    // Kiểm tra tên đăng nhập đã tồn tại
+    public boolean tonTaiTenDangNhap(String tenDangNhap) throws SQLException {
+        if (tenDangNhap == null || tenDangNhap.isBlank()) return false;
+
+        String sql = "SELECT 1 FROM nguoi_dung WHERE ten_dang_nhap = ? LIMIT 1";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tenDangNhap.trim());
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
+    // Kiểm tra email đã tồn tại
+    public boolean tonTaiEmail(String email) throws SQLException {
+        if (email == null || email.isBlank()) return false;
+
+        String sql = "SELECT 1 FROM nguoi_dung WHERE email = ? LIMIT 1";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email.trim());
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
     // Lấy user thường theo số tài khoản (dùng cho Admin xác nhận trước khi nạp tiền)
     public NguoiDung layNguoiDungThuongTheoSoTaiKhoan(String soTaiKhoan) throws SQLException {
         String sql = "SELECT * FROM nguoi_dung WHERE so_tai_khoan = ? AND vai_tro = 'nguoi_dung'";
@@ -166,8 +192,25 @@ public class NguoiDungDAO {
         return danhSach;
     }
 
+    // Kiểm tra mật khẩu mới có trùng mật khẩu hiện tại không
+    public boolean laMatKhauTrungHienTai(int maNguoiDung, String matKhauMoi) throws SQLException {
+        if (matKhauMoi == null || matKhauMoi.isBlank()) return false;
+
+        String sql = "SELECT ma_nguoi_dung FROM nguoi_dung WHERE ma_nguoi_dung = ? AND mat_khau = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, maNguoiDung);
+            stmt.setString(2, hashMD5(matKhauMoi));
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        }
+    }
+
     // Đổi mật khẩu (kiểm tra mật khẩu cũ trước)
     public boolean doiMatKhau(int maNguoiDung, String matKhauCu, String matKhauMoi) throws SQLException {
+        if (matKhauMoi == null || matKhauMoi.length() < 6) return false;
+        if (laMatKhauTrungHienTai(maNguoiDung, matKhauMoi)) return false;
+
         // Kiểm tra mật khẩu cũ
         String sqlCheck = "SELECT ma_nguoi_dung FROM nguoi_dung WHERE ma_nguoi_dung = ? AND mat_khau = ?";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -190,6 +233,7 @@ public class NguoiDungDAO {
     // Admin đặt lại mật khẩu cho user (không cần mật khẩu cũ)
     public boolean datLaiMatKhauChoUser(int maNguoiDung, String matKhauMoi) throws SQLException {
         if (matKhauMoi == null || matKhauMoi.length() < 6) return false;
+        if (laMatKhauTrungHienTai(maNguoiDung, matKhauMoi)) return false;
 
         String sql = "UPDATE nguoi_dung SET mat_khau = ? " +
                      "WHERE ma_nguoi_dung = ? AND vai_tro = 'nguoi_dung'";
@@ -293,7 +337,7 @@ public class NguoiDungDAO {
 
             // 4) Ghi lịch sử giao dịch: user nhận sẽ thấy dạng 'Nhận'
             String sqlInsertGD = "INSERT INTO giao_dich " +
-                                 "(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, danh_muc_thu_id, trang_thai) " +
+                                 "(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_chi_id, danh_muc_thu_id, trang_thai) " +
                                  "VALUES (?, ?, ?, ?, ?, ?, 'thanh_cong')";
             try (PreparedStatement stmt = conn.prepareStatement(sqlInsertGD)) {
                 stmt.setString(1, soTaiKhoanGui);

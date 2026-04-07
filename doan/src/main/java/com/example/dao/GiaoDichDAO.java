@@ -113,7 +113,7 @@ public class GiaoDichDAO {
             stmtCong.executeUpdate();
             
             // 5. Lưu giao dịch với cả danh mục chi (người gửi) và danh mục thu (người nhận)
-            String sqlGiaoDich = "INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, danh_muc_thu_id) VALUES (?, ?, ?, ?, ?, ?)";
+            String sqlGiaoDich = "INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_chi_id, danh_muc_thu_id) VALUES (?, ?, ?, ?, ?, ?)";
             PreparedStatement stmtGiaoDich = conn.prepareStatement(sqlGiaoDich);
             stmtGiaoDich.setString(1, soTaiKhoanGui);
             stmtGiaoDich.setString(2, soTaiKhoanNhan);
@@ -166,7 +166,7 @@ public class GiaoDichDAO {
                         "dc.ten_danh_muc AS ten_dm_chi, " +
                         "dt.ten_danh_muc AS ten_dm_thu " +
                         "FROM giao_dich gd " +
-                        "LEFT JOIN danh_muc dc ON gd.danh_muc_id    = dc.id " +
+                        "LEFT JOIN danh_muc dc ON gd.danh_muc_chi_id = dc.id " +
                         "LEFT JOIN danh_muc dt ON gd.danh_muc_thu_id = dt.id " +
                         "WHERE (gd.so_tai_khoan_gui = ? OR gd.so_tai_khoan_nhan = ?) ");
 
@@ -203,7 +203,7 @@ public class GiaoDichDAO {
                 gd.setNoiDung(rs.getString("noi_dung"));
                 gd.setNgayGiaoDich(rs.getTimestamp("ngay_giao_dich"));
                 gd.setTrangThai(rs.getString("trang_thai"));
-                int dmId = rs.getInt("danh_muc_id");
+                int dmId = rs.getInt("danh_muc_chi_id");
                 if (!rs.wasNull()) gd.setDanhMucId(dmId);
                 int dmThuId = rs.getInt("danh_muc_thu_id");
                 if (!rs.wasNull()) gd.setDanhMucThuId(dmThuId);
@@ -217,7 +217,7 @@ public class GiaoDichDAO {
 
     /** Cập nhật danh mục chi của giao dịch (người gửi) */
     public boolean capNhatDanhMucChi(int maGiaoDich, Integer danhMucId) throws SQLException {
-        String sql = "UPDATE giao_dich SET danh_muc_id = ? WHERE ma_giao_dich = ?";
+        String sql = "UPDATE giao_dich SET danh_muc_chi_id = ? WHERE ma_giao_dich = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             if (danhMucId != null) stmt.setInt(1, danhMucId);
@@ -280,7 +280,7 @@ public class GiaoDichDAO {
         Map<String, Double> result = new LinkedHashMap<>();
         String sql = "SELECT dm.ten_danh_muc, SUM(gd.so_tien) AS tong_chi " +
                 "FROM giao_dich gd " +
-                "JOIN danh_muc dm ON gd.danh_muc_id = dm.id " +
+                "JOIN danh_muc dm ON gd.danh_muc_chi_id = dm.id " +
                 "WHERE gd.so_tai_khoan_gui = ? " +
                 "AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? " +
                 "GROUP BY dm.id, dm.ten_danh_muc " +
@@ -584,7 +584,7 @@ public class GiaoDichDAO {
             String noiDungDayDu = noiDungPrefix + (noiDung != null && !noiDung.isBlank() ? (" " + noiDung.trim()) : "");
 
             String sqlInsert = "INSERT INTO giao_dich " +
-                    "(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, danh_muc_thu_id, trang_thai) " +
+                    "(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_chi_id, danh_muc_thu_id, trang_thai) " +
                     "VALUES (?, ?, ?, ?, ?, ?, 'thanh_cong')";
             try (PreparedStatement stmt = conn.prepareStatement(sqlInsert)) {
                 stmt.setString(1, soTaiKhoanGui);

@@ -90,6 +90,12 @@ public class AdminPasswordController {
             }
 
             try {
+                if (nguoiDungDAO.laMatKhauTrungHienTai(LoginController.currentUser.getMaNguoiDung(), moi)) {
+                    lblKetQua.setText("Mật khẩu mới trùng với mật khẩu hiện tại!");
+                    lblKetQua.setStyle("-fx-text-fill: red;");
+                    return;
+                }
+
                 boolean ok = nguoiDungDAO.doiMatKhau(LoginController.currentUser.getMaNguoiDung(), cu, moi);
                 if (ok) {
                     lblKetQua.setText("Đổi mật khẩu thành công!");
@@ -214,6 +220,12 @@ public class AdminPasswordController {
             }
 
             try {
+                if (nguoiDungDAO.laMatKhauTrungHienTai(nd.getMaNguoiDung(), mkMoi)) {
+                    lblKetQuaReset.setText("Mật khẩu mới trùng với mật khẩu hiện tại của user!");
+                    lblKetQuaReset.setStyle("-fx-text-fill: red;");
+                    return;
+                }
+
                 boolean ok = nguoiDungDAO.datLaiMatKhauChoUser(nd.getMaNguoiDung(), mkMoi);
                 if (ok) {
                     lblKetQuaReset.setText("Đặt lại mật khẩu thành công cho user " + nd.getTenDangNhap() + "!");

@@ -52,13 +52,13 @@ CREATE TABLE giao_dich (
     so_tai_khoan_nhan VARCHAR(20) NOT NULL, -- Số tài khoản nhận tiền
     so_tien DECIMAL(15, 2) NOT NULL,
     noi_dung TEXT, -- Nội dung chuyển tiền
-    danh_muc_id INT DEFAULT NULL,     -- Danh mục chi tiêu của người gửi
+    danh_muc_chi_id INT DEFAULT NULL, -- Danh mục chi tiêu của người gửi
     danh_muc_thu_id INT DEFAULT NULL, -- Danh mục thu nhập của người nhận
     ngay_giao_dich DATETIME DEFAULT CURRENT_TIMESTAMP,
     trang_thai VARCHAR(20) DEFAULT 'thanh_cong', -- 'thanh_cong', 'that_bai'
     FOREIGN KEY (so_tai_khoan_gui) REFERENCES nguoi_dung(so_tai_khoan),
     FOREIGN KEY (so_tai_khoan_nhan) REFERENCES nguoi_dung(so_tai_khoan),
-    FOREIGN KEY (danh_muc_id) REFERENCES danh_muc(id) ON DELETE SET NULL,
+    FOREIGN KEY (danh_muc_chi_id) REFERENCES danh_muc(id) ON DELETE SET NULL,
     FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -82,7 +82,7 @@ CREATE TABLE ngan_sach (
 -- =====================================================
 -- 5. TẠO INDEX ĐỂ TĂNG TỐC QUERY
 -- =====================================================
-CREATE INDEX idx_giao_dich_danh_muc ON giao_dich(danh_muc_id);
+CREATE INDEX idx_giao_dich_danh_muc_chi ON giao_dich(danh_muc_chi_id);
 CREATE INDEX idx_giao_dich_danh_muc_thu ON giao_dich(danh_muc_thu_id);
 CREATE INDEX idx_giao_dich_ngay ON giao_dich(ngay_giao_dich);
 CREATE INDEX idx_ngan_sach_thang_nam ON ngan_sach(thang, nam);
@@ -192,11 +192,7 @@ JOIN (
     LIMIT 1
 ) p;
 
--- 3. Giao dịch mẫu (Chuyển tiền giữa các tài khoản với danh mục)
-INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_id, ngay_giao_dich) VALUES
-('101', '102', 5000000, 'Chuyển tiền hỗ trợ', 8, '2026-01-05 10:30:00'),
-('102', '103', 2000000, 'Trả nợ', 8, '2026-01-06 14:20:00'),
-('103', '102', 1000000, 'Tiền ăn', 1, '2026-01-08 09:15:00');
+
 
 -- =====================================================
 -- NÂNG CẤP DATABASE (Chạy nếu đã có DB cũ, bỏ qua nếu tạo mới)
@@ -216,6 +212,8 @@ INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, d
 -- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS loai VARCHAR(10) DEFAULT 'chi';
 -- ALTER TABLE danh_muc ADD COLUMN IF NOT EXISTS parent_id INT DEFAULT NULL;
 -- ALTER TABLE danh_muc ADD CONSTRAINT fk_danh_muc_parent FOREIGN KEY (parent_id) REFERENCES danh_muc(id) ON DELETE SET NULL;
+-- Migration đổi tên cột danh_muc_id -> danh_muc_chi_id (DB cũ):
+-- Chạy file riêng: migration_rename_danh_muc_id_to_danh_muc_chi_id.sql
 -- ALTER TABLE giao_dich ADD COLUMN IF NOT EXISTS danh_muc_thu_id INT DEFAULT NULL;
 -- ALTER TABLE giao_dich ADD CONSTRAINT fk_dmthu FOREIGN KEY (danh_muc_thu_id) REFERENCES danh_muc(id) ON DELETE SET NULL;
 -- UPDATE danh_muc SET loai='chi' WHERE loai IS NULL;

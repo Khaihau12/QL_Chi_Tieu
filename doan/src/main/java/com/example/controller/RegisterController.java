@@ -11,6 +11,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+import java.sql.SQLException;
+
 /**
  * Controller cho màn hình đăng ký (JavaFX thuần)
  */
@@ -157,6 +159,18 @@ public class RegisterController {
         }
 
         try {
+            if (nguoiDungDAO.tonTaiTenDangNhap(tenDangNhap)) {
+                lblThongBao.setText("Tên đăng nhập đã tồn tại!");
+                lblThongBao.setStyle("-fx-text-fill: red;");
+                return;
+            }
+
+            if (nguoiDungDAO.tonTaiEmail(email)) {
+                lblThongBao.setText("Email đã tồn tại!");
+                lblThongBao.setStyle("-fx-text-fill: red;");
+                return;
+            }
+
             // Tạo đối tượng người dùng mới
             NguoiDung nguoiDung = new NguoiDung(tenDangNhap, matKhau, hoTen, email);
 
@@ -171,15 +185,22 @@ public class RegisterController {
                         javafx.util.Duration.millis(1500));
                 pause.setOnFinished(ev -> chuyenVeDangNhap());
                 pause.play();
+            } else {
+                lblThongBao.setText("Đăng ký thất bại. Vui lòng thử lại!");
+                lblThongBao.setStyle("-fx-text-fill: red;");
             }
-        } catch (Exception e) {
-            if (e.getMessage().contains("Duplicate entry")) {
+        } catch (SQLException e) {
+            String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (message.contains("duplicate entry") && message.contains("ten_dang_nhap")) {
+                lblThongBao.setText("Tên đăng nhập đã tồn tại!");
+            } else if (message.contains("duplicate entry") && message.contains("email")) {
+                lblThongBao.setText("Email đã tồn tại!");
+            } else if (message.contains("duplicate entry")) {
                 lblThongBao.setText("Tên đăng nhập hoặc email đã tồn tại!");
             } else {
-                lblThongBao.setText("Lỗi: " + e.getMessage());
+                lblThongBao.setText("Lỗi đăng ký. Vui lòng thử lại!");
             }
             lblThongBao.setStyle("-fx-text-fill: red;");
-            e.printStackTrace();
         }
     }
 

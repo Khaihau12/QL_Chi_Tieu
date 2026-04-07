@@ -855,13 +855,20 @@ public class DashboardController {
                 return;
             }
             try {
+                if (nguoiDungDAO.laMatKhauTrungHienTai(LoginController.currentUser.getMaNguoiDung(), moi)) {
+                    lblKetQua.setText("Mật khẩu mới trùng với mật khẩu hiện tại!");
+                    lblKetQua.setStyle("-fx-text-fill: red;");
+                    ev.consume();
+                    return;
+                }
+
                 boolean ok = nguoiDungDAO.doiMatKhau(
                         LoginController.currentUser.getMaNguoiDung(), cu, moi);
                 if (!ok) {
                     lblKetQua.setText("Mật khẩu hiện tại không đúng!");
                     lblKetQua.setStyle("-fx-text-fill: red;");
                     ev.consume();
-                } // nếu ok thì cho dialog đóng bình thường
+                }
             } catch (Exception ex) {
                 lblKetQua.setText("Lỗi: " + ex.getMessage());
                 lblKetQua.setStyle("-fx-text-fill: red;");
