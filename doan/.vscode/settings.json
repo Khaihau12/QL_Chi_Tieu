@@ -1,12 +1,29 @@
 {
     "java.configuration.runtimes": [
         {
-            "name": "JavaSE-21",
-            "path": "C:\\Users\\Haupc\\.jdk\\jdk-21.0.8(1)",
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-17.0.17.10-hotspot",
             "default": true
         }
     ],
-    "java.project.sourcePaths": ["src/main/java"],
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.project.sourcePaths": [
+        "src/main/java",
+        "src/test/java"
+    ],
     "java.project.outputPath": "target/classes",
-    "java.home": "C:\\Users\\Haupc\\.jdk\\jdk-21.0.8(1)"
+    "java.test.defaultConfig": "JUnit 4",
+    "java.test.config": [
+        {
+            "name": "JUnit 4",
+            "workingDirectory": "${workspaceFolder}"
+        }
+    ],
+    "coverage-gutters.coverageFileNames": [
+        "jacoco.xml",
+        "coverage.xml",
+        "lcov.info",
+        "cov.xml",
+        "coverage.cobertura.xml"
+    ]
 }

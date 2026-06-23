@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MoneyInputUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.util</a> &gt; <span class="el_source">MoneyInputUtil.java</span></div><h1>MoneyInputUtil.java</h1><pre class="source lang-java linenums">package com.example.util;
+
+import javafx.scene.control.TextField;
+
+import java.math.BigDecimal;
+
+/**
+ * Utility cho ô nhập tiền: tự chèn dấu chấm ngăn cách hàng nghìn.
+ */
+public final class MoneyInputUtil {
+
+    private MoneyInputUtil() {}
+
+    public static void attachMoneyFormatter(TextField field) {
+<span class="nc" id="L15">        final boolean[] updating = {false};</span>
+<span class="nc" id="L16">        field.textProperty().addListener((obs, oldVal, newVal) -&gt; {</span>
+<span class="nc bnc" id="L17" title="All 2 branches missed.">            if (updating[0]) return;</span>
+<span class="nc" id="L18">            updating[0] = true;</span>
+            try {
+<span class="nc bnc" id="L20" title="All 2 branches missed.">                String digits = newVal == null ? &quot;&quot; : newVal.replaceAll(&quot;[^\\d]&quot;, &quot;&quot;);</span>
+<span class="nc" id="L21">                String formatted = formatDigitsWithDots(digits);</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">                if (!formatted.equals(newVal)) {</span>
+<span class="nc" id="L23">                    field.setText(formatted);</span>
+                }
+<span class="nc" id="L25">                field.positionCaret(field.getText().length());</span>
+            } finally {
+<span class="nc" id="L27">                updating[0] = false;</span>
+            }
+<span class="nc" id="L29">        });</span>
+<span class="nc" id="L30">    }</span>
+
+    public static BigDecimal parseMoney(String raw) {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (raw == null) return null;</span>
+<span class="fc" id="L34">        String digits = raw.replaceAll(&quot;[^\\d]&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (digits.isEmpty()) return null;</span>
+<span class="fc" id="L36">        return new BigDecimal(digits);</span>
+    }
+
+    public static void attachDigitsOnly(TextField field) {
+<span class="nc" id="L40">        final boolean[] updating = {false};</span>
+<span class="nc" id="L41">        field.textProperty().addListener((obs, oldVal, newVal) -&gt; {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            if (updating[0]) return;</span>
+<span class="nc" id="L43">            updating[0] = true;</span>
+            try {
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                String digits = newVal == null ? &quot;&quot; : newVal.replaceAll(&quot;[^\\d]&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                if (!digits.equals(newVal)) {</span>
+<span class="nc" id="L47">                    field.setText(digits);</span>
+                }
+<span class="nc" id="L49">                field.positionCaret(field.getText().length());</span>
+            } finally {
+<span class="nc" id="L51">                updating[0] = false;</span>
+            }
+<span class="nc" id="L53">        });</span>
+<span class="nc" id="L54">    }</span>
+
+    private static String formatDigitsWithDots(String digits) {
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (digits == null || digits.isEmpty()) return &quot;&quot;;</span>
+
+<span class="nc" id="L59">        StringBuilder rev = new StringBuilder(digits).reverse();</span>
+<span class="nc" id="L60">        StringBuilder out = new StringBuilder();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (int i = 0; i &lt; rev.length(); i++) {</span>
+<span class="nc bnc" id="L62" title="All 4 branches missed.">            if (i &gt; 0 &amp;&amp; i % 3 == 0) out.append('.');</span>
+<span class="nc" id="L63">            out.append(rev.charAt(i));</span>
+        }
+<span class="nc" id="L65">        return out.reverse().toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

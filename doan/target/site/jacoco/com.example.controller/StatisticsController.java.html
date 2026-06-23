@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatisticsController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.controller</a> &gt; <span class="el_source">StatisticsController.java</span></div><h1>StatisticsController.java</h1><pre class="source lang-java linenums">package com.example.controller;
+
+import com.example.dao.GiaoDichDAO;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
+import javafx.stage.Stage;
+
+import java.time.LocalDate;
+import java.util.Map;
+
+public class StatisticsController {
+    private Stage stage;
+    private Scene scene;
+    private String soTaiKhoan;
+    
+    private ComboBox&lt;Integer&gt; cbThang;
+    private ComboBox&lt;Integer&gt; cbNam;
+    private VBox chartBox;
+    private VBox chartThuBox;
+    private Label lblTongChi;
+    private Label lblTongThu;
+    private Label lblThuTienMat;
+    private Label lblThuChuyenKhoan;
+    private GiaoDichDAO giaoDichDAO;
+    
+<span class="nc" id="L31">    public StatisticsController(Stage stage, String soTaiKhoan) {</span>
+<span class="nc" id="L32">        this.stage = stage;</span>
+<span class="nc" id="L33">        this.soTaiKhoan = soTaiKhoan;</span>
+<span class="nc" id="L34">        this.giaoDichDAO = new GiaoDichDAO();</span>
+        
+<span class="nc" id="L36">        createUI();</span>
+<span class="nc" id="L37">    }</span>
+    
+    private void createUI() {
+<span class="nc" id="L40">        VBox root = new VBox(20);</span>
+<span class="nc" id="L41">        root.setPadding(new Insets(20));</span>
+<span class="nc" id="L42">        root.setAlignment(Pos.TOP_CENTER);</span>
+        
+        // Header
+<span class="nc" id="L45">        Label title = new Label(&quot;THỐNG KÊ CHI TIÊU&quot;);</span>
+<span class="nc" id="L46">        title.setStyle(&quot;-fx-font-size: 24px; -fx-font-weight: bold;&quot;);</span>
+        
+        // Bộ lọc tháng/năm
+<span class="nc" id="L49">        HBox filterBox = createFilterBox();</span>
+        
+        // Tổng quan
+<span class="nc" id="L52">        HBox summaryBox = createSummaryBox();</span>
+        
+        // Biểu đồ chi theo danh mục
+<span class="nc" id="L55">        Label lblChart = new Label(&quot;Chi tiêu theo danh mục:&quot;);</span>
+<span class="nc" id="L56">        lblChart.setStyle(&quot;-fx-font-size: 15px; -fx-font-weight: bold;&quot;);</span>
+
+<span class="nc" id="L58">        chartBox = new VBox(8);</span>
+<span class="nc" id="L59">        chartBox.setPadding(new Insets(10));</span>
+<span class="nc" id="L60">        chartBox.setStyle(&quot;-fx-border-color: #e67e22; -fx-border-width: 1; -fx-background-color: #fffbf5;&quot;);</span>
+
+        // Biểu đồ thu theo danh mục
+<span class="nc" id="L63">        Label lblThuChart = new Label(&quot;Thu nhập theo danh mục:&quot;);</span>
+<span class="nc" id="L64">        lblThuChart.setStyle(&quot;-fx-font-size: 15px; -fx-font-weight: bold;&quot;);</span>
+
+<span class="nc" id="L66">        chartThuBox = new VBox(8);</span>
+<span class="nc" id="L67">        chartThuBox.setPadding(new Insets(10));</span>
+<span class="nc" id="L68">        chartThuBox.setStyle(&quot;-fx-border-color: #27ae60; -fx-border-width: 1; -fx-background-color: #f5fffb;&quot;);</span>
+
+        // Nút quay lại
+<span class="nc" id="L71">        Button btnQuayLai = new Button(&quot;Quay Lại&quot;);</span>
+<span class="nc" id="L72">        btnQuayLai.setStyle(&quot;-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L73">        btnQuayLai.setOnAction(e -&gt; {</span>
+<span class="nc" id="L74">            DashboardController dashboard = new DashboardController(stage);</span>
+<span class="nc" id="L75">            stage.setScene(dashboard.getScene());</span>
+<span class="nc" id="L76">            stage.setResizable(false);</span>
+<span class="nc" id="L77">            stage.setWidth(1200);</span>
+<span class="nc" id="L78">            stage.setHeight(830);</span>
+<span class="nc" id="L79">            stage.centerOnScreen();</span>
+<span class="nc" id="L80">        });</span>
+
+<span class="nc" id="L82">        ScrollPane scroll = new ScrollPane();</span>
+<span class="nc" id="L83">        VBox scrollContent = new VBox(15,</span>
+                title, filterBox, summaryBox,
+                lblChart, chartBox,
+                lblThuChart, chartThuBox,
+                btnQuayLai);
+<span class="nc" id="L88">        scrollContent.setPadding(new Insets(20));</span>
+<span class="nc" id="L89">        scroll.setContent(scrollContent);</span>
+<span class="nc" id="L90">        scroll.setFitToWidth(true);</span>
+<span class="nc" id="L91">        scroll.setStyle(&quot;-fx-background-color: transparent;&quot;);</span>
+
+<span class="nc" id="L93">        root.getChildren().addAll(scroll);</span>
+<span class="nc" id="L94">        VBox.setVgrow(scroll, Priority.ALWAYS);</span>
+
+<span class="nc" id="L96">        scene = new Scene(root, 1200, 800);</span>
+<span class="nc" id="L97">        loadData();</span>
+<span class="nc" id="L98">    }</span>
+    
+    private HBox createFilterBox() {
+<span class="nc" id="L101">        HBox box = new HBox(10);</span>
+<span class="nc" id="L102">        box.setAlignment(Pos.CENTER);</span>
+        
+<span class="nc" id="L104">        Label lblThang = new Label(&quot;Tháng:&quot;);</span>
+<span class="nc" id="L105">        cbThang = new ComboBox&lt;&gt;();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        for (int i = 1; i &lt;= 12; i++) {</span>
+<span class="nc" id="L107">            cbThang.getItems().add(i);</span>
+        }
+<span class="nc" id="L109">        cbThang.setValue(LocalDate.now().getMonthValue());</span>
+        
+<span class="nc" id="L111">        Label lblNam = new Label(&quot;Năm:&quot;);</span>
+<span class="nc" id="L112">        cbNam = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L113">        int currentYear = LocalDate.now().getYear();</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        for (int i = currentYear - 2; i &lt;= currentYear + 2; i++) {</span>
+<span class="nc" id="L115">            cbNam.getItems().add(i);</span>
+        }
+<span class="nc" id="L117">        cbNam.setValue(currentYear);</span>
+        
+        // Tự động load khi thay đổi tháng/năm
+<span class="nc" id="L120">        cbThang.setOnAction(e -&gt; loadData());</span>
+<span class="nc" id="L121">        cbNam.setOnAction(e -&gt; loadData());</span>
+        
+<span class="nc" id="L123">        box.getChildren().addAll(lblThang, cbThang, lblNam, cbNam);</span>
+<span class="nc" id="L124">        return box;</span>
+    }
+    
+    private HBox createSummaryBox() {
+<span class="nc" id="L128">        HBox box = new HBox(40);</span>
+<span class="nc" id="L129">        box.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L130">        box.setPadding(new Insets(10));</span>
+<span class="nc" id="L131">        box.setStyle(&quot;-fx-background-color: #ecf0f1; -fx-border-radius: 5;&quot;);</span>
+        
+<span class="nc" id="L133">        lblTongChi = new Label(&quot;Tổng Chi: 0 VNĐ&quot;);</span>
+<span class="nc" id="L134">        lblTongChi.setStyle(&quot;-fx-font-size: 16px; -fx-text-fill: red; -fx-font-weight: bold;&quot;);</span>
+        
+<span class="nc" id="L136">        lblTongThu = new Label(&quot;Tổng Thu: 0 VNĐ&quot;);</span>
+<span class="nc" id="L137">        lblTongThu.setStyle(&quot;-fx-font-size: 16px; -fx-text-fill: green; -fx-font-weight: bold;&quot;);</span>
+
+<span class="nc" id="L139">        lblThuTienMat = new Label(&quot;Thu tiền mặt: 0 VNĐ&quot;);</span>
+<span class="nc" id="L140">        lblThuTienMat.setStyle(&quot;-fx-font-size: 14px; -fx-text-fill: #16a085; -fx-font-weight: bold;&quot;);</span>
+
+<span class="nc" id="L142">        lblThuChuyenKhoan = new Label(&quot;Thu chuyển khoản: 0 VNĐ&quot;);</span>
+<span class="nc" id="L143">        lblThuChuyenKhoan.setStyle(&quot;-fx-font-size: 14px; -fx-text-fill: #2980b9; -fx-font-weight: bold;&quot;);</span>
+        
+<span class="nc" id="L145">        box.getChildren().addAll(lblTongChi, lblTongThu, lblThuTienMat, lblThuChuyenKhoan);</span>
+<span class="nc" id="L146">        return box;</span>
+    }
+    
+    private void loadData() {
+<span class="nc" id="L150">        int thang = cbThang.getValue();</span>
+<span class="nc" id="L151">        int nam = cbNam.getValue();</span>
+        
+        // Tính tổng chi và tổng thu
+<span class="nc" id="L154">        Map&lt;String, Double&gt; summary = giaoDichDAO.layTongQuanTheoThang(soTaiKhoan, thang, nam);</span>
+<span class="nc" id="L155">        double tongChi = summary.getOrDefault(&quot;chi&quot;, 0.0);</span>
+<span class="nc" id="L156">        double tongThu = summary.getOrDefault(&quot;thu&quot;, 0.0);</span>
+
+<span class="nc" id="L158">        Map&lt;String, Double&gt; thuTheoNguon = giaoDichDAO.layTongThuTheoNguon(soTaiKhoan, thang, nam);</span>
+<span class="nc" id="L159">        double thuTienMat = thuTheoNguon.getOrDefault(&quot;thu_tien_mat&quot;, 0.0);</span>
+<span class="nc" id="L160">        double thuChuyenKhoan = thuTheoNguon.getOrDefault(&quot;thu_chuyen_khoan&quot;, 0.0);</span>
+        
+<span class="nc" id="L162">        lblTongChi.setText(String.format(&quot;Tổng Chi: %,.0f VNĐ&quot;, tongChi));</span>
+<span class="nc" id="L163">        lblTongThu.setText(String.format(&quot;Tổng Thu: %,.0f VNĐ&quot;, tongThu));</span>
+<span class="nc" id="L164">        lblThuTienMat.setText(String.format(&quot;Thu tiền mặt: %,.0f VNĐ&quot;, thuTienMat));</span>
+<span class="nc" id="L165">        lblThuChuyenKhoan.setText(String.format(&quot;Thu chuyển khoản: %,.0f VNĐ&quot;, thuChuyenKhoan));</span>
+        
+        // Lấy chi tiêu theo danh mục
+<span class="nc" id="L168">        Map&lt;String, Double&gt; chiTheoDanhMuc = giaoDichDAO.layChiTheoDanhMuc(soTaiKhoan, thang, nam);</span>
+        
+        // Vẽ biểu đồ chi
+<span class="nc" id="L171">        chartBox.getChildren().clear();</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (chiTheoDanhMuc.isEmpty()) {</span>
+<span class="nc" id="L173">            Label lblEmpty = new Label(&quot;Không có dữ liệu chi tiêu trong tháng này&quot;);</span>
+<span class="nc" id="L174">            lblEmpty.setStyle(&quot;-fx-font-size: 14px; -fx-text-fill: #999;&quot;);</span>
+<span class="nc" id="L175">            chartBox.getChildren().add(lblEmpty);</span>
+<span class="nc" id="L176">        } else {</span>
+<span class="nc" id="L177">            double maxChi = chiTheoDanhMuc.values().stream().max(Double::compare).orElse(1.0);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            for (Map.Entry&lt;String, Double&gt; entry : chiTheoDanhMuc.entrySet()) {</span>
+<span class="nc" id="L179">                chartBox.getChildren().add(buildBarRow(</span>
+<span class="nc" id="L180">                    entry.getKey(), entry.getValue(), maxChi, tongChi, &quot;#e67e22&quot;));</span>
+<span class="nc" id="L181">            }</span>
+        }
+
+        // Vẽ biểu đồ thu
+<span class="nc" id="L185">        Map&lt;String, Double&gt; thuTheoDanhMuc = giaoDichDAO.layThuTheoDanhMuc(soTaiKhoan, thang, nam);</span>
+<span class="nc" id="L186">        chartThuBox.getChildren().clear();</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (thuTheoDanhMuc.isEmpty()) {</span>
+<span class="nc" id="L188">            Label lblEmpty2 = new Label(&quot;Không có dữ liệu thu nhập trong tháng này&quot;);</span>
+<span class="nc" id="L189">            lblEmpty2.setStyle(&quot;-fx-font-size: 14px; -fx-text-fill: #999;&quot;);</span>
+<span class="nc" id="L190">            chartThuBox.getChildren().add(lblEmpty2);</span>
+<span class="nc" id="L191">        } else {</span>
+<span class="nc" id="L192">            double maxThu = thuTheoDanhMuc.values().stream().max(Double::compare).orElse(1.0);</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            for (Map.Entry&lt;String, Double&gt; entry : thuTheoDanhMuc.entrySet()) {</span>
+<span class="nc" id="L194">                chartThuBox.getChildren().add(buildBarRow(</span>
+<span class="nc" id="L195">                    entry.getKey(), entry.getValue(), maxThu, tongThu, &quot;#27ae60&quot;));</span>
+<span class="nc" id="L196">            }</span>
+        }
+<span class="nc" id="L198">    }</span>
+
+    private HBox buildBarRow(String label, double value, double max, double total, String color) {
+<span class="nc" id="L201">        HBox barBox = new HBox(10);</span>
+<span class="nc" id="L202">        barBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L204">        Label lblDM = new Label(label);</span>
+<span class="nc" id="L205">        lblDM.setPrefWidth(130);</span>
+<span class="nc" id="L206">        lblDM.setStyle(&quot;-fx-font-weight: bold;&quot;);</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        ProgressBar bar = new ProgressBar(max &gt; 0 ? value / max : 0);</span>
+<span class="nc" id="L209">        bar.setPrefWidth(300);</span>
+<span class="nc" id="L210">        bar.setStyle(&quot;-fx-accent: &quot; + color + &quot;;&quot;);</span>
+
+<span class="nc" id="L212">        Label lblVal = new Label(String.format(&quot;%,.0f VNĐ&quot;, value));</span>
+<span class="nc" id="L213">        lblVal.setStyle(&quot;-fx-text-fill: #2c3e50;&quot;);</span>
+
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        String pct = total &gt; 0 ? String.format(&quot;(%.1f%%)&quot;, (value / total) * 100) : &quot;&quot;;</span>
+<span class="nc" id="L216">        Label lblPct = new Label(pct);</span>
+<span class="nc" id="L217">        lblPct.setStyle(&quot;-fx-text-fill: #7f8c8d;&quot;);</span>
+
+<span class="nc" id="L219">        barBox.getChildren().addAll(lblDM, bar, lblVal, lblPct);</span>
+<span class="nc" id="L220">        return barBox;</span>
+    }
+    
+    public Scene getScene() {
+<span class="nc" id="L224">        return scene;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

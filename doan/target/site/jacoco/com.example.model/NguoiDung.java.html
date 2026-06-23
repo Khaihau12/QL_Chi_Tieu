@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NguoiDung.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.model</a> &gt; <span class="el_source">NguoiDung.java</span></div><h1>NguoiDung.java</h1><pre class="source lang-java linenums">package com.example.model;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+
+/**
+ * Entity class đại diện cho bảng nguoi_dung (Tài khoản ngân hàng)
+ */
+public class NguoiDung {
+    private Integer maNguoiDung;
+    private String soTaiKhoan; // Số tài khoản ngân hàng
+    private String tenDangNhap;
+    private String matKhau;
+    private String hoTen;
+    private String email;
+    private BigDecimal soDu; // Số dư tài khoản
+    private BigDecimal soDuTienMat; // Số dư ví tiền mặt
+    private String vaiTro; // 'quan_ly' hoặc 'nguoi_dung'
+    private String trangThai; // 'hoat_dong' hoặc 'bi_khoa'
+    private String lyDoKhoa; // Lý do khóa (null nếu đang hoạt động)
+    private Timestamp thoiGianMoKhoa; // Thời điểm tự mở khóa (null = vĩnh viễn)
+    private Timestamp lanDangNhapCuoi;
+    private Timestamp ngayTao;
+
+    // Constructor mặc định
+<span class="fc" id="L26">    public NguoiDung() {</span>
+<span class="fc" id="L27">    }</span>
+
+    // Constructor không có ID (dùng khi đăng ký)
+<span class="nc" id="L30">    public NguoiDung(String tenDangNhap, String matKhau, String hoTen, String email) {</span>
+<span class="nc" id="L31">        this.tenDangNhap = tenDangNhap;</span>
+<span class="nc" id="L32">        this.matKhau = matKhau;</span>
+<span class="nc" id="L33">        this.hoTen = hoTen;</span>
+<span class="nc" id="L34">        this.email = email;</span>
+<span class="nc" id="L35">        this.soDu = BigDecimal.ZERO;</span>
+<span class="nc" id="L36">        this.soDuTienMat = BigDecimal.ZERO;</span>
+<span class="nc" id="L37">    }</span>
+
+    // Getters và Setters
+    public Integer getMaNguoiDung() {
+<span class="nc" id="L41">        return maNguoiDung;</span>
+    }
+    
+    public void setMaNguoiDung(Integer maNguoiDung) {
+<span class="nc" id="L45">        this.maNguoiDung = maNguoiDung;</span>
+<span class="nc" id="L46">    }</span>
+
+    public String getSoTaiKhoan() {
+<span class="nc" id="L49">        return soTaiKhoan;</span>
+    }
+
+    public void setSoTaiKhoan(String soTaiKhoan) {
+<span class="fc" id="L53">        this.soTaiKhoan = soTaiKhoan;</span>
+<span class="fc" id="L54">    }</span>
+
+    public String getTenDangNhap() {
+<span class="nc" id="L57">        return tenDangNhap;</span>
+    }
+
+    public void setTenDangNhap(String tenDangNhap) {
+<span class="nc" id="L61">        this.tenDangNhap = tenDangNhap;</span>
+<span class="nc" id="L62">    }</span>
+
+    public String getMatKhau() {
+<span class="nc" id="L65">        return matKhau;</span>
+    }
+
+    public void setMatKhau(String matKhau) {
+<span class="nc" id="L69">        this.matKhau = matKhau;</span>
+<span class="nc" id="L70">    }</span>
+
+    public String getHoTen() {
+<span class="nc" id="L73">        return hoTen;</span>
+    }
+
+    public void setHoTen(String hoTen) {
+<span class="nc" id="L77">        this.hoTen = hoTen;</span>
+<span class="nc" id="L78">    }</span>
+
+    public String getEmail() {
+<span class="nc" id="L81">        return email;</span>
+    }
+
+    public void setEmail(String email) {
+<span class="nc" id="L85">        this.email = email;</span>
+<span class="nc" id="L86">    }</span>
+
+    public BigDecimal getSoDu() {
+<span class="nc" id="L89">        return soDu;</span>
+    }
+
+    public void setSoDu(BigDecimal soDu) {
+<span class="nc" id="L93">        this.soDu = soDu;</span>
+<span class="nc" id="L94">    }</span>
+
+    public BigDecimal getSoDuTienMat() {
+<span class="nc" id="L97">        return soDuTienMat;</span>
+    }
+
+    public void setSoDuTienMat(BigDecimal soDuTienMat) {
+<span class="nc" id="L101">        this.soDuTienMat = soDuTienMat;</span>
+<span class="nc" id="L102">    }</span>
+
+    public String getVaiTro() {
+<span class="fc" id="L105">        return vaiTro;</span>
+    }
+
+    public void setVaiTro(String vaiTro) {
+<span class="fc" id="L109">        this.vaiTro = vaiTro;</span>
+<span class="fc" id="L110">    }</span>
+
+    public String getTrangThai() {
+<span class="fc" id="L113">        return trangThai;</span>
+    }
+
+    public void setTrangThai(String trangThai) {
+<span class="fc" id="L117">        this.trangThai = trangThai;</span>
+<span class="fc" id="L118">    }</span>
+
+    public String getLyDoKhoa() {
+<span class="nc" id="L121">        return lyDoKhoa;</span>
+    }
+
+    public void setLyDoKhoa(String lyDoKhoa) {
+<span class="nc" id="L125">        this.lyDoKhoa = lyDoKhoa;</span>
+<span class="nc" id="L126">    }</span>
+
+    public Timestamp getThoiGianMoKhoa() {
+<span class="nc" id="L129">        return thoiGianMoKhoa;</span>
+    }
+
+    public void setThoiGianMoKhoa(Timestamp thoiGianMoKhoa) {
+<span class="nc" id="L133">        this.thoiGianMoKhoa = thoiGianMoKhoa;</span>
+<span class="nc" id="L134">    }</span>
+
+    public Timestamp getLanDangNhapCuoi() {
+<span class="nc" id="L137">        return lanDangNhapCuoi;</span>
+    }
+
+    public void setLanDangNhapCuoi(Timestamp lanDangNhapCuoi) {
+<span class="nc" id="L141">        this.lanDangNhapCuoi = lanDangNhapCuoi;</span>
+<span class="nc" id="L142">    }</span>
+
+    public Timestamp getNgayTao() {
+<span class="nc" id="L145">        return ngayTao;</span>
+    }
+
+    public void setNgayTao(Timestamp ngayTao) {
+<span class="nc" id="L149">        this.ngayTao = ngayTao;</span>
+<span class="nc" id="L150">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L154">        return &quot;NguoiDung{&quot; +</span>
+                &quot;soTaiKhoan='&quot; + soTaiKhoan + '\'' +
+                &quot;, tenDangNhap='&quot; + tenDangNhap + '\'' +
+                &quot;, hoTen='&quot; + hoTen + '\'' +
+                &quot;, soDu=&quot; + soDu +
+                &quot;, soDuTienMat=&quot; + soDuTienMat +
+                '}';
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

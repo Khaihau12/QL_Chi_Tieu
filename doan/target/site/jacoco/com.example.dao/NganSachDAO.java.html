@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NganSachDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.dao</a> &gt; <span class="el_source">NganSachDAO.java</span></div><h1>NganSachDAO.java</h1><pre class="source lang-java linenums">package com.example.dao;
+
+import com.example.model.NganSach;
+import com.example.util.DatabaseConnection;
+
+import java.math.BigDecimal;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+<span class="nc" id="L11">public class NganSachDAO {</span>
+    
+    // Lấy giới hạn ngân sách của một danh mục trong tháng
+    public BigDecimal layGioiHanNganSach(String soTaiKhoan, int danhMucId, int thang, int nam) {
+<span class="nc" id="L15">        String sql = &quot;SELECT gioi_han FROM ngan_sach &quot; +</span>
+                    &quot;WHERE so_tai_khoan = ? AND danh_muc_id = ? AND thang = ? AND nam = ?&quot;;
+        
+<span class="nc" id="L18">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L19">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L21">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L22">            pstmt.setInt(2, danhMucId);</span>
+<span class="nc" id="L23">            pstmt.setInt(3, thang);</span>
+<span class="nc" id="L24">            pstmt.setInt(4, nam);</span>
+<span class="nc" id="L25">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L27" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L28">                return rs.getBigDecimal(&quot;gioi_han&quot;);</span>
+            }
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        } catch (SQLException e) {</span>
+<span class="nc" id="L31">            e.printStackTrace();</span>
+<span class="nc" id="L32">        }</span>
+        
+<span class="nc" id="L34">        return null; // Không có giới hạn</span>
+    }
+    
+    // Kiểm tra ngân sách đã tồn tại chưa
+    public boolean kiemTraTonTai(String soTaiKhoan, int danhMucId, int thang, int nam) {
+<span class="nc" id="L39">        String sql = &quot;SELECT COUNT(*) FROM ngan_sach &quot; +</span>
+                    &quot;WHERE so_tai_khoan = ? AND danh_muc_id = ? AND thang = ? AND nam = ?&quot;;
+        
+<span class="nc" id="L42">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L43">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L45">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L46">            pstmt.setInt(2, danhMucId);</span>
+<span class="nc" id="L47">            pstmt.setInt(3, thang);</span>
+<span class="nc" id="L48">            pstmt.setInt(4, nam);</span>
+<span class="nc" id="L49">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                return rs.getInt(1) &gt; 0;</span>
+            }
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        } catch (SQLException e) {</span>
+<span class="nc" id="L55">            e.printStackTrace();</span>
+<span class="nc" id="L56">        }</span>
+        
+<span class="nc" id="L58">        return false;</span>
+    }
+    
+    // Lấy ngân sách theo người dùng (tháng hiện tại)
+    public List&lt;NganSach&gt; layNganSachTheoUser(String soTaiKhoan, int thang, int nam) {
+<span class="nc" id="L63">        List&lt;NganSach&gt; danhSachNganSach = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L64">        String sql = &quot;SELECT ns.*, dm.ten_danh_muc &quot; +</span>
+                    &quot;FROM ngan_sach ns &quot; +
+                    &quot;JOIN danh_muc dm ON ns.danh_muc_id = dm.id &quot; +
+                    &quot;WHERE ns.so_tai_khoan = ? AND ns.thang = ? AND ns.nam = ? &quot; +
+                    &quot;ORDER BY dm.ten_danh_muc&quot;;
+        
+<span class="nc" id="L70">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L71">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L73">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L74">            pstmt.setInt(2, thang);</span>
+<span class="nc" id="L75">            pstmt.setInt(3, nam);</span>
+<span class="nc" id="L76">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L79">                NganSach ns = new NganSach(</span>
+<span class="nc" id="L80">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L81">                    rs.getInt(&quot;danh_muc_id&quot;),</span>
+<span class="nc" id="L82">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L83">                    rs.getBigDecimal(&quot;gioi_han&quot;),</span>
+<span class="nc" id="L84">                    rs.getInt(&quot;thang&quot;),</span>
+<span class="nc" id="L85">                    rs.getInt(&quot;nam&quot;)</span>
+                );
+<span class="nc" id="L87">                ns.setTenDanhMuc(rs.getString(&quot;ten_danh_muc&quot;));</span>
+<span class="nc" id="L88">                danhSachNganSach.add(ns);</span>
+<span class="nc" id="L89">            }</span>
+<span class="nc" id="L90">        } catch (SQLException e) {</span>
+<span class="nc" id="L91">            e.printStackTrace();</span>
+<span class="nc" id="L92">        }</span>
+        
+<span class="nc" id="L94">        return danhSachNganSach;</span>
+    }
+    
+    // Lấy tất cả ngân sách của user (tất cả tháng)
+    public List&lt;NganSach&gt; layTatCaNganSach(String soTaiKhoan) {
+<span class="nc" id="L99">        List&lt;NganSach&gt; danhSachNganSach = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L100">        String sql = &quot;SELECT ns.*, dm.ten_danh_muc &quot; +</span>
+                    &quot;FROM ngan_sach ns &quot; +
+                    &quot;JOIN danh_muc dm ON ns.danh_muc_id = dm.id &quot; +
+                    &quot;WHERE ns.so_tai_khoan = ? &quot; +
+                    &quot;ORDER BY ns.nam DESC, ns.thang DESC, dm.ten_danh_muc&quot;;
+        
+<span class="nc" id="L106">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L107">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L109">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L110">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L113">                NganSach ns = new NganSach(</span>
+<span class="nc" id="L114">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L115">                    rs.getInt(&quot;danh_muc_id&quot;),</span>
+<span class="nc" id="L116">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L117">                    rs.getBigDecimal(&quot;gioi_han&quot;),</span>
+<span class="nc" id="L118">                    rs.getInt(&quot;thang&quot;),</span>
+<span class="nc" id="L119">                    rs.getInt(&quot;nam&quot;)</span>
+                );
+<span class="nc" id="L121">                ns.setTenDanhMuc(rs.getString(&quot;ten_danh_muc&quot;));</span>
+<span class="nc" id="L122">                danhSachNganSach.add(ns);</span>
+<span class="nc" id="L123">            }</span>
+<span class="nc" id="L124">        } catch (SQLException e) {</span>
+<span class="nc" id="L125">            e.printStackTrace();</span>
+<span class="nc" id="L126">        }</span>
+        
+<span class="nc" id="L128">        return danhSachNganSach;</span>
+    }
+    
+    // Thêm ngân sách mới
+    public boolean themNganSach(NganSach nganSach) {
+<span class="nc" id="L133">        String sql = &quot;INSERT INTO ngan_sach (danh_muc_id, so_tai_khoan, gioi_han, thang, nam) &quot; +</span>
+                    &quot;VALUES (?, ?, ?, ?, ?)&quot;;
+        
+<span class="nc" id="L136">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L137">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L139">            pstmt.setInt(1, nganSach.getDanhMucId());</span>
+<span class="nc" id="L140">            pstmt.setString(2, nganSach.getSoTaiKhoan());</span>
+<span class="nc" id="L141">            pstmt.setBigDecimal(3, nganSach.getGioiHan());</span>
+<span class="nc" id="L142">            pstmt.setInt(4, nganSach.getThang());</span>
+<span class="nc" id="L143">            pstmt.setInt(5, nganSach.getNam());</span>
+            
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L146">        } catch (SQLException e) {</span>
+<span class="nc" id="L147">            e.printStackTrace();</span>
+<span class="nc" id="L148">            return false;</span>
+        }
+    }
+    
+    // Sửa ngân sách
+    public boolean suaNganSach(NganSach nganSach) {
+<span class="nc" id="L154">        String sql = &quot;UPDATE ngan_sach SET gioi_han = ? WHERE id = ?&quot;;</span>
+        
+<span class="nc" id="L156">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L157">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L159">            pstmt.setBigDecimal(1, nganSach.getGioiHan());</span>
+<span class="nc" id="L160">            pstmt.setInt(2, nganSach.getId());</span>
+            
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L163">        } catch (SQLException e) {</span>
+<span class="nc" id="L164">            e.printStackTrace();</span>
+<span class="nc" id="L165">            return false;</span>
+        }
+    }
+    
+    // Xóa ngân sách
+    public boolean xoaNganSach(int id) {
+<span class="nc" id="L171">        String sql = &quot;DELETE FROM ngan_sach WHERE id = ?&quot;;</span>
+        
+<span class="nc" id="L173">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L174">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L176">            pstmt.setInt(1, id);</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L178">        } catch (SQLException e) {</span>
+<span class="nc" id="L179">            e.printStackTrace();</span>
+<span class="nc" id="L180">            return false;</span>
+        }
+    }
+    
+    // Lấy số tiền đã chi theo danh mục
+    public double layTongChiTheoDanhMuc(String soTaiKhoan, int danhMucId, int thang, int nam) {
+<span class="nc" id="L186">        String sql = &quot;SELECT COALESCE(SUM(so_tien), 0) as tong_chi &quot; +</span>
+                    &quot;FROM giao_dich &quot; +
+                    &quot;WHERE so_tai_khoan_gui = ? AND danh_muc_chi_id = ? &quot; +
+                    &quot;AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?&quot;;
+        
+<span class="nc" id="L191">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L192">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L194">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L195">            pstmt.setInt(2, danhMucId);</span>
+<span class="nc" id="L196">            pstmt.setInt(3, thang);</span>
+<span class="nc" id="L197">            pstmt.setInt(4, nam);</span>
+<span class="nc" id="L198">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L201">                return rs.getDouble(&quot;tong_chi&quot;);</span>
+            }
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        } catch (SQLException e) {</span>
+<span class="nc" id="L204">            e.printStackTrace();</span>
+<span class="nc" id="L205">        }</span>
+        
+<span class="nc" id="L207">        return 0.0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

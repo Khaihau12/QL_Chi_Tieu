@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminDashboardController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.controller.admin</a> &gt; <span class="el_source">AdminDashboardController.java</span></div><h1>AdminDashboardController.java</h1><pre class="source lang-java linenums">package com.example.controller.admin;
+
+import com.example.controller.LoginController;
+import com.example.model.NguoiDung;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+
+/**
+ * Controller tổng cho trang Admin, chỉ phụ trách điều hướng giữa các panel con.
+ */
+public class AdminDashboardController {
+
+    private final Stage stage;
+    private Scene scene;
+    private BorderPane root;
+    private StackPane contentArea;
+
+    private final AdminAccountController accountController;
+    private final AdminPasswordController passwordController;
+    private final AdminExpenseCategoryController expenseCategoryController;
+    private final AdminIncomeCategoryController incomeCategoryController;
+    private final AdminReportController reportController;
+
+    // Nav buttons
+    private Button btnNavTaiKhoan;
+    private Button btnNavDoiMatKhau;
+    private Button btnNavDanhMuc;
+    private Button btnNavDanhMucThu;
+    private Button btnNavBaoCao;
+
+<span class="nc" id="L43">    public AdminDashboardController(Stage stage) {</span>
+<span class="nc" id="L44">        this.stage = stage;</span>
+<span class="nc" id="L45">        this.accountController = new AdminAccountController();</span>
+<span class="nc" id="L46">        this.passwordController = new AdminPasswordController();</span>
+<span class="nc" id="L47">        this.expenseCategoryController = new AdminExpenseCategoryController();</span>
+<span class="nc" id="L48">        this.incomeCategoryController = new AdminIncomeCategoryController();</span>
+<span class="nc" id="L49">        this.reportController = new AdminReportController();</span>
+<span class="nc" id="L50">        createUI();</span>
+<span class="nc" id="L51">    }</span>
+
+    private void createUI() {
+<span class="nc" id="L54">        root = new BorderPane();</span>
+<span class="nc" id="L55">        root.setStyle(&quot;-fx-background-color: #ecf0f1;&quot;);</span>
+<span class="nc" id="L56">        root.setTop(createHeader());</span>
+<span class="nc" id="L57">        root.setLeft(createNavBar());</span>
+
+<span class="nc" id="L59">        contentArea = new StackPane();</span>
+<span class="nc" id="L60">        contentArea.setPadding(new Insets(20));</span>
+<span class="nc" id="L61">        root.setCenter(contentArea);</span>
+
+<span class="nc" id="L63">        showPanel(accountController.getPanel());</span>
+<span class="nc" id="L64">        accountController.refresh();</span>
+<span class="nc" id="L65">        setActiveNav(btnNavTaiKhoan);</span>
+
+<span class="nc" id="L67">        scene = new Scene(root, 1200, 800);</span>
+<span class="nc" id="L68">    }</span>
+
+    private HBox createHeader() {
+<span class="nc" id="L71">        HBox header = new HBox();</span>
+<span class="nc" id="L72">        header.setPadding(new Insets(15, 25, 15, 25));</span>
+<span class="nc" id="L73">        header.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L74">        header.setStyle(&quot;-fx-background-color: #2c3e50;&quot;);</span>
+
+<span class="nc" id="L76">        Label lblTitle = new Label(&quot;BẢNG ĐIỀU KHIỂN QUẢN TRỊ&quot;);</span>
+<span class="nc" id="L77">        lblTitle.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+<span class="nc" id="L78">        lblTitle.setStyle(&quot;-fx-text-fill: white;&quot;);</span>
+
+<span class="nc" id="L80">        Region spacer = new Region();</span>
+<span class="nc" id="L81">        HBox.setHgrow(spacer, Priority.ALWAYS);</span>
+
+<span class="nc" id="L83">        NguoiDung admin = LoginController.currentUser;</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">        String tenAdmin = (admin != null &amp;&amp; admin.getHoTen() != null) ? admin.getHoTen() : &quot;Admin&quot;;</span>
+<span class="nc" id="L85">        Label lblAdmin = new Label(tenAdmin);</span>
+<span class="nc" id="L86">        lblAdmin.setStyle(&quot;-fx-text-fill: #bdc3c7; -fx-font-size: 13px;&quot;);</span>
+
+<span class="nc" id="L88">        Button btnDangXuat = new Button(&quot;Đăng xuất&quot;);</span>
+<span class="nc" id="L89">        btnDangXuat.setStyle(&quot;-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L90">        btnDangXuat.setOnAction(e -&gt; handleDangXuat());</span>
+
+<span class="nc" id="L92">        header.getChildren().addAll(lblTitle, spacer, lblAdmin, new Label(&quot;    &quot;), btnDangXuat);</span>
+<span class="nc" id="L93">        return header;</span>
+    }
+
+    private VBox createNavBar() {
+<span class="nc" id="L97">        VBox nav = new VBox(5);</span>
+<span class="nc" id="L98">        nav.setPadding(new Insets(20, 10, 20, 10));</span>
+<span class="nc" id="L99">        nav.setStyle(&quot;-fx-background-color: #34495e;&quot;);</span>
+<span class="nc" id="L100">        nav.setPrefWidth(215);</span>
+
+<span class="nc" id="L102">        Label lblMenu = new Label(&quot;CHỨC NĂNG&quot;);</span>
+<span class="nc" id="L103">        lblMenu.setStyle(&quot;-fx-text-fill: #95a5a6; -fx-font-size: 11px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L104">        lblMenu.setPadding(new Insets(0, 0, 10, 5));</span>
+
+<span class="nc" id="L106">        btnNavTaiKhoan = createNavButton(&quot;Quản lý tài khoản&quot;);</span>
+<span class="nc" id="L107">        btnNavDoiMatKhau = createNavButton(&quot;Đổi mật khẩu&quot;);</span>
+<span class="nc" id="L108">        btnNavDanhMuc = createNavButton(&quot;Danh mục Chi mặc định&quot;);</span>
+<span class="nc" id="L109">        btnNavDanhMucThu = createNavButton(&quot;Danh mục Thu mặc định&quot;);</span>
+<span class="nc" id="L110">        btnNavBaoCao = createNavButton(&quot;Báo cáo hệ thống&quot;);</span>
+
+<span class="nc" id="L112">        btnNavTaiKhoan.setOnAction(e -&gt; {</span>
+<span class="nc" id="L113">            showPanel(accountController.getPanel());</span>
+<span class="nc" id="L114">            accountController.refresh();</span>
+<span class="nc" id="L115">            setActiveNav(btnNavTaiKhoan);</span>
+<span class="nc" id="L116">        });</span>
+<span class="nc" id="L117">        btnNavDoiMatKhau.setOnAction(e -&gt; {</span>
+<span class="nc" id="L118">            showPanel(passwordController.getPanel());</span>
+<span class="nc" id="L119">            setActiveNav(btnNavDoiMatKhau);</span>
+<span class="nc" id="L120">        });</span>
+<span class="nc" id="L121">        btnNavDanhMuc.setOnAction(e -&gt; {</span>
+<span class="nc" id="L122">            showPanel(expenseCategoryController.getPanel());</span>
+<span class="nc" id="L123">            expenseCategoryController.refresh();</span>
+<span class="nc" id="L124">            setActiveNav(btnNavDanhMuc);</span>
+<span class="nc" id="L125">        });</span>
+<span class="nc" id="L126">        btnNavDanhMucThu.setOnAction(e -&gt; {</span>
+<span class="nc" id="L127">            showPanel(incomeCategoryController.getPanel());</span>
+<span class="nc" id="L128">            incomeCategoryController.refresh();</span>
+<span class="nc" id="L129">            setActiveNav(btnNavDanhMucThu);</span>
+<span class="nc" id="L130">        });</span>
+<span class="nc" id="L131">        btnNavBaoCao.setOnAction(e -&gt; {</span>
+<span class="nc" id="L132">            showPanel(reportController.getPanel());</span>
+<span class="nc" id="L133">            reportController.refresh();</span>
+<span class="nc" id="L134">            setActiveNav(btnNavBaoCao);</span>
+<span class="nc" id="L135">        });</span>
+
+<span class="nc" id="L137">        nav.getChildren().addAll(lblMenu, btnNavTaiKhoan, btnNavDoiMatKhau, btnNavDanhMuc, btnNavDanhMucThu, btnNavBaoCao);</span>
+<span class="nc" id="L138">        return nav;</span>
+    }
+
+    private Button createNavButton(String text) {
+<span class="nc" id="L142">        Button btn = new Button(text);</span>
+<span class="nc" id="L143">        btn.setPrefWidth(195);</span>
+<span class="nc" id="L144">        btn.setPrefHeight(42);</span>
+<span class="nc" id="L145">        btn.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L146">        btn.setPadding(new Insets(0, 10, 0, 10));</span>
+<span class="nc" id="L147">        btn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-font-size: 13px; -fx-cursor: hand;&quot;);</span>
+<span class="nc" id="L148">        return btn;</span>
+    }
+
+    private void setActiveNav(Button active) {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        for (Button btn : new Button[]{btnNavTaiKhoan, btnNavDoiMatKhau, btnNavDanhMuc, btnNavDanhMucThu, btnNavBaoCao}) {</span>
+<span class="nc" id="L153">            btn.setStyle(&quot;-fx-background-color: transparent; -fx-text-fill: #ecf0f1; -fx-font-size: 13px; -fx-cursor: hand;&quot;);</span>
+        }
+<span class="nc" id="L155">        active.setStyle(&quot;-fx-background-color: #2c3e50; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-cursor: hand;&quot;);</span>
+<span class="nc" id="L156">    }</span>
+
+    private void showPanel(VBox panel) {
+<span class="nc" id="L159">        contentArea.getChildren().setAll(panel);</span>
+<span class="nc" id="L160">    }</span>
+
+    private void handleDangXuat() {
+<span class="nc" id="L163">        LoginController.currentUser = null;</span>
+<span class="nc" id="L164">        LoginController loginController = new LoginController(stage);</span>
+<span class="nc" id="L165">        stage.setScene(loginController.getScene());</span>
+<span class="nc" id="L166">        stage.setTitle(&quot;Quản Lý Chi Tiêu - Đăng Nhập&quot;);</span>
+<span class="nc" id="L167">        stage.setResizable(false);</span>
+<span class="nc" id="L168">        stage.setWidth(520);</span>
+<span class="nc" id="L169">        stage.setHeight(590);</span>
+<span class="nc" id="L170">        stage.centerOnScreen();</span>
+<span class="nc" id="L171">    }</span>
+
+    public Scene getScene() {
+<span class="nc" id="L174">        return scene;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

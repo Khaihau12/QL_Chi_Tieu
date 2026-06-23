@@ -1,0 +1,956 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DashboardController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.controller</a> &gt; <span class="el_source">DashboardController.java</span></div><h1>DashboardController.java</h1><pre class="source lang-java linenums">package com.example.controller;
+
+import com.example.dao.DanhMucDAO;
+import com.example.dao.GiaoDichDAO;
+import com.example.dao.NganSachDAO;
+import com.example.dao.NguoiDungDAO;
+import com.example.model.DanhMuc;
+import com.example.model.GiaoDich;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Controller cho màn hình Dashboard (JavaFX thuần)
+ */
+public class DashboardController {
+
+    private static final String LOC_TAT_CA = &quot;Tất cả các ngày&quot;;
+    private static final String LOC_THANG = &quot;Chọn tháng&quot;;
+    private static final String LOC_NGAY = &quot;Chọn ngày&quot;;
+
+    private Stage stage;
+    private Scene scene;
+    private Label lblXinChao;
+    private Label lblSoTaiKhoan;
+    private Label lblSoDu;
+    private Label lblSoDuTienMat;
+    private TableView&lt;GiaoDichInfo&gt; tableGiaoDich;
+    private Button btnGiaoDich;
+    private Button btnRefresh;
+    private Button btnDangXuat;
+    private ComboBox&lt;String&gt; cbLoaiLoc;
+    private ComboBox&lt;Integer&gt; cbThangLoc;
+    private ComboBox&lt;Integer&gt; cbNamLoc;
+    private ComboBox&lt;Integer&gt; cbNgayLoc;
+    private ComboBox&lt;Integer&gt; cbThangNgayLoc;
+    private ComboBox&lt;Integer&gt; cbNamNgayLoc;
+    private HBox boxLocThang;
+    private HBox boxLocNgay;
+<span class="nc" id="L55">    private boolean dangCapNhatBoLoc = false;</span>
+<span class="nc" id="L56">    private GiaoDichDAO giaoDichDAO = new GiaoDichDAO();</span>
+<span class="nc" id="L57">    private NguoiDungDAO nguoiDungDAO = new NguoiDungDAO();</span>
+<span class="nc" id="L58">    private DanhMucDAO danhMucDAO = new DanhMucDAO();</span>
+<span class="nc" id="L59">    private NganSachDAO nganSachDAO = new NganSachDAO();</span>
+<span class="nc" id="L60">    private DecimalFormat df = new DecimalFormat(&quot;#,###&quot;);</span>
+    // Lưu danh sách GiaoDich gốc để sử dụng khi đổi danh mục
+<span class="nc" id="L62">    private List&lt;GiaoDich&gt; rawGiaoDichList = new ArrayList&lt;&gt;();</span>
+
+    // Inner class để hiển thị giao dịch
+    public static class GiaoDichInfo {
+        private int maGiaoDich;
+        private String ngay;
+        private String loai;
+        private String taiKhoan;
+        private String soTien;
+        private String noiDung;
+        private String danhMuc;       // Tên danh mục để hiển thị
+        // Internal fields (không phải column)
+        private Integer danhMucId;    // ID danh mục chi (nếu Gùi)
+        private Integer danhMucThuId; // ID danh mục thu (nếu Nhạn)
+        private BigDecimal soTienRaw;
+        private java.sql.Timestamp ngayGiaoDichRaw;
+
+        public GiaoDichInfo(int maGiaoDich, String ngay, String loai, String taiKhoan,
+                            String soTien, String noiDung, String danhMuc,
+                            Integer danhMucId, Integer danhMucThuId,
+<span class="nc" id="L82">                            BigDecimal soTienRaw, java.sql.Timestamp ngayGiaoDichRaw) {</span>
+<span class="nc" id="L83">            this.maGiaoDich = maGiaoDich;</span>
+<span class="nc" id="L84">            this.ngay = ngay;</span>
+<span class="nc" id="L85">            this.loai = loai;</span>
+<span class="nc" id="L86">            this.taiKhoan = taiKhoan;</span>
+<span class="nc" id="L87">            this.soTien = soTien;</span>
+<span class="nc" id="L88">            this.noiDung = noiDung;</span>
+<span class="nc" id="L89">            this.danhMuc = danhMuc;</span>
+<span class="nc" id="L90">            this.danhMucId = danhMucId;</span>
+<span class="nc" id="L91">            this.danhMucThuId = danhMucThuId;</span>
+<span class="nc" id="L92">            this.soTienRaw = soTienRaw;</span>
+<span class="nc" id="L93">            this.ngayGiaoDichRaw = ngayGiaoDichRaw;</span>
+<span class="nc" id="L94">        }</span>
+
+        // Backward-compat constructor (legacy code)
+        public GiaoDichInfo(String ngay, String loai, String taiKhoan, String soTien, String noiDung) {
+<span class="nc" id="L98">            this(0, ngay, loai, taiKhoan, soTien, noiDung, &quot;&quot;, null, null, BigDecimal.ZERO, null);</span>
+<span class="nc" id="L99">        }</span>
+
+<span class="nc" id="L101">        public int getMaGiaoDich() { return maGiaoDich; }</span>
+<span class="nc" id="L102">        public String getNgay() { return ngay; }</span>
+<span class="nc" id="L103">        public String getLoai() { return loai; }</span>
+<span class="nc" id="L104">        public String getTaiKhoan() { return taiKhoan; }</span>
+<span class="nc" id="L105">        public String getSoTien() { return soTien; }</span>
+<span class="nc" id="L106">        public String getNoiDung() { return noiDung; }</span>
+<span class="nc" id="L107">        public String getDanhMuc() { return danhMuc; }</span>
+<span class="nc" id="L108">        public void setDanhMuc(String danhMuc) { this.danhMuc = danhMuc; }</span>
+<span class="nc" id="L109">        public Integer getDanhMucId() { return danhMucId; }</span>
+<span class="nc" id="L110">        public void setDanhMucId(Integer id) { this.danhMucId = id; }</span>
+<span class="nc" id="L111">        public Integer getDanhMucThuId() { return danhMucThuId; }</span>
+<span class="nc" id="L112">        public void setDanhMucThuId(Integer id) { this.danhMucThuId = id; }</span>
+<span class="nc" id="L113">        public BigDecimal getSoTienRaw() { return soTienRaw; }</span>
+<span class="nc" id="L114">        public java.sql.Timestamp getNgayGiaoDichRaw() { return ngayGiaoDichRaw; }</span>
+    }
+
+<span class="nc" id="L117">    public DashboardController(Stage stage) {</span>
+<span class="nc" id="L118">        this.stage = stage;</span>
+<span class="nc" id="L119">        createUI();</span>
+<span class="nc" id="L120">        loadDashboardData();</span>
+<span class="nc" id="L121">    }</span>
+
+    private void createUI() {
+        // Root layout
+<span class="nc" id="L125">        BorderPane root = new BorderPane();</span>
+<span class="nc" id="L126">        root.setStyle(&quot;-fx-background-color: #f5f5f5;&quot;);</span>
+
+        // === TOP: Header ===
+<span class="nc" id="L129">        VBox header = createHeader();</span>
+<span class="nc" id="L130">        root.setTop(header);</span>
+
+        // === CENTER: Table ===
+<span class="nc" id="L133">        VBox center = createCenter();</span>
+<span class="nc" id="L134">        root.setCenter(center);</span>
+
+        // Tạo scene
+<span class="nc" id="L137">        scene = new Scene(root, 1200, 800);</span>
+<span class="nc" id="L138">    }</span>
+
+    private VBox createHeader() {
+<span class="nc" id="L141">        VBox header = new VBox(15);</span>
+<span class="nc" id="L142">        header.setPadding(new Insets(20));</span>
+<span class="nc" id="L143">        header.setStyle(&quot;-fx-background-color: #2c3e50;&quot;);</span>
+
+        // Hàng 1: Xin chào + Đăng xuất
+<span class="nc" id="L146">        HBox row1 = new HBox();</span>
+<span class="nc" id="L147">        row1.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L148">        HBox.setHgrow(row1, Priority.ALWAYS);</span>
+
+<span class="nc" id="L150">        lblXinChao = new Label(&quot;Xin chào, &quot; + LoginController.currentUser.getHoTen());</span>
+<span class="nc" id="L151">        lblXinChao.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+<span class="nc" id="L152">        lblXinChao.setStyle(&quot;-fx-text-fill: white;&quot;);</span>
+
+<span class="nc" id="L154">        Region spacer1 = new Region();</span>
+<span class="nc" id="L155">        HBox.setHgrow(spacer1, Priority.ALWAYS);</span>
+
+<span class="nc" id="L157">        Button btnDoiMatKhau = new Button(&quot;Đổi mật khẩu&quot;);</span>
+<span class="nc" id="L158">        btnDoiMatKhau.setStyle(&quot;-fx-background-color: #8e44ad; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L159">        btnDoiMatKhau.setPrefHeight(35);</span>
+<span class="nc" id="L160">        btnDoiMatKhau.setPrefWidth(130);</span>
+<span class="nc" id="L161">        btnDoiMatKhau.setOnAction(e -&gt; handleDoiMatKhau());</span>
+
+<span class="nc" id="L163">        btnDangXuat = new Button(&quot;Đăng xuất&quot;);</span>
+<span class="nc" id="L164">        btnDangXuat.setStyle(&quot;-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L165">        btnDangXuat.setPrefHeight(35);</span>
+<span class="nc" id="L166">        btnDangXuat.setPrefWidth(120);</span>
+<span class="nc" id="L167">        btnDangXuat.setOnAction(e -&gt; handleDangXuat());</span>
+
+<span class="nc" id="L169">        HBox boxActionTop = new HBox(10);</span>
+<span class="nc" id="L170">        boxActionTop.setAlignment(Pos.CENTER_RIGHT);</span>
+<span class="nc" id="L171">        boxActionTop.getChildren().addAll(btnDoiMatKhau, btnDangXuat);</span>
+
+<span class="nc" id="L173">        row1.getChildren().addAll(lblXinChao, spacer1, boxActionTop);</span>
+
+        // Hàng 2: Số tài khoản + số dư tài khoản + ví tiền mặt
+<span class="nc" id="L176">        HBox row2 = new HBox(30);</span>
+<span class="nc" id="L177">        row2.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L179">        lblSoTaiKhoan = new Label(&quot;STK: &quot; + LoginController.currentUser.getSoTaiKhoan());</span>
+<span class="nc" id="L180">        lblSoTaiKhoan.setFont(Font.font(&quot;Arial&quot;, 16));</span>
+<span class="nc" id="L181">        lblSoTaiKhoan.setStyle(&quot;-fx-text-fill: #ecf0f1;&quot;);</span>
+
+<span class="nc" id="L183">        Label lblSoDuTitle = new Label(&quot;Số dư TK: &quot;);</span>
+<span class="nc" id="L184">        lblSoDuTitle.setFont(Font.font(&quot;Arial&quot;, 16));</span>
+<span class="nc" id="L185">        lblSoDuTitle.setStyle(&quot;-fx-text-fill: #ecf0f1;&quot;);</span>
+
+<span class="nc" id="L187">        lblSoDu = new Label(&quot;0 đ&quot;);</span>
+<span class="nc" id="L188">        lblSoDu.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+<span class="nc" id="L189">        lblSoDu.setStyle(&quot;-fx-text-fill: #2ecc71;&quot;);</span>
+
+<span class="nc" id="L191">        Label lblSoDuTienMatTitle = new Label(&quot;Ví tiền mặt: &quot;);</span>
+<span class="nc" id="L192">        lblSoDuTienMatTitle.setFont(Font.font(&quot;Arial&quot;, 16));</span>
+<span class="nc" id="L193">        lblSoDuTienMatTitle.setStyle(&quot;-fx-text-fill: #ecf0f1;&quot;);</span>
+
+<span class="nc" id="L195">        lblSoDuTienMat = new Label(&quot;0 đ&quot;);</span>
+<span class="nc" id="L196">        lblSoDuTienMat.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+<span class="nc" id="L197">        lblSoDuTienMat.setStyle(&quot;-fx-text-fill: #f1c40f;&quot;);</span>
+
+<span class="nc" id="L199">        row2.getChildren().addAll(lblSoTaiKhoan, lblSoDuTitle, lblSoDu, lblSoDuTienMatTitle, lblSoDuTienMat);</span>
+
+        // Hàng 3: Các nút chức năng
+<span class="nc" id="L202">        HBox row3 = new HBox(15);</span>
+<span class="nc" id="L203">        row3.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L205">        btnGiaoDich = new Button(&quot;Chuyển tiền&quot;);</span>
+<span class="nc" id="L206">        btnGiaoDich.setStyle(&quot;-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L207">        btnGiaoDich.setPrefHeight(40);</span>
+<span class="nc" id="L208">        btnGiaoDich.setPrefWidth(150);</span>
+<span class="nc" id="L209">        btnGiaoDich.setOnAction(e -&gt; handleGiaoDich());</span>
+
+<span class="nc" id="L211">        Button btnNganSach = new Button(&quot;Ngân sách&quot;);</span>
+<span class="nc" id="L212">        btnNganSach.setStyle(&quot;-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L213">        btnNganSach.setPrefHeight(40);</span>
+<span class="nc" id="L214">        btnNganSach.setPrefWidth(150);</span>
+<span class="nc" id="L215">        btnNganSach.setOnAction(e -&gt; handleNganSach());</span>
+        
+<span class="nc" id="L217">        Button btnThongKe = new Button(&quot;Thống kê&quot;);</span>
+<span class="nc" id="L218">        btnThongKe.setStyle(&quot;-fx-background-color: #9b59b6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L219">        btnThongKe.setPrefHeight(40);</span>
+<span class="nc" id="L220">        btnThongKe.setPrefWidth(150);</span>
+<span class="nc" id="L221">        btnThongKe.setOnAction(e -&gt; handleThongKe());</span>
+        
+<span class="nc" id="L223">        Button btnDanhMuc = new Button(&quot;Danh mục&quot;);</span>
+<span class="nc" id="L224">        btnDanhMuc.setStyle(&quot;-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L225">        btnDanhMuc.setPrefHeight(40);</span>
+<span class="nc" id="L226">        btnDanhMuc.setPrefWidth(150);</span>
+<span class="nc" id="L227">        btnDanhMuc.setOnAction(e -&gt; handleDanhMuc());</span>
+
+<span class="nc" id="L229">        row3.getChildren().addAll(btnGiaoDich, btnNganSach, btnThongKe, btnDanhMuc);</span>
+
+<span class="nc" id="L231">        header.getChildren().addAll(row1, row2, row3);</span>
+<span class="nc" id="L232">        return header;</span>
+    }
+
+    private VBox createCenter() {
+<span class="nc" id="L236">        VBox center = new VBox(10);</span>
+<span class="nc" id="L237">        center.setPadding(new Insets(20));</span>
+
+        // Tiêu đề
+<span class="nc" id="L240">        Label lblTitle = new Label(&quot;Lịch sử giao dịch&quot;);</span>
+<span class="nc" id="L241">        lblTitle.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 18));</span>
+<span class="nc" id="L242">        lblTitle.setStyle(&quot;-fx-text-fill: #2c3e50;&quot;);</span>
+
+        // Nút đổi danh mục
+<span class="nc" id="L245">        Button btnDoiDanhMuc = new Button(&quot;Đổi danh mục&quot;);</span>
+<span class="nc" id="L246">        btnDoiDanhMuc.setStyle(&quot;-fx-background-color: #16a085; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L247">        btnDoiDanhMuc.setPrefHeight(35);</span>
+<span class="nc" id="L248">        btnDoiDanhMuc.setOnAction(e -&gt; handleDoiDanhMuc());</span>
+
+<span class="nc" id="L250">        btnRefresh = new Button(&quot;Làm mới&quot;);</span>
+<span class="nc" id="L251">        btnRefresh.setStyle(&quot;-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L252">        btnRefresh.setPrefHeight(35);</span>
+<span class="nc" id="L253">        btnRefresh.setPrefWidth(120);</span>
+<span class="nc" id="L254">        btnRefresh.setOnAction(e -&gt; handleRefresh());</span>
+
+<span class="nc" id="L256">        HBox titleRow = new HBox(15);</span>
+<span class="nc" id="L257">        titleRow.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L258">        Region sp = new Region();</span>
+<span class="nc" id="L259">        HBox.setHgrow(sp, Priority.ALWAYS);</span>
+<span class="nc" id="L260">        titleRow.getChildren().addAll(lblTitle, sp, btnRefresh, btnDoiDanhMuc);</span>
+
+        // Bộ lọc lịch sử giao dịch
+<span class="nc" id="L263">        HBox filterRow = createFilterRow();</span>
+
+        // TableView
+<span class="nc" id="L266">        tableGiaoDich = createTable();</span>
+
+<span class="nc" id="L268">        center.getChildren().addAll(titleRow, filterRow, tableGiaoDich);</span>
+<span class="nc" id="L269">        VBox.setVgrow(tableGiaoDich, Priority.ALWAYS);</span>
+
+<span class="nc" id="L271">        return center;</span>
+    }
+
+    private HBox createFilterRow() {
+<span class="nc" id="L275">        HBox row = new HBox(10);</span>
+<span class="nc" id="L276">        row.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L278">        Label lblLoc = new Label(&quot;Lọc giao dịch:&quot;);</span>
+<span class="nc" id="L279">        lblLoc.setStyle(&quot;-fx-font-weight: bold; -fx-text-fill: #2c3e50;&quot;);</span>
+
+<span class="nc" id="L281">        cbLoaiLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L282">        cbLoaiLoc.getItems().addAll(LOC_TAT_CA, LOC_THANG, LOC_NGAY);</span>
+<span class="nc" id="L283">        cbLoaiLoc.setValue(LOC_TAT_CA);</span>
+<span class="nc" id="L284">        cbLoaiLoc.setPrefWidth(170);</span>
+
+<span class="nc" id="L286">        cbThangLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L287">        cbThangLoc.setPrefWidth(90);</span>
+
+<span class="nc" id="L289">        cbNamLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L290">        int namHienTai = LocalDate.now().getYear();</span>
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        for (int y = namHienTai - 4; y &lt;= namHienTai; y++) cbNamLoc.getItems().add(y);</span>
+<span class="nc" id="L292">        cbNamLoc.setPrefWidth(100);</span>
+
+<span class="nc" id="L294">        cbNamLoc.setValue(namHienTai);</span>
+<span class="nc" id="L295">        capNhatDanhSachThangLoc();</span>
+<span class="nc" id="L296">        cbThangLoc.setValue(LocalDate.now().getMonthValue());</span>
+
+<span class="nc" id="L298">        cbNgayLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L299">        cbNgayLoc.setPrefWidth(90);</span>
+
+<span class="nc" id="L301">        cbThangNgayLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L302">        cbThangNgayLoc.setPrefWidth(90);</span>
+
+<span class="nc" id="L304">        cbNamNgayLoc = new ComboBox&lt;&gt;();</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        for (int y = namHienTai - 4; y &lt;= namHienTai; y++) cbNamNgayLoc.getItems().add(y);</span>
+<span class="nc" id="L306">        cbNamNgayLoc.setPrefWidth(100);</span>
+
+<span class="nc" id="L308">        cbNamNgayLoc.setValue(namHienTai);</span>
+<span class="nc" id="L309">        capNhatDanhSachThangNgayLoc();</span>
+<span class="nc" id="L310">        cbThangNgayLoc.setValue(LocalDate.now().getMonthValue());</span>
+<span class="nc" id="L311">        capNhatDanhSachNgayLoc();</span>
+<span class="nc" id="L312">        cbNgayLoc.setValue(LocalDate.now().getDayOfMonth());</span>
+
+<span class="nc" id="L314">        boxLocThang = new HBox(8, new Label(&quot;Tháng&quot;), cbThangLoc, new Label(&quot;Năm&quot;), cbNamLoc);</span>
+<span class="nc" id="L315">        boxLocThang.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L317">        boxLocNgay = new HBox(8,</span>
+            new Label(&quot;Ngày&quot;), cbNgayLoc,
+            new Label(&quot;Tháng&quot;), cbThangNgayLoc,
+            new Label(&quot;Năm&quot;), cbNamNgayLoc);
+<span class="nc" id="L321">        boxLocNgay.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L323">        cbLoaiLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc" id="L325">            capNhatHienThiBoLoc();</span>
+<span class="nc" id="L326">            loadDashboardData();</span>
+<span class="nc" id="L327">        });</span>
+<span class="nc" id="L328">        cbThangLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">            if (LOC_THANG.equals(cbLoaiLoc.getValue())) loadDashboardData();</span>
+<span class="nc" id="L331">        });</span>
+<span class="nc" id="L332">        cbNamLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc" id="L334">            capNhatDanhSachThangLoc();</span>
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            if (LOC_THANG.equals(cbLoaiLoc.getValue())) loadDashboardData();</span>
+<span class="nc" id="L336">        });</span>
+
+<span class="nc" id="L338">        cbNgayLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();</span>
+<span class="nc" id="L341">        });</span>
+
+<span class="nc" id="L343">        cbThangNgayLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc" id="L345">            capNhatDanhSachNgayLoc();</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();</span>
+<span class="nc" id="L347">        });</span>
+
+<span class="nc" id="L349">        cbNamNgayLoc.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (dangCapNhatBoLoc) return;</span>
+<span class="nc" id="L351">            capNhatDanhSachThangNgayLoc();</span>
+<span class="nc" id="L352">            capNhatDanhSachNgayLoc();</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">            if (LOC_NGAY.equals(cbLoaiLoc.getValue())) loadDashboardData();</span>
+<span class="nc" id="L354">        });</span>
+
+<span class="nc" id="L356">        row.getChildren().addAll(lblLoc, cbLoaiLoc, boxLocThang, boxLocNgay);</span>
+<span class="nc" id="L357">        capNhatHienThiBoLoc();</span>
+<span class="nc" id="L358">        return row;</span>
+    }
+
+    private void capNhatHienThiBoLoc() {
+<span class="nc bnc" id="L362" title="All 6 branches missed.">        if (cbLoaiLoc == null || boxLocThang == null || boxLocNgay == null) return;</span>
+<span class="nc" id="L363">        boolean locThang = LOC_THANG.equals(cbLoaiLoc.getValue());</span>
+<span class="nc" id="L364">        boolean locNgay = LOC_NGAY.equals(cbLoaiLoc.getValue());</span>
+
+<span class="nc" id="L366">        boxLocThang.setVisible(locThang);</span>
+<span class="nc" id="L367">        boxLocThang.setManaged(locThang);</span>
+
+<span class="nc" id="L369">        boxLocNgay.setVisible(locNgay);</span>
+<span class="nc" id="L370">        boxLocNgay.setManaged(locNgay);</span>
+<span class="nc" id="L371">    }</span>
+
+    private void capNhatDanhSachThangLoc() {
+<span class="nc bnc" id="L374" title="All 6 branches missed.">        if (cbThangLoc == null || cbNamLoc == null || cbNamLoc.getValue() == null) return;</span>
+
+<span class="nc" id="L376">        boolean oldFlag = dangCapNhatBoLoc;</span>
+<span class="nc" id="L377">        dangCapNhatBoLoc = true;</span>
+        try {
+<span class="nc" id="L379">            int nam = cbNamLoc.getValue();</span>
+<span class="nc" id="L380">            int namHienTai = LocalDate.now().getYear();</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">            int thangMax = (nam == namHienTai) ? LocalDate.now().getMonthValue() : 12;</span>
+
+<span class="nc" id="L383">            Integer thangCu = cbThangLoc.getValue();</span>
+<span class="nc" id="L384">            cbThangLoc.getItems().clear();</span>
+<span class="nc bnc" id="L385" title="All 2 branches missed.">            for (int i = 1; i &lt;= thangMax; i++) cbThangLoc.getItems().add(i);</span>
+
+<span class="nc bnc" id="L387" title="All 2 branches missed.">            int thangMoi = (thangCu != null) ? Math.min(thangCu, thangMax) : thangMax;</span>
+<span class="nc" id="L388">            cbThangLoc.getSelectionModel().select(Integer.valueOf(thangMoi));</span>
+<span class="nc bnc" id="L389" title="All 4 branches missed.">            if (cbThangLoc.getValue() == null &amp;&amp; !cbThangLoc.getItems().isEmpty()) {</span>
+<span class="nc" id="L390">                cbThangLoc.getSelectionModel().selectLast();</span>
+            }
+        } finally {
+<span class="nc" id="L393">            dangCapNhatBoLoc = oldFlag;</span>
+        }
+<span class="nc" id="L395">    }</span>
+
+    private void capNhatDanhSachThangNgayLoc() {
+<span class="nc bnc" id="L398" title="All 6 branches missed.">        if (cbThangNgayLoc == null || cbNamNgayLoc == null || cbNamNgayLoc.getValue() == null) return;</span>
+
+<span class="nc" id="L400">        boolean oldFlag = dangCapNhatBoLoc;</span>
+<span class="nc" id="L401">        dangCapNhatBoLoc = true;</span>
+        try {
+<span class="nc" id="L403">            int nam = cbNamNgayLoc.getValue();</span>
+<span class="nc" id="L404">            int namHienTai = LocalDate.now().getYear();</span>
+<span class="nc bnc" id="L405" title="All 2 branches missed.">            int thangMax = (nam == namHienTai) ? LocalDate.now().getMonthValue() : 12;</span>
+
+<span class="nc" id="L407">            Integer thangCu = cbThangNgayLoc.getValue();</span>
+<span class="nc" id="L408">            cbThangNgayLoc.getItems().clear();</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">            for (int i = 1; i &lt;= thangMax; i++) cbThangNgayLoc.getItems().add(i);</span>
+
+<span class="nc bnc" id="L411" title="All 2 branches missed.">            int thangMoi = (thangCu != null) ? Math.min(thangCu, thangMax) : thangMax;</span>
+<span class="nc" id="L412">            cbThangNgayLoc.getSelectionModel().select(Integer.valueOf(thangMoi));</span>
+<span class="nc bnc" id="L413" title="All 4 branches missed.">            if (cbThangNgayLoc.getValue() == null &amp;&amp; !cbThangNgayLoc.getItems().isEmpty()) {</span>
+<span class="nc" id="L414">                cbThangNgayLoc.getSelectionModel().selectLast();</span>
+            }
+        } finally {
+<span class="nc" id="L417">            dangCapNhatBoLoc = oldFlag;</span>
+        }
+<span class="nc" id="L419">    }</span>
+
+    private void capNhatDanhSachNgayLoc() {
+<span class="nc bnc" id="L422" title="All 6 branches missed.">        if (cbNgayLoc == null || cbThangNgayLoc == null || cbNamNgayLoc == null) return;</span>
+<span class="nc" id="L423">        Integer thang = cbThangNgayLoc.getValue();</span>
+<span class="nc" id="L424">        Integer nam = cbNamNgayLoc.getValue();</span>
+<span class="nc bnc" id="L425" title="All 4 branches missed.">        if (thang == null || nam == null) return;</span>
+
+<span class="nc" id="L427">        boolean oldFlag = dangCapNhatBoLoc;</span>
+<span class="nc" id="L428">        dangCapNhatBoLoc = true;</span>
+        try {
+<span class="nc" id="L430">            Integer ngayCu = cbNgayLoc.getValue();</span>
+<span class="nc" id="L431">            int maxNgay = LocalDate.of(nam, thang, 1).lengthOfMonth();</span>
+<span class="nc" id="L432">            LocalDate homNay = LocalDate.now();</span>
+<span class="nc bnc" id="L433" title="All 4 branches missed.">            if (nam == homNay.getYear() &amp;&amp; thang == homNay.getMonthValue()) {</span>
+<span class="nc" id="L434">                maxNgay = Math.min(maxNgay, homNay.getDayOfMonth());</span>
+            }
+
+<span class="nc" id="L437">            cbNgayLoc.getItems().clear();</span>
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            for (int d = 1; d &lt;= maxNgay; d++) cbNgayLoc.getItems().add(d);</span>
+
+<span class="nc bnc" id="L440" title="All 2 branches missed.">            int ngayMoi = (ngayCu != null) ? Math.min(ngayCu, maxNgay) : 1;</span>
+<span class="nc" id="L441">            cbNgayLoc.getSelectionModel().select(Integer.valueOf(ngayMoi));</span>
+<span class="nc bnc" id="L442" title="All 4 branches missed.">            if (cbNgayLoc.getValue() == null &amp;&amp; !cbNgayLoc.getItems().isEmpty()) {</span>
+<span class="nc" id="L443">                cbNgayLoc.getSelectionModel().selectLast();</span>
+            }
+        } finally {
+<span class="nc" id="L446">            dangCapNhatBoLoc = oldFlag;</span>
+        }
+<span class="nc" id="L448">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private TableView&lt;GiaoDichInfo&gt; createTable() {
+<span class="nc" id="L452">        TableView&lt;GiaoDichInfo&gt; table = new TableView&lt;&gt;();</span>
+<span class="nc" id="L453">        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);</span>
+
+        // Các cột
+<span class="nc" id="L456">        TableColumn&lt;GiaoDichInfo, String&gt; colNgay = new TableColumn&lt;&gt;(&quot;Ngày giờ&quot;);</span>
+<span class="nc" id="L457">        colNgay.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;ngay&quot;));</span>
+<span class="nc" id="L458">        colNgay.setPrefWidth(150);</span>
+
+<span class="nc" id="L460">        TableColumn&lt;GiaoDichInfo, String&gt; colLoai = new TableColumn&lt;&gt;(&quot;Loại&quot;);</span>
+<span class="nc" id="L461">        colLoai.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;loai&quot;));</span>
+<span class="nc" id="L462">        colLoai.setPrefWidth(80);</span>
+        // Format màu cho loại giao dịch
+<span class="nc" id="L464">        colLoai.setCellFactory(column -&gt; new TableCell&lt;GiaoDichInfo, String&gt;() {</span>
+            @Override
+            protected void updateItem(String item, boolean empty) {
+<span class="nc" id="L467">                super.updateItem(item, empty);</span>
+<span class="nc bnc" id="L468" title="All 4 branches missed.">                if (empty || item == null) {</span>
+<span class="nc" id="L469">                    setText(null);</span>
+<span class="nc" id="L470">                    setStyle(&quot;&quot;);</span>
+                } else {
+<span class="nc" id="L472">                    setText(item);</span>
+<span class="nc bnc" id="L473" title="All 4 branches missed.">                    setStyle((item.equals(&quot;Gửi&quot;) || item.equals(&quot;Chi TM&quot;)) ? </span>
+<span class="nc" id="L474">                        &quot;-fx-text-fill: red; -fx-font-weight: bold;&quot; : </span>
+<span class="nc" id="L475">                        &quot;-fx-text-fill: green; -fx-font-weight: bold;&quot;);</span>
+                }
+<span class="nc" id="L477">            }</span>
+        });
+
+<span class="nc" id="L480">        TableColumn&lt;GiaoDichInfo, String&gt; colTaiKhoan = new TableColumn&lt;&gt;(&quot;Tài khoản&quot;);</span>
+<span class="nc" id="L481">        colTaiKhoan.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;taiKhoan&quot;));</span>
+<span class="nc" id="L482">        colTaiKhoan.setPrefWidth(250);</span>
+
+<span class="nc" id="L484">        TableColumn&lt;GiaoDichInfo, String&gt; colSoTien = new TableColumn&lt;&gt;(&quot;Số tiền&quot;);</span>
+<span class="nc" id="L485">        colSoTien.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;soTien&quot;));</span>
+<span class="nc" id="L486">        colSoTien.setPrefWidth(150);</span>
+        // Format căn phải cho số tiền
+<span class="nc" id="L488">        colSoTien.setCellFactory(column -&gt; new TableCell&lt;GiaoDichInfo, String&gt;() {</span>
+            @Override
+            protected void updateItem(String item, boolean empty) {
+<span class="nc" id="L491">                super.updateItem(item, empty);</span>
+<span class="nc bnc" id="L492" title="All 4 branches missed.">                if (empty || item == null) {</span>
+<span class="nc" id="L493">                    setText(null);</span>
+                } else {
+<span class="nc" id="L495">                    setText(item);</span>
+<span class="nc" id="L496">                    setStyle(&quot;-fx-alignment: CENTER-RIGHT; -fx-font-weight: bold;&quot;);</span>
+                }
+<span class="nc" id="L498">            }</span>
+        });
+
+<span class="nc" id="L501">        TableColumn&lt;GiaoDichInfo, String&gt; colNoiDung = new TableColumn&lt;&gt;(&quot;Nội dung&quot;);</span>
+<span class="nc" id="L502">        colNoiDung.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;noiDung&quot;));</span>
+<span class="nc" id="L503">        colNoiDung.setPrefWidth(200);</span>
+
+<span class="nc" id="L505">        TableColumn&lt;GiaoDichInfo, String&gt; colDanhMuc = new TableColumn&lt;&gt;(&quot;Danh mục&quot;);</span>
+<span class="nc" id="L506">        colDanhMuc.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;danhMuc&quot;));</span>
+<span class="nc" id="L507">        colDanhMuc.setPrefWidth(160);</span>
+<span class="nc" id="L508">        colDanhMuc.setCellFactory(col -&gt; new TableCell&lt;GiaoDichInfo, String&gt;() {</span>
+            @Override
+            protected void updateItem(String item, boolean empty) {
+<span class="nc" id="L511">                super.updateItem(item, empty);</span>
+<span class="nc bnc" id="L512" title="All 4 branches missed.">                if (empty || item == null) { setText(null); setStyle(&quot;&quot;); return; }</span>
+<span class="nc" id="L513">                boolean blank = item.isBlank();</span>
+<span class="nc bnc" id="L514" title="All 2 branches missed.">                setText(blank ? &quot;— Chưa phân loại&quot; : item);</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">                if (blank) setStyle(&quot;-fx-text-fill: #bdc3c7; -fx-font-style: italic;&quot;);</span>
+                else {
+                    // Thu thì xanh lá, Chi thì cam
+<span class="nc" id="L518">                    GiaoDichInfo row = getTableView().getItems().get(getIndex());</span>
+<span class="nc bnc" id="L519" title="All 4 branches missed.">                    if (&quot;Nhận&quot;.equals(row.getLoai()) || &quot;Thu TM&quot;.equals(row.getLoai()))</span>
+<span class="nc" id="L520">                        setStyle(&quot;-fx-text-fill: #27ae60; -fx-font-weight: bold;&quot;);</span>
+                    else
+<span class="nc" id="L522">                        setStyle(&quot;-fx-text-fill: #e67e22; -fx-font-weight: bold;&quot;);</span>
+                }
+<span class="nc" id="L524">            }</span>
+        });
+
+<span class="nc" id="L527">        table.getColumns().addAll(colNgay, colLoai, colTaiKhoan, colSoTien, colNoiDung, colDanhMuc);</span>
+<span class="nc" id="L528">        return table;</span>
+    }
+
+    private void loadDashboardData() {
+        try {
+<span class="nc" id="L533">            String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();</span>
+            
+            // Lấy số dư tài khoản + ví tiền mặt
+<span class="nc" id="L536">            BigDecimal soDu = giaoDichDAO.laySoDu(soTaiKhoan);</span>
+<span class="nc" id="L537">            BigDecimal soDuTienMat = giaoDichDAO.laySoDuTienMat(soTaiKhoan);</span>
+
+<span class="nc" id="L539">            lblSoDu.setText(df.format(soDu) + &quot; đ&quot;);</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">            lblSoDu.setStyle(soDu.compareTo(BigDecimal.ZERO) &gt;= 0 ?</span>
+<span class="nc" id="L541">                &quot;-fx-text-fill: #2ecc71; -fx-font-weight: bold; -fx-font-size: 20px;&quot; : </span>
+<span class="nc" id="L542">                &quot;-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 20px;&quot;);</span>
+
+<span class="nc" id="L544">            lblSoDuTienMat.setText(df.format(soDuTienMat) + &quot; đ&quot;);</span>
+<span class="nc bnc" id="L545" title="All 2 branches missed.">            lblSoDuTienMat.setStyle(soDuTienMat.compareTo(BigDecimal.ZERO) &gt;= 0 ?</span>
+<span class="nc" id="L546">                &quot;-fx-text-fill: #f1c40f; -fx-font-weight: bold; -fx-font-size: 20px;&quot; :</span>
+<span class="nc" id="L547">                &quot;-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 20px;&quot;);</span>
+            
+            // Load lịch sử giao dịch theo bộ lọc
+            List&lt;GiaoDich&gt; danhSach;
+<span class="nc bnc" id="L551" title="All 2 branches missed.">            String loaiLoc = cbLoaiLoc != null ? cbLoaiLoc.getValue() : LOC_TAT_CA;</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">            if (LOC_THANG.equals(loaiLoc)) {</span>
+<span class="nc bnc" id="L553" title="All 4 branches missed.">                int thang = cbThangLoc != null &amp;&amp; cbThangLoc.getValue() != null</span>
+<span class="nc" id="L554">                        ? cbThangLoc.getValue() : LocalDate.now().getMonthValue();</span>
+<span class="nc bnc" id="L555" title="All 4 branches missed.">                int nam = cbNamLoc != null &amp;&amp; cbNamLoc.getValue() != null</span>
+<span class="nc" id="L556">                        ? cbNamLoc.getValue() : LocalDate.now().getYear();</span>
+<span class="nc" id="L557">                danhSach = giaoDichDAO.layLichSuGiaoDichTheoThang(soTaiKhoan, thang, nam);</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">            } else if (LOC_NGAY.equals(loaiLoc)) {</span>
+<span class="nc bnc" id="L559" title="All 4 branches missed.">                int thang = cbThangNgayLoc != null &amp;&amp; cbThangNgayLoc.getValue() != null</span>
+<span class="nc" id="L560">                    ? cbThangNgayLoc.getValue() : LocalDate.now().getMonthValue();</span>
+<span class="nc bnc" id="L561" title="All 4 branches missed.">                int nam = cbNamNgayLoc != null &amp;&amp; cbNamNgayLoc.getValue() != null</span>
+<span class="nc" id="L562">                    ? cbNamNgayLoc.getValue() : LocalDate.now().getYear();</span>
+
+<span class="nc" id="L564">                LocalDate homNay = LocalDate.now();</span>
+<span class="nc" id="L565">                int maxNgay = LocalDate.of(nam, thang, 1).lengthOfMonth();</span>
+<span class="nc bnc" id="L566" title="All 4 branches missed.">                if (nam == homNay.getYear() &amp;&amp; thang == homNay.getMonthValue()) {</span>
+<span class="nc" id="L567">                    maxNgay = Math.min(maxNgay, homNay.getDayOfMonth());</span>
+                }
+
+<span class="nc bnc" id="L570" title="All 2 branches missed.">                Integer ngayDaChon = cbNgayLoc != null ? cbNgayLoc.getValue() : null;</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">                int ngay = (ngayDaChon != null)</span>
+<span class="nc" id="L572">                        ? ngayDaChon</span>
+<span class="nc" id="L573">                        : Math.min(homNay.getDayOfMonth(), maxNgay);</span>
+<span class="nc bnc" id="L574" title="All 2 branches missed.">                if (ngay &lt; 1) ngay = 1;</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">                if (ngay &gt; maxNgay) ngay = maxNgay;</span>
+
+                // Đồng bộ lại UI nếu ngày đang chọn không hợp lệ sau khi đổi tháng/năm.
+<span class="nc bnc" id="L578" title="All 6 branches missed.">                if (cbNgayLoc != null &amp;&amp; (ngayDaChon == null || !ngayDaChon.equals(ngay))) {</span>
+<span class="nc" id="L579">                    cbNgayLoc.setValue(ngay);</span>
+                }
+
+<span class="nc" id="L582">                LocalDate ngayLoc = LocalDate.of(nam, thang, ngay);</span>
+<span class="nc" id="L583">                danhSach = giaoDichDAO.layLichSuGiaoDichTheoNgay(soTaiKhoan, ngayLoc);</span>
+<span class="nc" id="L584">            } else {</span>
+<span class="nc" id="L585">                danhSach = giaoDichDAO.layLichSuGiaoDich(soTaiKhoan);</span>
+            }
+
+<span class="nc" id="L588">            rawGiaoDichList = new ArrayList&lt;&gt;(danhSach);</span>
+<span class="nc" id="L589">            List&lt;GiaoDichInfo&gt; displayList = new ArrayList&lt;&gt;();</span>
+            
+<span class="nc bnc" id="L591" title="All 2 branches missed.">            for (GiaoDich gd : danhSach) {</span>
+<span class="nc" id="L592">                String ngay = new SimpleDateFormat(&quot;dd/MM/yyyy HH:mm&quot;).format(gd.getNgayGiaoDich());</span>
+                String loai;
+                String taiKhoan;
+                String danhMucHienThi;
+<span class="nc bnc" id="L596" title="All 2 branches missed.">                String noiDungGoc = gd.getNoiDung() != null ? gd.getNoiDung() : &quot;&quot;;</span>
+<span class="nc" id="L597">                boolean laChiTienMat = GiaoDichDAO.isGiaoDichTienMatChi(noiDungGoc);</span>
+<span class="nc" id="L598">                boolean laThuTienMat = GiaoDichDAO.isGiaoDichTienMatThu(noiDungGoc);</span>
+
+<span class="nc bnc" id="L600" title="All 2 branches missed.">                if (laChiTienMat) {</span>
+<span class="nc" id="L601">                    loai = &quot;Chi TM&quot;;</span>
+<span class="nc" id="L602">                    taiKhoan = &quot;Tiền mặt&quot;;</span>
+<span class="nc bnc" id="L603" title="All 2 branches missed.">                    danhMucHienThi = gd.getTenDanhMucChi() != null ? gd.getTenDanhMucChi() : &quot;&quot;;</span>
+<span class="nc bnc" id="L604" title="All 2 branches missed.">                } else if (laThuTienMat) {</span>
+<span class="nc" id="L605">                    loai = &quot;Thu TM&quot;;</span>
+<span class="nc" id="L606">                    taiKhoan = &quot;Tiền mặt&quot;;</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">                    danhMucHienThi = gd.getTenDanhMucThu() != null ? gd.getTenDanhMucThu() : &quot;&quot;;</span>
+<span class="nc bnc" id="L608" title="All 2 branches missed.">                } else if (gd.getSoTaiKhoanGui().equals(soTaiKhoan)) {</span>
+<span class="nc" id="L609">                    loai = &quot;Gửi&quot;;</span>
+<span class="nc" id="L610">                    taiKhoan = gd.getSoTaiKhoanNhan();</span>
+<span class="nc" id="L611">                    String tenNguoiNhan = giaoDichDAO.layTenNguoiDung(gd.getSoTaiKhoanNhan());</span>
+<span class="nc bnc" id="L612" title="All 2 branches missed.">                    if (tenNguoiNhan != null) taiKhoan += &quot; (&quot; + tenNguoiNhan + &quot;)&quot;;</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">                    danhMucHienThi = gd.getTenDanhMucChi() != null ? gd.getTenDanhMucChi() : &quot;&quot;;</span>
+<span class="nc" id="L614">                } else {</span>
+<span class="nc" id="L615">                    loai = &quot;Nhận&quot;;</span>
+<span class="nc" id="L616">                    taiKhoan = gd.getSoTaiKhoanGui();</span>
+<span class="nc" id="L617">                    String tenNguoiGui = giaoDichDAO.layTenNguoiDung(gd.getSoTaiKhoanGui());</span>
+<span class="nc bnc" id="L618" title="All 2 branches missed.">                    if (tenNguoiGui != null) taiKhoan += &quot; (&quot; + tenNguoiGui + &quot;)&quot;;</span>
+<span class="nc bnc" id="L619" title="All 2 branches missed.">                    danhMucHienThi = gd.getTenDanhMucThu() != null ? gd.getTenDanhMucThu() : &quot;&quot;;</span>
+                }
+                
+<span class="nc" id="L622">                String soTien = df.format(gd.getSoTien()) + &quot; đ&quot;;</span>
+<span class="nc" id="L623">                String noiDung = GiaoDichDAO.boPrefixTienMat(noiDungGoc);</span>
+                
+<span class="nc" id="L625">                displayList.add(new GiaoDichInfo(</span>
+<span class="nc" id="L626">                    gd.getMaGiaoDich(), ngay, loai, taiKhoan, soTien, noiDung,</span>
+<span class="nc" id="L627">                    danhMucHienThi, gd.getDanhMucId(), gd.getDanhMucThuId(),</span>
+<span class="nc" id="L628">                    gd.getSoTien(), gd.getNgayGiaoDich()));</span>
+<span class="nc" id="L629">            }</span>
+            
+<span class="nc" id="L631">            ObservableList&lt;GiaoDichInfo&gt; data = FXCollections.observableArrayList(displayList);</span>
+<span class="nc" id="L632">            tableGiaoDich.setItems(data);</span>
+            
+<span class="nc" id="L634">        } catch (Exception e) {</span>
+<span class="nc" id="L635">            showError(&quot;Lỗi tải dữ liệu: &quot; + e.getMessage());</span>
+<span class="nc" id="L636">            e.printStackTrace();</span>
+<span class="nc" id="L637">        }</span>
+<span class="nc" id="L638">    }</span>
+
+    private void handleGiaoDich() {
+<span class="nc" id="L641">        TransactionController transactionController = new TransactionController(stage);</span>
+<span class="nc" id="L642">        stage.setScene(transactionController.getScene());</span>
+<span class="nc" id="L643">        stage.setTitle(&quot;Chuyển Tiền&quot;);</span>
+<span class="nc" id="L644">        stage.setResizable(false);</span>
+<span class="nc" id="L645">        stage.setWidth(1200);</span>
+<span class="nc" id="L646">        stage.setHeight(830);</span>
+<span class="nc" id="L647">        stage.centerOnScreen();</span>
+<span class="nc" id="L648">    }</span>
+    
+    private void handleNganSach() {
+        try {
+<span class="nc" id="L652">            String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();</span>
+<span class="nc" id="L653">            BudgetController budgetController = new BudgetController(stage, soTaiKhoan);</span>
+            
+<span class="nc" id="L655">            stage.setScene(budgetController.getScene());</span>
+<span class="nc" id="L656">            stage.setTitle(&quot;Quản Lý Ngân Sách&quot;);</span>
+<span class="nc" id="L657">            stage.setResizable(false);</span>
+<span class="nc" id="L658">            stage.setWidth(1200);</span>
+<span class="nc" id="L659">            stage.setHeight(830);</span>
+<span class="nc" id="L660">            stage.centerOnScreen();</span>
+<span class="nc" id="L661">        } catch (Exception e) {</span>
+<span class="nc" id="L662">            showError(&quot;Lỗi khi mở Ngân sách: &quot; + e.getMessage());</span>
+<span class="nc" id="L663">        }</span>
+<span class="nc" id="L664">    }</span>
+    
+    private void handleThongKe() {
+        try {
+<span class="nc" id="L668">            String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();</span>
+<span class="nc" id="L669">            StatisticsController statisticsController = new StatisticsController(stage, soTaiKhoan);</span>
+            
+<span class="nc" id="L671">            stage.setScene(statisticsController.getScene());</span>
+<span class="nc" id="L672">            stage.setTitle(&quot;Thống Kê Chi Tiêu&quot;);</span>
+<span class="nc" id="L673">            stage.setResizable(false);</span>
+<span class="nc" id="L674">            stage.setWidth(1200);</span>
+<span class="nc" id="L675">            stage.setHeight(830);</span>
+<span class="nc" id="L676">            stage.centerOnScreen();</span>
+<span class="nc" id="L677">        } catch (Exception e) {</span>
+<span class="nc" id="L678">            showError(&quot;Lỗi khi mở Thống kê: &quot; + e.getMessage());</span>
+<span class="nc" id="L679">        }</span>
+<span class="nc" id="L680">    }</span>
+    
+    private void handleDanhMuc() {
+        try {
+<span class="nc" id="L684">            String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();</span>
+<span class="nc" id="L685">            CategoryController categoryController = new CategoryController(stage, soTaiKhoan);</span>
+<span class="nc" id="L686">            stage.setScene(categoryController.getScene());</span>
+<span class="nc" id="L687">            stage.setTitle(&quot;Quản Lý Danh Mục&quot;);</span>
+<span class="nc" id="L688">            stage.setResizable(false);</span>
+<span class="nc" id="L689">            stage.setWidth(1200);</span>
+<span class="nc" id="L690">            stage.setHeight(830);</span>
+<span class="nc" id="L691">            stage.centerOnScreen();</span>
+<span class="nc" id="L692">        } catch (Exception e) {</span>
+<span class="nc" id="L693">            e.printStackTrace();</span>
+<span class="nc" id="L694">            showError(&quot;Lỗi khi mở Danh mục: &quot; + e.getMessage());</span>
+<span class="nc" id="L695">        }</span>
+<span class="nc" id="L696">    }</span>
+
+    private void handleDangXuat() {
+<span class="nc" id="L699">        LoginController.currentUser = null;</span>
+<span class="nc" id="L700">        LoginController loginController = new LoginController(stage);</span>
+<span class="nc" id="L701">        stage.setScene(loginController.getScene());</span>
+<span class="nc" id="L702">        stage.setTitle(&quot;Đăng nhập&quot;);</span>
+<span class="nc" id="L703">        stage.setResizable(false);</span>
+<span class="nc" id="L704">        stage.setWidth(520);</span>
+<span class="nc" id="L705">        stage.setHeight(590);</span>
+<span class="nc" id="L706">        stage.centerOnScreen();</span>
+<span class="nc" id="L707">    }</span>
+
+    private void handleRefresh() {
+<span class="nc" id="L710">        loadDashboardData();</span>
+<span class="nc" id="L711">    }</span>
+
+    /** Đổi danh mục của giao dịch đang chọn, có cảnh báo ngân sách khi đổi loại chi */
+    private void handleDoiDanhMuc() {
+<span class="nc" id="L715">        GiaoDichInfo selected = tableGiaoDich.getSelectionModel().getSelectedItem();</span>
+<span class="nc bnc" id="L716" title="All 6 branches missed.">        boolean isChi = selected != null &amp;&amp; (&quot;Gửi&quot;.equals(selected.getLoai()) || &quot;Chi TM&quot;.equals(selected.getLoai()));</span>
+<span class="nc" id="L717">        String soTaiKhoan = LoginController.currentUser.getSoTaiKhoan();</span>
+<span class="nc bnc" id="L718" title="All 2 branches missed.">        String loaiDM = isChi ? &quot;chi&quot; : &quot;thu&quot;;</span>
+<span class="nc bnc" id="L719" title="All 2 branches missed.">        List&lt;DanhMuc&gt; dsDanhMuc = selected != null</span>
+<span class="nc" id="L720">                ? danhMucDAO.layDanhMucConTheoLoai(soTaiKhoan, loaiDM)</span>
+<span class="nc" id="L721">                : new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L722" title="All 2 branches missed.">        String validationError = validateInputDoiDanhMuc(selected, dsDanhMuc.isEmpty(), isChi ? &quot;Chi&quot; : &quot;Thu&quot;);</span>
+<span class="nc bnc" id="L723" title="All 2 branches missed.">        if (validationError != null) {</span>
+<span class="nc" id="L724">            new Alert(Alert.AlertType.WARNING, validationError, ButtonType.OK).showAndWait();</span>
+<span class="nc" id="L725">            return;</span>
+        }
+
+<span class="nc" id="L728">        Dialog&lt;DanhMuc&gt; dialog = new Dialog&lt;&gt;();</span>
+<span class="nc" id="L729">        dialog.setTitle(&quot;Đổi danh mục&quot;);</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">        dialog.setHeaderText((isChi ? &quot;Danh mục Chi&quot; : &quot;Danh mục Thu&quot;) +</span>
+<span class="nc" id="L731">                &quot; — Giao dịch ngày &quot; + selected.getNgay());</span>
+
+<span class="nc" id="L733">        ComboBox&lt;DanhMuc&gt; cbDM = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L734">        cbDM.getItems().addAll(dsDanhMuc);</span>
+<span class="nc" id="L735">        cbDM.setPrefWidth(300);</span>
+
+        // Chọn danh mục hiện tại
+<span class="nc bnc" id="L738" title="All 2 branches missed.">        Integer curId = isChi ? selected.getDanhMucId() : selected.getDanhMucThuId();</span>
+<span class="nc bnc" id="L739" title="All 2 branches missed.">        if (curId != null) {</span>
+<span class="nc bnc" id="L740" title="All 2 branches missed.">            dsDanhMuc.stream().filter(d -&gt; d.getId() == curId).findFirst()</span>
+<span class="nc" id="L741">                    .ifPresent(cbDM::setValue);</span>
+        }
+
+<span class="nc" id="L744">        VBox content = new VBox(10);</span>
+<span class="nc" id="L745">        content.setPadding(new Insets(20));</span>
+<span class="nc" id="L746">        content.getChildren().addAll(new Label(&quot;Chọn danh mục mới:&quot;), cbDM);</span>
+<span class="nc" id="L747">        dialog.getDialogPane().setContent(content);</span>
+<span class="nc" id="L748">        ButtonType btnOK = new ButtonType(&quot;✔ Xác nhận&quot;, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L749">        dialog.getDialogPane().getButtonTypes().addAll(btnOK, ButtonType.CANCEL);</span>
+<span class="nc bnc" id="L750" title="All 2 branches missed.">        dialog.setResultConverter(btn -&gt; btn == btnOK ? cbDM.getValue() : null);</span>
+
+<span class="nc" id="L752">        dialog.showAndWait().ifPresent(newDM -&gt; {</span>
+<span class="nc bnc" id="L753" title="All 2 branches missed.">            if (newDM == null) return;</span>
+
+            // === Kiểm tra ngân sách (chỉ áp dụng cho giao dịch gửi = chi tiêu) ===
+<span class="nc bnc" id="L756" title="All 2 branches missed.">            if (isChi) {</span>
+                try {
+                    // Lấy tháng/năm từ giao dịch — KHÔNG dùng tháng hiện tại
+<span class="nc" id="L759">                    java.sql.Timestamp ts = selected.getNgayGiaoDichRaw();</span>
+<span class="nc bnc" id="L760" title="All 2 branches missed.">                    LocalDate ngayGD = ts != null ? ts.toLocalDateTime().toLocalDate() : LocalDate.now();</span>
+<span class="nc" id="L761">                    int thang = ngayGD.getMonthValue();</span>
+<span class="nc" id="L762">                    int nam   = ngayGD.getYear();</span>
+
+<span class="nc bnc" id="L764" title="All 2 branches missed.">                    if (!xacNhanNeuVuotNganSach(soTaiKhoan, newDM, selected.getSoTienRaw(), thang, nam)) return;</span>
+
+<span class="nc" id="L766">                    giaoDichDAO.capNhatDanhMucChi(selected.getMaGiaoDich(), newDM.getId());</span>
+<span class="nc" id="L767">                } catch (Exception ex) {</span>
+<span class="nc" id="L768">                    showError(&quot;Lỗi cập nhật: &quot; + ex.getMessage());</span>
+<span class="nc" id="L769">                    return;</span>
+<span class="nc" id="L770">                }</span>
+            } else {
+                try {
+<span class="nc" id="L773">                    giaoDichDAO.capNhatDanhMucThu(selected.getMaGiaoDich(), newDM.getId());</span>
+<span class="nc" id="L774">                } catch (Exception ex) {</span>
+<span class="nc" id="L775">                    showError(&quot;Lỗi cập nhật: &quot; + ex.getMessage());</span>
+<span class="nc" id="L776">                    return;</span>
+<span class="nc" id="L777">                }</span>
+            }
+
+<span class="nc" id="L780">            Alert ok = new Alert(Alert.AlertType.INFORMATION,</span>
+<span class="nc" id="L781">                    &quot;Đã đổi danh mục thành công: &quot; + newDM.getTenDanhMuc(), ButtonType.OK);</span>
+<span class="nc" id="L782">            ok.setHeaderText(null);</span>
+<span class="nc" id="L783">            ok.showAndWait();</span>
+<span class="nc" id="L784">            loadDashboardData();</span>
+<span class="nc" id="L785">        });</span>
+<span class="nc" id="L786">    }</span>
+
+    private void handleDoiMatKhau() {
+<span class="nc" id="L789">        Dialog&lt;Void&gt; dialog = new Dialog&lt;&gt;();</span>
+<span class="nc" id="L790">        dialog.setTitle(&quot;Đổi mật khẩu&quot;);</span>
+<span class="nc" id="L791">        dialog.setHeaderText(&quot;Đổi mật khẩu tài khoản: &quot; + LoginController.currentUser.getTenDangNhap());</span>
+
+<span class="nc" id="L793">        GridPane grid = new GridPane();</span>
+<span class="nc" id="L794">        grid.setHgap(15);</span>
+<span class="nc" id="L795">        grid.setVgap(12);</span>
+<span class="nc" id="L796">        grid.setPadding(new Insets(20));</span>
+
+<span class="nc" id="L798">        PasswordField txtCu = new PasswordField();</span>
+<span class="nc" id="L799">        txtCu.setPromptText(&quot;Nhập mật khẩu hiện tại&quot;);</span>
+<span class="nc" id="L800">        txtCu.setPrefWidth(280);</span>
+
+<span class="nc" id="L802">        PasswordField txtMoi = new PasswordField();</span>
+<span class="nc" id="L803">        txtMoi.setPromptText(&quot;Tối thiểu 6 ký tự&quot;);</span>
+<span class="nc" id="L804">        txtMoi.setPrefWidth(280);</span>
+
+<span class="nc" id="L806">        PasswordField txtXacNhan = new PasswordField();</span>
+<span class="nc" id="L807">        txtXacNhan.setPromptText(&quot;Nhập lại mật khẩu mới&quot;);</span>
+<span class="nc" id="L808">        txtXacNhan.setPrefWidth(280);</span>
+
+<span class="nc" id="L810">        Label lblKetQua = new Label(&quot;&quot;);</span>
+<span class="nc" id="L811">        lblKetQua.setWrapText(true);</span>
+
+<span class="nc" id="L813">        grid.add(new Label(&quot;Mật khẩu hiện tại:&quot;), 0, 0);</span>
+<span class="nc" id="L814">        grid.add(txtCu, 1, 0);</span>
+<span class="nc" id="L815">        grid.add(new Label(&quot;Mật khẩu mới:&quot;), 0, 1);</span>
+<span class="nc" id="L816">        grid.add(txtMoi, 1, 1);</span>
+<span class="nc" id="L817">        grid.add(new Label(&quot;Xác nhận mật khẩu:&quot;), 0, 2);</span>
+<span class="nc" id="L818">        grid.add(txtXacNhan, 1, 2);</span>
+<span class="nc" id="L819">        grid.add(lblKetQua, 1, 3);</span>
+
+<span class="nc" id="L821">        dialog.getDialogPane().setContent(grid);</span>
+
+<span class="nc" id="L823">        ButtonType btnLuu = new ButtonType(&quot;Lưu mật khẩu&quot;, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L824">        dialog.getDialogPane().getButtonTypes().addAll(btnLuu, ButtonType.CANCEL);</span>
+
+        // Validate khi nhấn Lưu (dùng event filter để chặn dialog đóng khi lỗi)
+<span class="nc" id="L827">        javafx.scene.Node btnLuuNode = dialog.getDialogPane().lookupButton(btnLuu);</span>
+<span class="nc" id="L828">        btnLuuNode.addEventFilter(javafx.event.ActionEvent.ACTION, ev -&gt; {</span>
+<span class="nc" id="L829">            String cu = txtCu.getText();</span>
+<span class="nc" id="L830">            String moi = txtMoi.getText();</span>
+<span class="nc" id="L831">            String xn = txtXacNhan.getText();</span>
+
+            try {
+<span class="nc" id="L834">                boolean trung = nguoiDungDAO.laMatKhauTrungHienTai(</span>
+<span class="nc" id="L835">                        LoginController.currentUser.getMaNguoiDung(), moi);</span>
+<span class="nc" id="L836">                String validationError = validateInputDoiMatKhau(cu, moi, xn, trung);</span>
+<span class="nc bnc" id="L837" title="All 2 branches missed.">                if (validationError != null) {</span>
+<span class="nc" id="L838">                    lblKetQua.setText(validationError);</span>
+<span class="nc" id="L839">                    lblKetQua.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+<span class="nc" id="L840">                    ev.consume();</span>
+<span class="nc" id="L841">                    return;</span>
+                }
+
+<span class="nc" id="L844">                boolean ok = nguoiDungDAO.doiMatKhau(</span>
+<span class="nc" id="L845">                        LoginController.currentUser.getMaNguoiDung(), cu, moi);</span>
+<span class="nc bnc" id="L846" title="All 2 branches missed.">                if (!ok) {</span>
+<span class="nc" id="L847">                    lblKetQua.setText(&quot;Mật khẩu hiện tại không đúng!&quot;);</span>
+<span class="nc" id="L848">                    lblKetQua.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+<span class="nc" id="L849">                    ev.consume();</span>
+                }
+<span class="nc" id="L851">            } catch (Exception ex) {</span>
+<span class="nc" id="L852">                lblKetQua.setText(&quot;Lỗi: &quot; + ex.getMessage());</span>
+<span class="nc" id="L853">                lblKetQua.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+<span class="nc" id="L854">                ev.consume();</span>
+<span class="nc" id="L855">            }</span>
+<span class="nc" id="L856">        });</span>
+
+<span class="nc" id="L858">        dialog.setResultConverter(btn -&gt; null);</span>
+
+<span class="nc" id="L860">        boolean[] changed = {false};</span>
+<span class="nc" id="L861">        btnLuuNode.addEventFilter(javafx.event.ActionEvent.ACTION, ev -&gt; {</span>
+            // nếu đạt đây thì đã pass validation (event không bị consumed)
+<span class="nc bnc" id="L863" title="All 2 branches missed.">            changed[0] = !ev.isConsumed();</span>
+<span class="nc" id="L864">        });</span>
+
+<span class="nc" id="L866">        dialog.showAndWait();</span>
+<span class="nc bnc" id="L867" title="All 2 branches missed.">        if (changed[0]) {</span>
+<span class="nc" id="L868">            Alert ok = new Alert(Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L869">            ok.setTitle(&quot;Đổi mật khẩu&quot;);</span>
+<span class="nc" id="L870">            ok.setHeaderText(null);</span>
+<span class="nc" id="L871">            ok.setContentText(&quot;✅ Đổi mật khẩu thành công!&quot;);</span>
+<span class="nc" id="L872">            ok.showAndWait();</span>
+        }
+<span class="nc" id="L874">    }</span>
+
+    // Validate dữ liệu đổi mật khẩu
+    public static String validateInputDoiMatKhau(String matKhauCu,
+                                                 String matKhauMoi,
+                                                 String xacNhanMatKhau,
+                                                 boolean trungHienTai) {
+<span class="nc bnc" id="L881" title="All 6 branches missed.">        if (matKhauCu == null || matKhauCu.isEmpty()</span>
+<span class="nc bnc" id="L882" title="All 4 branches missed.">                || matKhauMoi == null || matKhauMoi.isEmpty()</span>
+<span class="nc bnc" id="L883" title="All 2 branches missed.">                || xacNhanMatKhau == null || xacNhanMatKhau.isEmpty()) {</span>
+<span class="nc" id="L884">            return &quot;Vui lòng điền đầy đủ thông tin!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L887" title="All 2 branches missed.">        if (matKhauMoi.length() &lt; 6) {</span>
+<span class="nc" id="L888">            return &quot;Mật khẩu mới phải ít nhất 6 ký tự!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L891" title="All 2 branches missed.">        if (!matKhauMoi.equals(xacNhanMatKhau)) {</span>
+<span class="nc" id="L892">            return &quot;Mật khẩu xác nhận không khớp!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L895" title="All 2 branches missed.">        if (trungHienTai) return &quot;Mật khẩu mới trùng với mật khẩu hiện tại!&quot;;</span>
+
+<span class="nc" id="L897">        return null;</span>
+    }
+
+    public static String validateInputDoiDanhMuc(GiaoDichInfo selected,
+                                                 boolean khongCoDanhMucCon,
+                                                 String loaiDanhMucLabel) {
+<span class="nc bnc" id="L903" title="All 2 branches missed.">        if (selected == null) {</span>
+<span class="nc" id="L904">            return &quot;Vui lòng chọn giao dịch cần đổi danh mục!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L907" title="All 2 branches missed.">        if (khongCoDanhMucCon) {</span>
+<span class="nc" id="L908">            return &quot;Chưa có danh mục con loại &quot; + loaiDanhMucLabel + &quot;.\n&quot;</span>
+                    + &quot;Vui lòng tạo danh mục con trước khi đổi danh mục giao dịch.&quot;;
+        }
+
+<span class="nc" id="L912">        return null;</span>
+    }
+
+    private boolean xacNhanNeuVuotNganSach(String soTaiKhoan, DanhMuc danhMuc, BigDecimal soTien, int thang, int nam) {
+<span class="nc" id="L916">        BigDecimal gioiHan = nganSachDAO.layGioiHanNganSach(soTaiKhoan, danhMuc.getId(), thang, nam);</span>
+<span class="nc bnc" id="L917" title="All 2 branches missed.">        if (gioiHan == null) return true; // Không đặt ngân sách → cho phép tiếp tục</span>
+
+<span class="nc" id="L919">        double daChi = nganSachDAO.layTongChiTheoDanhMuc(soTaiKhoan, danhMuc.getId(), thang, nam);</span>
+<span class="nc" id="L920">        BigDecimal tongSau = BigDecimal.valueOf(daChi).add(soTien);</span>
+
+<span class="nc bnc" id="L922" title="All 2 branches missed.">        if (tongSau.compareTo(gioiHan) &lt;= 0) return true; // Không vượt → cho phép tiếp tục</span>
+
+<span class="nc" id="L924">        String msg = String.format(</span>
+                &quot;Cảnh báo ngân sách!%n&quot; +
+                &quot;Danh mục: %s%n&quot; +
+                &quot;Hạn mức tháng %d/%d: %s đ%n&quot; +
+                &quot;Đã chi: %s đ%n&quot; +
+                &quot;Giao dịch này: +%s đ%n&quot; +
+                &quot;→ Tổng sau khi chuyển: %s đ (vượt %s đ)%n%n&quot; +
+                &quot;Bạn vẫn muốn chuyển sang danh mục này?&quot;,
+<span class="nc" id="L932">                danhMuc.getTenDanhMuc(), thang, nam,</span>
+<span class="nc" id="L933">                df.format(gioiHan),</span>
+<span class="nc" id="L934">                df.format(daChi),</span>
+<span class="nc" id="L935">                df.format(soTien),</span>
+<span class="nc" id="L936">                df.format(tongSau),</span>
+<span class="nc" id="L937">                df.format(tongSau.subtract(gioiHan)));</span>
+<span class="nc" id="L938">        Alert warn = new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.YES, ButtonType.NO);</span>
+<span class="nc" id="L939">        warn.setTitle(&quot;Vượt hạn mức ngân sách&quot;);</span>
+<span class="nc" id="L940">        warn.setHeaderText(null);</span>
+<span class="nc bnc" id="L941" title="All 2 branches missed.">        return warn.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;</span>
+    }
+
+    private void showError(String message) {
+<span class="nc" id="L945">        Alert alert = new Alert(Alert.AlertType.ERROR);</span>
+<span class="nc" id="L946">        alert.setTitle(&quot;Lỗi&quot;);</span>
+<span class="nc" id="L947">        alert.setHeaderText(null);</span>
+<span class="nc" id="L948">        alert.setContentText(message);</span>
+<span class="nc" id="L949">        alert.showAndWait();</span>
+<span class="nc" id="L950">    }</span>
+
+    public Scene getScene() {
+<span class="nc" id="L953">        return scene;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

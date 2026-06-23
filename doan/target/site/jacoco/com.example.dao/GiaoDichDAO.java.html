@@ -1,0 +1,620 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GiaoDichDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.dao</a> &gt; <span class="el_source">GiaoDichDAO.java</span></div><h1>GiaoDichDAO.java</h1><pre class="source lang-java linenums">package com.example.dao;
+
+import com.example.model.GiaoDich;
+import com.example.util.DatabaseConnection;
+
+import java.math.BigDecimal;
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * DAO để thao tác với bảng giao_dich (Chuyển tiền)
+ */
+<span class="nc" id="L17">public class GiaoDichDAO {</span>
+
+    public static final String TIEN_MAT_CHI_PREFIX = &quot;[TIEN_MAT_CHI]&quot;;
+    public static final String TIEN_MAT_THU_PREFIX = &quot;[TIEN_MAT_THU]&quot;;
+
+    public static boolean isGiaoDichTienMatChi(String noiDung) {
+<span class="nc bnc" id="L23" title="All 4 branches missed.">        return noiDung != null &amp;&amp; noiDung.startsWith(TIEN_MAT_CHI_PREFIX);</span>
+    }
+
+    public static boolean isGiaoDichTienMatThu(String noiDung) {
+<span class="nc bnc" id="L27" title="All 4 branches missed.">        return noiDung != null &amp;&amp; noiDung.startsWith(TIEN_MAT_THU_PREFIX);</span>
+    }
+
+    public static String boPrefixTienMat(String noiDung) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (noiDung == null) return &quot;&quot;;</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (isGiaoDichTienMatChi(noiDung)) {</span>
+<span class="nc" id="L33">            return noiDung.substring(TIEN_MAT_CHI_PREFIX.length()).trim();</span>
+        }
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (isGiaoDichTienMatThu(noiDung)) {</span>
+<span class="nc" id="L36">            return noiDung.substring(TIEN_MAT_THU_PREFIX.length()).trim();</span>
+        }
+<span class="nc" id="L38">        return noiDung;</span>
+    }
+
+    /**
+     * Chuyển tiền giữa 2 tài khoản (Transaction có rollback)
+     */
+    public boolean chuyenTien(String soTaiKhoanGui, String soTaiKhoanNhan, BigDecimal soTien, String noiDung) throws SQLException {
+<span class="nc" id="L45">        return chuyenTien(soTaiKhoanGui, soTaiKhoanNhan, soTien, noiDung, null);</span>
+    }
+    
+    /**
+     * Chuyển tiền giữa 2 tài khoản với danh mục (Transaction có rollback)
+     * Tự động gán danh mục thu &quot;Thu khác&quot; cho người nhận
+     */
+    public boolean chuyenTien(String soTaiKhoanGui, String soTaiKhoanNhan, BigDecimal soTien, String noiDung, Integer danhMucId) throws SQLException {
+        // Lấy ID danh mục &quot;Thu khác&quot; mặc định
+<span class="nc" id="L54">        Integer thuKhacId = null;</span>
+        try {
+<span class="nc" id="L56">            String sqlThuKhac = &quot;SELECT id FROM danh_muc WHERE ten_danh_muc = 'Thu khác' AND loai = 'thu' AND so_tai_khoan IS NULL LIMIT 1&quot;;</span>
+<span class="nc" id="L57">            try (Connection c = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L58">                 Statement st = c.createStatement();</span>
+<span class="nc" id="L59">                 ResultSet r = st.executeQuery(sqlThuKhac)) {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                if (r.next()) thuKhacId = r.getInt(&quot;id&quot;);</span>
+            }
+<span class="nc" id="L62">        } catch (SQLException ignored) {}</span>
+
+<span class="nc" id="L64">        Connection conn = null;</span>
+        try {
+<span class="nc" id="L66">            conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L67">            conn.setAutoCommit(false);</span>
+            
+            // 1. Kiểm tra số dư tài khoản gửi
+<span class="nc" id="L70">            String sqlKiemTra = &quot;SELECT so_du FROM nguoi_dung WHERE so_tai_khoan = ? FOR UPDATE&quot;;</span>
+<span class="nc" id="L71">            PreparedStatement stmtKiemTra = conn.prepareStatement(sqlKiemTra);</span>
+<span class="nc" id="L72">            stmtKiemTra.setString(1, soTaiKhoanGui);</span>
+<span class="nc" id="L73">            ResultSet rs = stmtKiemTra.executeQuery();</span>
+            
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (!rs.next()) {</span>
+<span class="nc" id="L76">                conn.rollback();</span>
+<span class="nc" id="L77">                throw new SQLException(&quot;Tài khoản gửi không tồn tại!&quot;);</span>
+            }
+            
+<span class="nc" id="L80">            BigDecimal soDuHienTai = rs.getBigDecimal(&quot;so_du&quot;);</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (soDuHienTai.compareTo(soTien) &lt; 0) {</span>
+<span class="nc" id="L82">                conn.rollback();</span>
+<span class="nc" id="L83">                throw new SQLException(&quot;Số dư không đủ! Hiện có: &quot; + soDuHienTai + &quot; đ&quot;);</span>
+            }
+            
+            // 2. Kiểm tra tài khoản nhận hợp lệ (chỉ cho phép tài khoản người dùng)
+<span class="nc" id="L87">            String sqlKiemTraNhan = &quot;SELECT so_tai_khoan, vai_tro FROM nguoi_dung WHERE so_tai_khoan = ?&quot;;</span>
+<span class="nc" id="L88">            PreparedStatement stmtKiemTraNhan = conn.prepareStatement(sqlKiemTraNhan);</span>
+<span class="nc" id="L89">            stmtKiemTraNhan.setString(1, soTaiKhoanNhan);</span>
+<span class="nc" id="L90">            ResultSet rsNhan = stmtKiemTraNhan.executeQuery();</span>
+            
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (!rsNhan.next()) {</span>
+<span class="nc" id="L93">                conn.rollback();</span>
+<span class="nc" id="L94">                throw new SQLException(&quot;Tài khoản nhận không tồn tại!&quot;);</span>
+            }
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (!&quot;nguoi_dung&quot;.equals(rsNhan.getString(&quot;vai_tro&quot;))) {</span>
+<span class="nc" id="L97">                conn.rollback();</span>
+<span class="nc" id="L98">                throw new SQLException(&quot;Không thể chuyển tiền đến tài khoản quản trị viên!&quot;);</span>
+            }
+            
+            // 3. Trừ tiền tài khoản gửi
+<span class="nc" id="L102">            String sqlTru = &quot;UPDATE nguoi_dung SET so_du = so_du - ? WHERE so_tai_khoan = ?&quot;;</span>
+<span class="nc" id="L103">            PreparedStatement stmtTru = conn.prepareStatement(sqlTru);</span>
+<span class="nc" id="L104">            stmtTru.setBigDecimal(1, soTien);</span>
+<span class="nc" id="L105">            stmtTru.setString(2, soTaiKhoanGui);</span>
+<span class="nc" id="L106">            stmtTru.executeUpdate();</span>
+            
+            // 4. Cộng tiền tài khoản nhận
+<span class="nc" id="L109">            String sqlCong = &quot;UPDATE nguoi_dung SET so_du = so_du + ? WHERE so_tai_khoan = ?&quot;;</span>
+<span class="nc" id="L110">            PreparedStatement stmtCong = conn.prepareStatement(sqlCong);</span>
+<span class="nc" id="L111">            stmtCong.setBigDecimal(1, soTien);</span>
+<span class="nc" id="L112">            stmtCong.setString(2, soTaiKhoanNhan);</span>
+<span class="nc" id="L113">            stmtCong.executeUpdate();</span>
+            
+            // 5. Lưu giao dịch với cả danh mục chi (người gửi) và danh mục thu (người nhận)
+<span class="nc" id="L116">            String sqlGiaoDich = &quot;INSERT INTO giao_dich (so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_chi_id, danh_muc_thu_id) VALUES (?, ?, ?, ?, ?, ?)&quot;;</span>
+<span class="nc" id="L117">            PreparedStatement stmtGiaoDich = conn.prepareStatement(sqlGiaoDich);</span>
+<span class="nc" id="L118">            stmtGiaoDich.setString(1, soTaiKhoanGui);</span>
+<span class="nc" id="L119">            stmtGiaoDich.setString(2, soTaiKhoanNhan);</span>
+<span class="nc" id="L120">            stmtGiaoDich.setBigDecimal(3, soTien);</span>
+<span class="nc" id="L121">            stmtGiaoDich.setString(4, noiDung);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (danhMucId != null) stmtGiaoDich.setInt(5, danhMucId);</span>
+<span class="nc" id="L123">            else stmtGiaoDich.setNull(5, Types.INTEGER);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (thuKhacId != null) stmtGiaoDich.setInt(6, thuKhacId);</span>
+<span class="nc" id="L125">            else stmtGiaoDich.setNull(6, Types.INTEGER);</span>
+<span class="nc" id="L126">            stmtGiaoDich.executeUpdate();</span>
+            
+<span class="nc" id="L128">            conn.commit();</span>
+<span class="nc" id="L129">            return true;</span>
+            
+<span class="nc" id="L131">        } catch (SQLException e) {</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (conn != null) conn.rollback();</span>
+<span class="nc" id="L133">            throw e;</span>
+        } finally {
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            if (conn != null) {</span>
+<span class="nc" id="L136">                conn.setAutoCommit(true);</span>
+<span class="nc" id="L137">                conn.close();</span>
+            }
+        }
+    }
+
+    /**
+     * Lấy lịch sử giao dịch của 1 tài khoản (cả gửi và nhận), JOIN danh mục chi + thu
+     */
+    public List&lt;GiaoDich&gt; layLichSuGiaoDich(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L146">        return layLichSuGiaoDich(soTaiKhoan, null, null, null);</span>
+    }
+
+    /**
+     * Lấy lịch sử giao dịch theo tháng/năm (mới nhất trước)
+     */
+    public List&lt;GiaoDich&gt; layLichSuGiaoDichTheoThang(String soTaiKhoan, int thang, int nam) throws SQLException {
+<span class="nc" id="L153">        return layLichSuGiaoDich(soTaiKhoan, thang, nam, null);</span>
+    }
+
+    /**
+     * Lấy lịch sử giao dịch theo ngày cụ thể (mới nhất trước)
+     */
+    public List&lt;GiaoDich&gt; layLichSuGiaoDichTheoNgay(String soTaiKhoan, LocalDate ngay) throws SQLException {
+<span class="nc" id="L160">        return layLichSuGiaoDich(soTaiKhoan, null, null, ngay);</span>
+    }
+
+    private List&lt;GiaoDich&gt; layLichSuGiaoDich(String soTaiKhoan, Integer thang, Integer nam, LocalDate ngay) throws SQLException {
+<span class="nc" id="L164">        StringBuilder sql = new StringBuilder(</span>
+                &quot;SELECT gd.*, &quot; +
+                        &quot;dc.ten_danh_muc AS ten_dm_chi, &quot; +
+                        &quot;dt.ten_danh_muc AS ten_dm_thu &quot; +
+                        &quot;FROM giao_dich gd &quot; +
+                        &quot;LEFT JOIN danh_muc dc ON gd.danh_muc_chi_id = dc.id &quot; +
+                        &quot;LEFT JOIN danh_muc dt ON gd.danh_muc_thu_id = dt.id &quot; +
+                        &quot;WHERE (gd.so_tai_khoan_gui = ? OR gd.so_tai_khoan_nhan = ?) &quot;);
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (ngay != null) {</span>
+<span class="nc" id="L174">            sql.append(&quot;AND DATE(gd.ngay_giao_dich) = ? &quot;);</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">        } else if (thang != null &amp;&amp; nam != null) {</span>
+<span class="nc" id="L176">            sql.append(&quot;AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? &quot;);</span>
+        }
+<span class="nc" id="L178">        sql.append(&quot;ORDER BY gd.ngay_giao_dich DESC&quot;);</span>
+
+<span class="nc" id="L180">        List&lt;GiaoDich&gt; danhSach = new ArrayList&lt;&gt;();</span>
+        
+<span class="nc" id="L182">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L183">             PreparedStatement stmt = conn.prepareStatement(sql.toString())) {</span>
+            
+<span class="nc" id="L185">            int idx = 1;</span>
+<span class="nc" id="L186">            stmt.setString(idx++, soTaiKhoan);</span>
+<span class="nc" id="L187">            stmt.setString(idx++, soTaiKhoan);</span>
+
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            if (ngay != null) {</span>
+<span class="nc" id="L190">                stmt.setDate(idx, Date.valueOf(ngay));</span>
+<span class="nc bnc" id="L191" title="All 4 branches missed.">            } else if (thang != null &amp;&amp; nam != null) {</span>
+<span class="nc" id="L192">                stmt.setInt(idx++, thang);</span>
+<span class="nc" id="L193">                stmt.setInt(idx, nam);</span>
+            }
+            
+<span class="nc" id="L196">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L198">                GiaoDich gd = new GiaoDich();</span>
+<span class="nc" id="L199">                gd.setMaGiaoDich(rs.getInt(&quot;ma_giao_dich&quot;));</span>
+<span class="nc" id="L200">                gd.setSoTaiKhoanGui(rs.getString(&quot;so_tai_khoan_gui&quot;));</span>
+<span class="nc" id="L201">                gd.setSoTaiKhoanNhan(rs.getString(&quot;so_tai_khoan_nhan&quot;));</span>
+<span class="nc" id="L202">                gd.setSoTien(rs.getBigDecimal(&quot;so_tien&quot;));</span>
+<span class="nc" id="L203">                gd.setNoiDung(rs.getString(&quot;noi_dung&quot;));</span>
+<span class="nc" id="L204">                gd.setNgayGiaoDich(rs.getTimestamp(&quot;ngay_giao_dich&quot;));</span>
+<span class="nc" id="L205">                gd.setTrangThai(rs.getString(&quot;trang_thai&quot;));</span>
+<span class="nc" id="L206">                int dmId = rs.getInt(&quot;danh_muc_chi_id&quot;);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                if (!rs.wasNull()) gd.setDanhMucId(dmId);</span>
+<span class="nc" id="L208">                int dmThuId = rs.getInt(&quot;danh_muc_thu_id&quot;);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">                if (!rs.wasNull()) gd.setDanhMucThuId(dmThuId);</span>
+<span class="nc" id="L210">                gd.setTenDanhMucChi(rs.getString(&quot;ten_dm_chi&quot;));</span>
+<span class="nc" id="L211">                gd.setTenDanhMucThu(rs.getString(&quot;ten_dm_thu&quot;));</span>
+<span class="nc" id="L212">                danhSach.add(gd);</span>
+<span class="nc" id="L213">            }</span>
+        }
+<span class="nc" id="L215">        return danhSach;</span>
+    }
+
+    /** Cập nhật danh mục chi của giao dịch (người gửi) */
+    public boolean capNhatDanhMucChi(int maGiaoDich, Integer danhMucId) throws SQLException {
+<span class="nc" id="L220">        String sql = &quot;UPDATE giao_dich SET danh_muc_chi_id = ? WHERE ma_giao_dich = ?&quot;;</span>
+<span class="nc" id="L221">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L222">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (danhMucId != null) stmt.setInt(1, danhMucId);</span>
+<span class="nc" id="L224">            else stmt.setNull(1, Types.INTEGER);</span>
+<span class="nc" id="L225">            stmt.setInt(2, maGiaoDich);</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            return stmt.executeUpdate() &gt; 0;</span>
+        }
+    }
+
+    /** Cập nhật danh mục thu của giao dịch (người nhận) */
+    public boolean capNhatDanhMucThu(int maGiaoDich, Integer danhMucThuId) throws SQLException {
+<span class="nc" id="L232">        String sql = &quot;UPDATE giao_dich SET danh_muc_thu_id = ? WHERE ma_giao_dich = ?&quot;;</span>
+<span class="nc" id="L233">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L234">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            if (danhMucThuId != null) stmt.setInt(1, danhMucThuId);</span>
+<span class="nc" id="L236">            else stmt.setNull(1, Types.INTEGER);</span>
+<span class="nc" id="L237">            stmt.setInt(2, maGiaoDich);</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            return stmt.executeUpdate() &gt; 0;</span>
+        }
+    }
+
+    /** Tổng quan chi/thu theo tháng của 1 tài khoản */
+    public Map&lt;String, Double&gt; layTongQuanTheoThang(String soTaiKhoan, int thang, int nam) {
+<span class="nc" id="L244">        Map&lt;String, Double&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L245">        String sql = &quot;SELECT &quot; +</span>
+                &quot;SUM(CASE WHEN so_tai_khoan_gui = ? THEN so_tien ELSE 0 END) AS tong_chi, &quot; +
+                &quot;SUM(CASE WHEN so_tai_khoan_nhan = ? THEN so_tien ELSE 0 END) AS tong_thu &quot; +
+                &quot;FROM giao_dich &quot; +
+                &quot;WHERE (so_tai_khoan_gui = ? OR so_tai_khoan_nhan = ?) &quot; +
+                &quot;AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?&quot;;
+
+<span class="nc" id="L252">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L253">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L254">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L255">            stmt.setString(2, soTaiKhoan);</span>
+<span class="nc" id="L256">            stmt.setString(3, soTaiKhoan);</span>
+<span class="nc" id="L257">            stmt.setString(4, soTaiKhoan);</span>
+<span class="nc" id="L258">            stmt.setInt(5, thang);</span>
+<span class="nc" id="L259">            stmt.setInt(6, nam);</span>
+
+<span class="nc" id="L261">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L263">                result.put(&quot;chi&quot;, rs.getDouble(&quot;tong_chi&quot;));</span>
+<span class="nc" id="L264">                result.put(&quot;thu&quot;, rs.getDouble(&quot;tong_thu&quot;));</span>
+            } else {
+<span class="nc" id="L266">                result.put(&quot;chi&quot;, 0.0);</span>
+<span class="nc" id="L267">                result.put(&quot;thu&quot;, 0.0);</span>
+            }
+<span class="nc" id="L269">        } catch (SQLException e) {</span>
+<span class="nc" id="L270">            e.printStackTrace();</span>
+<span class="nc" id="L271">            result.put(&quot;chi&quot;, 0.0);</span>
+<span class="nc" id="L272">            result.put(&quot;thu&quot;, 0.0);</span>
+<span class="nc" id="L273">        }</span>
+
+<span class="nc" id="L275">        return result;</span>
+    }
+
+    /** Thống kê chi tiêu theo danh mục chi trong tháng */
+    public Map&lt;String, Double&gt; layChiTheoDanhMuc(String soTaiKhoan, int thang, int nam) {
+<span class="nc" id="L280">        Map&lt;String, Double&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L281">        String sql = &quot;SELECT dm.ten_danh_muc, SUM(gd.so_tien) AS tong_chi &quot; +</span>
+                &quot;FROM giao_dich gd &quot; +
+                &quot;JOIN danh_muc dm ON gd.danh_muc_chi_id = dm.id &quot; +
+                &quot;WHERE gd.so_tai_khoan_gui = ? &quot; +
+                &quot;AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? &quot; +
+                &quot;GROUP BY dm.id, dm.ten_danh_muc &quot; +
+                &quot;ORDER BY tong_chi DESC&quot;;
+
+<span class="nc" id="L289">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L290">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L291">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L292">            stmt.setInt(2, thang);</span>
+<span class="nc" id="L293">            stmt.setInt(3, nam);</span>
+
+<span class="nc" id="L295">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L297">                result.put(rs.getString(&quot;ten_danh_muc&quot;), rs.getDouble(&quot;tong_chi&quot;));</span>
+            }
+<span class="nc" id="L299">        } catch (SQLException e) {</span>
+<span class="nc" id="L300">            e.printStackTrace();</span>
+<span class="nc" id="L301">        }</span>
+
+<span class="nc" id="L303">        return result;</span>
+    }
+
+    /** Thống kê thu nhập theo danh mục thu trong tháng */
+    public Map&lt;String, Double&gt; layThuTheoDanhMuc(String soTaiKhoan, int thang, int nam) {
+<span class="nc" id="L308">        Map&lt;String, Double&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L309">        String sql = &quot;SELECT dm.ten_danh_muc, SUM(gd.so_tien) AS tong_thu &quot; +</span>
+                     &quot;FROM giao_dich gd &quot; +
+                     &quot;JOIN danh_muc dm ON gd.danh_muc_thu_id = dm.id &quot; +
+                     &quot;WHERE gd.so_tai_khoan_nhan = ? &quot; +
+                     &quot;AND MONTH(gd.ngay_giao_dich) = ? AND YEAR(gd.ngay_giao_dich) = ? &quot; +
+                     &quot;GROUP BY dm.id, dm.ten_danh_muc &quot; +
+                     &quot;ORDER BY tong_thu DESC&quot;;
+<span class="nc" id="L316">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L317">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L318">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L319">            stmt.setInt(2, thang);</span>
+<span class="nc" id="L320">            stmt.setInt(3, nam);</span>
+<span class="nc" id="L321">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L323">                result.put(rs.getString(&quot;ten_danh_muc&quot;), rs.getDouble(&quot;tong_thu&quot;));</span>
+            }
+<span class="nc" id="L325">        } catch (SQLException e) { e.printStackTrace(); }</span>
+<span class="nc" id="L326">        return result;</span>
+    }
+
+    /**
+     * Tách nguồn thu theo tháng:
+     * - thu_tien_mat: thu do người dùng tự ghi nhận tiền mặt
+     * - thu_chuyen_khoan: thu do người khác chuyển khoản
+     */
+    public Map&lt;String, Double&gt; layTongThuTheoNguon(String soTaiKhoan, int thang, int nam) {
+<span class="nc" id="L335">        Map&lt;String, Double&gt; result = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L336">        String sql = &quot;SELECT &quot; +</span>
+                &quot;COALESCE(SUM(CASE WHEN so_tai_khoan_nhan = ? AND noi_dung LIKE ? THEN so_tien ELSE 0 END), 0) AS thu_tien_mat, &quot; +
+                &quot;COALESCE(SUM(CASE WHEN so_tai_khoan_nhan = ? AND (noi_dung IS NULL OR noi_dung NOT LIKE ?) THEN so_tien ELSE 0 END), 0) AS thu_chuyen_khoan &quot; +
+                &quot;FROM giao_dich &quot; +
+                &quot;WHERE so_tai_khoan_nhan = ? AND MONTH(ngay_giao_dich) = ? AND YEAR(ngay_giao_dich) = ?&quot;;
+
+<span class="nc" id="L342">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L343">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L344">            String marker = TIEN_MAT_THU_PREFIX + &quot;%&quot;;</span>
+<span class="nc" id="L345">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L346">            stmt.setString(2, marker);</span>
+<span class="nc" id="L347">            stmt.setString(3, soTaiKhoan);</span>
+<span class="nc" id="L348">            stmt.setString(4, marker);</span>
+<span class="nc" id="L349">            stmt.setString(5, soTaiKhoan);</span>
+<span class="nc" id="L350">            stmt.setInt(6, thang);</span>
+<span class="nc" id="L351">            stmt.setInt(7, nam);</span>
+
+<span class="nc" id="L353">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L355">                result.put(&quot;thu_tien_mat&quot;, rs.getDouble(&quot;thu_tien_mat&quot;));</span>
+<span class="nc" id="L356">                result.put(&quot;thu_chuyen_khoan&quot;, rs.getDouble(&quot;thu_chuyen_khoan&quot;));</span>
+            } else {
+<span class="nc" id="L358">                result.put(&quot;thu_tien_mat&quot;, 0.0);</span>
+<span class="nc" id="L359">                result.put(&quot;thu_chuyen_khoan&quot;, 0.0);</span>
+            }
+<span class="nc" id="L361">        } catch (SQLException e) {</span>
+<span class="nc" id="L362">            e.printStackTrace();</span>
+<span class="nc" id="L363">            result.put(&quot;thu_tien_mat&quot;, 0.0);</span>
+<span class="nc" id="L364">            result.put(&quot;thu_chuyen_khoan&quot;, 0.0);</span>
+<span class="nc" id="L365">        }</span>
+<span class="nc" id="L366">        return result;</span>
+    }
+
+    /**
+     * Lấy số dư hiện tại của tài khoản
+     */
+    public BigDecimal laySoDu(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L373">        String sql = &quot;SELECT so_du FROM nguoi_dung WHERE so_tai_khoan = ?&quot;;</span>
+        
+<span class="nc" id="L375">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L376">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L378">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L379">            ResultSet rs = stmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L381" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L382">                return rs.getBigDecimal(&quot;so_du&quot;);</span>
+            }
+<span class="nc bnc" id="L384" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L385">        return BigDecimal.ZERO;</span>
+    }
+
+    /**
+     * Lấy số dư ví tiền mặt hiện tại của tài khoản
+     */
+    public BigDecimal laySoDuTienMat(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L392">        String sql = &quot;SELECT so_du_tien_mat FROM nguoi_dung WHERE so_tai_khoan = ?&quot;;</span>
+
+<span class="nc" id="L394">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L395">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+
+<span class="nc" id="L397">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L398">            ResultSet rs = stmt.executeQuery();</span>
+
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L401">                BigDecimal soDuTienMat = rs.getBigDecimal(&quot;so_du_tien_mat&quot;);</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                return soDuTienMat != null ? soDuTienMat : BigDecimal.ZERO;</span>
+            }
+<span class="nc bnc" id="L404" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L405">        return BigDecimal.ZERO;</span>
+    }
+
+    /**
+     * Đếm tổng số giao dịch CHUYỂN KHOẢN trong hệ thống (dùng cho báo cáo admin)
+     * Loại trừ các giao dịch tiền mặt nội bộ có marker [TIEN_MAT_*].
+     */
+    public long demTatCaGiaoDich() throws SQLException {
+<span class="nc" id="L413">        String sql = &quot;SELECT COUNT(*) FROM giao_dich &quot; +</span>
+                &quot;WHERE noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?)&quot;;
+<span class="nc" id="L415">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L416">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L417">            stmt.setString(1, TIEN_MAT_CHI_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L418">            stmt.setString(2, TIEN_MAT_THU_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L419">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">            if (rs.next()) return rs.getLong(1);</span>
+<span class="nc bnc" id="L421" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L422">        return 0;</span>
+    }
+
+    /**
+     * Tính tổng số tiền chuyển khoản đã lưu chuyển trong hệ thống (dùng cho báo cáo admin)
+     * Loại trừ các giao dịch tiền mặt nội bộ có marker [TIEN_MAT_*].
+     */
+    public BigDecimal tongSoTienGiaoDich() throws SQLException {
+<span class="nc" id="L430">        String sql = &quot;SELECT COALESCE(SUM(so_tien), 0) FROM giao_dich &quot; +</span>
+                &quot;WHERE noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?)&quot;;
+<span class="nc" id="L432">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L433">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L434">            stmt.setString(1, TIEN_MAT_CHI_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L435">            stmt.setString(2, TIEN_MAT_THU_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L436">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L437" title="All 2 branches missed.">            if (rs.next()) return rs.getBigDecimal(1);</span>
+<span class="nc bnc" id="L438" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L439">        return BigDecimal.ZERO;</span>
+    }
+
+    /**
+     * Đếm số giao dịch CHUYỂN KHOẢN đã gửi của một tài khoản
+     */
+    public long demGDGui(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L446">        String sql = &quot;SELECT COUNT(*) FROM giao_dich &quot; +</span>
+                &quot;WHERE so_tai_khoan_gui = ? &quot; +
+                &quot;AND (noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?))&quot;;
+<span class="nc" id="L449">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L450">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L451">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L452">            stmt.setString(2, TIEN_MAT_CHI_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L453">            stmt.setString(3, TIEN_MAT_THU_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L454">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">            if (rs.next()) return rs.getLong(1);</span>
+<span class="nc bnc" id="L456" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L457">        return 0;</span>
+    }
+
+    /**
+     * Đếm số giao dịch CHUYỂN KHOẢN đã nhận của một tài khoản
+     */
+    public long demGDNhan(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L464">        String sql = &quot;SELECT COUNT(*) FROM giao_dich &quot; +</span>
+                &quot;WHERE so_tai_khoan_nhan = ? &quot; +
+                &quot;AND (noi_dung IS NULL OR (noi_dung NOT LIKE ? AND noi_dung NOT LIKE ?))&quot;;
+<span class="nc" id="L467">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L468">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L469">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L470">            stmt.setString(2, TIEN_MAT_CHI_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L471">            stmt.setString(3, TIEN_MAT_THU_PREFIX + &quot;%&quot;);</span>
+<span class="nc" id="L472">            ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">            if (rs.next()) return rs.getLong(1);</span>
+<span class="nc bnc" id="L474" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L475">        return 0;</span>
+    }
+
+    /**
+     * Tìm tên người dùng theo số tài khoản
+     */
+    public String layTenNguoiDung(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L482">        String sql = &quot;SELECT ho_ten FROM nguoi_dung WHERE so_tai_khoan = ?&quot;;</span>
+        
+<span class="nc" id="L484">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L485">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L487">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L488">            ResultSet rs = stmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L490" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L491">                return rs.getString(&quot;ho_ten&quot;);</span>
+            }
+<span class="nc bnc" id="L493" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L494">        return null;</span>
+    }
+
+    /**
+     * Tìm tên người dùng thường theo số tài khoản (không bao gồm admin)
+     */
+    public String layTenNguoiDungThuong(String soTaiKhoan) throws SQLException {
+<span class="nc" id="L501">        String sql = &quot;SELECT ho_ten FROM nguoi_dung WHERE so_tai_khoan = ? AND vai_tro = 'nguoi_dung'&quot;;</span>
+
+<span class="nc" id="L503">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L504">             PreparedStatement stmt = conn.prepareStatement(sql)) {</span>
+
+<span class="nc" id="L506">            stmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L507">            ResultSet rs = stmt.executeQuery();</span>
+
+<span class="nc bnc" id="L509" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L510">                return rs.getString(&quot;ho_ten&quot;);</span>
+            }
+<span class="nc bnc" id="L512" title="All 4 branches missed.">        }</span>
+<span class="nc" id="L513">        return null;</span>
+    }
+
+    /**
+     * Ghi nhận giao dịch tiền mặt (không chuyển khoản cho người khác) để thống kê thu/chi.
+     * loai = &quot;chi&quot; hoặc &quot;thu&quot;
+     */
+    public boolean ghiNhanTienMat(String soTaiKhoanUser, BigDecimal soTien, String noiDung,
+                                  String loai, Integer danhMucId) throws SQLException {
+<span class="nc bnc" id="L522" title="All 4 branches missed.">        if (soTaiKhoanUser == null || soTaiKhoanUser.isBlank()) {</span>
+<span class="nc" id="L523">            throw new SQLException(&quot;Không xác định được tài khoản người dùng!&quot;);</span>
+        }
+<span class="nc bnc" id="L525" title="All 4 branches missed.">        if (soTien == null || soTien.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
+<span class="nc" id="L526">            throw new SQLException(&quot;Số tiền phải lớn hơn 0!&quot;);</span>
+        }
+<span class="nc bnc" id="L528" title="All 4 branches missed.">        if (!(&quot;chi&quot;.equals(loai) || &quot;thu&quot;.equals(loai))) {</span>
+<span class="nc" id="L529">            throw new SQLException(&quot;Loại giao dịch không hợp lệ!&quot;);</span>
+        }
+
+<span class="nc" id="L532">        Connection conn = null;</span>
+        try {
+<span class="nc" id="L534">            conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L535">            conn.setAutoCommit(false);</span>
+
+            // 1) Khóa tài khoản user để cập nhật số dư ví tiền mặt an toàn
+            BigDecimal soDuHienTai;
+<span class="nc" id="L539">            String sqlLockUser = &quot;SELECT so_du_tien_mat FROM nguoi_dung WHERE so_tai_khoan = ? FOR UPDATE&quot;;</span>
+<span class="nc" id="L540">            try (PreparedStatement stmt = conn.prepareStatement(sqlLockUser)) {</span>
+<span class="nc" id="L541">                stmt.setString(1, soTaiKhoanUser);</span>
+<span class="nc" id="L542">                ResultSet rs = stmt.executeQuery();</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">                if (!rs.next()) {</span>
+<span class="nc" id="L544">                    conn.rollback();</span>
+<span class="nc" id="L545">                    throw new SQLException(&quot;Tài khoản người dùng không tồn tại!&quot;);</span>
+                }
+<span class="nc" id="L547">                soDuHienTai = rs.getBigDecimal(&quot;so_du_tien_mat&quot;);</span>
+<span class="nc bnc" id="L548" title="All 2 branches missed.">                if (soDuHienTai == null) {</span>
+<span class="nc" id="L549">                    soDuHienTai = BigDecimal.ZERO;</span>
+                }
+            }
+
+<span class="nc bnc" id="L553" title="All 4 branches missed.">            if (&quot;chi&quot;.equals(loai) &amp;&amp; soDuHienTai.compareTo(soTien) &lt; 0) {</span>
+<span class="nc" id="L554">                conn.rollback();</span>
+<span class="nc" id="L555">                throw new SQLException(&quot;Số dư không đủ để ghi nhận khoản chi!&quot;);</span>
+            }
+
+                // 2) Cập nhật ví tiền mặt user
+                String sqlCapNhatSoDu = &quot;UPDATE nguoi_dung SET so_du_tien_mat = so_du_tien_mat &quot; +
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                    (&quot;chi&quot;.equals(loai) ? &quot;-&quot; : &quot;+&quot;) + &quot; ? WHERE so_tai_khoan = ?&quot;;</span>
+<span class="nc" id="L561">            try (PreparedStatement stmt = conn.prepareStatement(sqlCapNhatSoDu)) {</span>
+<span class="nc" id="L562">                stmt.setBigDecimal(1, soTien);</span>
+<span class="nc" id="L563">                stmt.setString(2, soTaiKhoanUser);</span>
+<span class="nc" id="L564">                stmt.executeUpdate();</span>
+            }
+
+            // 3) Lấy STK admin làm tài khoản đối ứng kỹ thuật để tránh đếm thu/chi bị nhân đôi
+<span class="nc" id="L568">            String soTaiKhoanAdmin = null;</span>
+<span class="nc" id="L569">            String sqlAdmin = &quot;SELECT so_tai_khoan FROM nguoi_dung WHERE vai_tro = 'quan_ly' ORDER BY ma_nguoi_dung LIMIT 1&quot;;</span>
+<span class="nc" id="L570">            try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(sqlAdmin)) {</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">                if (rs.next()) {</span>
+<span class="nc" id="L572">                    soTaiKhoanAdmin = rs.getString(&quot;so_tai_khoan&quot;);</span>
+                }
+            }
+<span class="nc bnc" id="L575" title="All 4 branches missed.">            if (soTaiKhoanAdmin == null || soTaiKhoanAdmin.isBlank()) {</span>
+<span class="nc" id="L576">                conn.rollback();</span>
+<span class="nc" id="L577">                throw new SQLException(&quot;Không tìm thấy tài khoản Admin để ghi nhận giao dịch!&quot;);</span>
+            }
+
+            // 4) Lưu giao dịch tiền mặt
+<span class="nc bnc" id="L581" title="All 2 branches missed.">            String soTaiKhoanGui = &quot;chi&quot;.equals(loai) ? soTaiKhoanUser : soTaiKhoanAdmin;</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">            String soTaiKhoanNhan = &quot;chi&quot;.equals(loai) ? soTaiKhoanAdmin : soTaiKhoanUser;</span>
+<span class="nc bnc" id="L583" title="All 2 branches missed.">            String noiDungPrefix = &quot;chi&quot;.equals(loai) ? TIEN_MAT_CHI_PREFIX : TIEN_MAT_THU_PREFIX;</span>
+<span class="nc bnc" id="L584" title="All 4 branches missed.">            String noiDungDayDu = noiDungPrefix + (noiDung != null &amp;&amp; !noiDung.isBlank() ? (&quot; &quot; + noiDung.trim()) : &quot;&quot;);</span>
+
+<span class="nc" id="L586">            String sqlInsert = &quot;INSERT INTO giao_dich &quot; +</span>
+                    &quot;(so_tai_khoan_gui, so_tai_khoan_nhan, so_tien, noi_dung, danh_muc_chi_id, danh_muc_thu_id, trang_thai) &quot; +
+                    &quot;VALUES (?, ?, ?, ?, ?, ?, 'thanh_cong')&quot;;
+<span class="nc" id="L589">            try (PreparedStatement stmt = conn.prepareStatement(sqlInsert)) {</span>
+<span class="nc" id="L590">                stmt.setString(1, soTaiKhoanGui);</span>
+<span class="nc" id="L591">                stmt.setString(2, soTaiKhoanNhan);</span>
+<span class="nc" id="L592">                stmt.setBigDecimal(3, soTien);</span>
+<span class="nc" id="L593">                stmt.setString(4, noiDungDayDu);</span>
+
+<span class="nc bnc" id="L595" title="All 2 branches missed.">                if (&quot;chi&quot;.equals(loai)) {</span>
+<span class="nc bnc" id="L596" title="All 2 branches missed.">                    if (danhMucId != null) stmt.setInt(5, danhMucId);</span>
+<span class="nc" id="L597">                    else stmt.setNull(5, Types.INTEGER);</span>
+<span class="nc" id="L598">                    stmt.setNull(6, Types.INTEGER);</span>
+                } else {
+<span class="nc" id="L600">                    stmt.setNull(5, Types.INTEGER);</span>
+<span class="nc bnc" id="L601" title="All 2 branches missed.">                    if (danhMucId != null) stmt.setInt(6, danhMucId);</span>
+<span class="nc" id="L602">                    else stmt.setNull(6, Types.INTEGER);</span>
+                }
+<span class="nc" id="L604">                stmt.executeUpdate();</span>
+            }
+
+<span class="nc" id="L607">            conn.commit();</span>
+<span class="nc" id="L608">            return true;</span>
+<span class="nc" id="L609">        } catch (SQLException e) {</span>
+<span class="nc bnc" id="L610" title="All 2 branches missed.">            if (conn != null) conn.rollback();</span>
+<span class="nc" id="L611">            throw e;</span>
+        } finally {
+<span class="nc bnc" id="L613" title="All 2 branches missed.">            if (conn != null) {</span>
+<span class="nc" id="L614">                conn.setAutoCommit(true);</span>
+<span class="nc" id="L615">                conn.close();</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

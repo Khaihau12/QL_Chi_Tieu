@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminReportController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.controller.admin</a> &gt; <span class="el_source">AdminReportController.java</span></div><h1>AdminReportController.java</h1><pre class="source lang-java linenums">package com.example.controller.admin;
+
+import com.example.dao.GiaoDichDAO;
+import com.example.dao.NguoiDungDAO;
+import com.example.model.NguoiDung;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.util.List;
+
+/**
+ * Controller panel Báo cáo hệ thống cho Admin.
+ */
+public class AdminReportController {
+
+    public static class UserReportRow {
+        private String tenDangNhap;
+        private String hoTen;
+        private String soTaiKhoan;
+        private String soDu;
+        private String soGDDaGui;
+        private String soGDDaNhan;
+        private String trangThai;
+
+        public UserReportRow(String tenDangNhap, String hoTen, String soTaiKhoan,
+<span class="nc" id="L39">                             String soDu, String soGDDaGui, String soGDDaNhan, String trangThai) {</span>
+<span class="nc" id="L40">            this.tenDangNhap = tenDangNhap;</span>
+<span class="nc" id="L41">            this.hoTen = hoTen;</span>
+<span class="nc" id="L42">            this.soTaiKhoan = soTaiKhoan;</span>
+<span class="nc" id="L43">            this.soDu = soDu;</span>
+<span class="nc" id="L44">            this.soGDDaGui = soGDDaGui;</span>
+<span class="nc" id="L45">            this.soGDDaNhan = soGDDaNhan;</span>
+<span class="nc" id="L46">            this.trangThai = trangThai;</span>
+<span class="nc" id="L47">        }</span>
+
+<span class="nc" id="L49">        public String getTenDangNhap() { return tenDangNhap; }</span>
+
+<span class="nc" id="L51">        public String getHoTen() { return hoTen; }</span>
+
+<span class="nc" id="L53">        public String getSoTaiKhoan() { return soTaiKhoan; }</span>
+
+<span class="nc" id="L55">        public String getSoDu() { return soDu; }</span>
+
+<span class="nc" id="L57">        public String getSoGDDaGui() { return soGDDaGui; }</span>
+
+<span class="nc" id="L59">        public String getSoGDDaNhan() { return soGDDaNhan; }</span>
+
+<span class="nc" id="L61">        public String getTrangThai() { return trangThai; }</span>
+    }
+
+<span class="nc" id="L64">    private final NguoiDungDAO nguoiDungDAO = new NguoiDungDAO();</span>
+<span class="nc" id="L65">    private final GiaoDichDAO giaoDichDAO = new GiaoDichDAO();</span>
+<span class="nc" id="L66">    private final DecimalFormat df = new DecimalFormat(&quot;#,###&quot;);</span>
+
+    private VBox panel;
+
+    private Label lblTongNguoiDung;
+    private Label lblTongGiaoDich;
+    private Label lblTongTienLuuChuyen;
+    private Label lblBiKhoa;
+
+    private TableView&lt;UserReportRow&gt; tableUserReport;
+
+<span class="nc" id="L77">    public AdminReportController() {</span>
+<span class="nc" id="L78">        buildPanel();</span>
+<span class="nc" id="L79">    }</span>
+
+    public VBox getPanel() {
+<span class="nc" id="L82">        return panel;</span>
+    }
+
+    public void refresh() {
+        try {
+<span class="nc" id="L87">            List&lt;NguoiDung&gt; all = nguoiDungDAO.layTatCa();</span>
+<span class="nc" id="L88">            long tongUser = all.stream().filter(nd -&gt; &quot;nguoi_dung&quot;.equals(nd.getVaiTro())).count();</span>
+<span class="nc" id="L89">            long biKhoa = all.stream().filter(nd -&gt; &quot;bi_khoa&quot;.equals(nd.getTrangThai())).count();</span>
+
+<span class="nc" id="L91">            long tongGD = giaoDichDAO.demTatCaGiaoDich();</span>
+<span class="nc" id="L92">            BigDecimal tongTien = giaoDichDAO.tongSoTienGiaoDich();</span>
+
+<span class="nc" id="L94">            lblTongNguoiDung.setText(String.valueOf(tongUser));</span>
+<span class="nc" id="L95">            lblTongGiaoDich.setText(String.valueOf(tongGD));</span>
+<span class="nc" id="L96">            lblTongTienLuuChuyen.setText(df.format(tongTien) + &quot; đ&quot;);</span>
+<span class="nc" id="L97">            lblBiKhoa.setText(String.valueOf(biKhoa));</span>
+
+<span class="nc" id="L99">            tableUserReport.getItems().clear();</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            for (NguoiDung nd : all) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                if (&quot;quan_ly&quot;.equals(nd.getVaiTro())) continue;</span>
+<span class="nc" id="L102">                long gui = giaoDichDAO.demGDGui(nd.getSoTaiKhoan());</span>
+<span class="nc" id="L103">                long nhan = giaoDichDAO.demGDNhan(nd.getSoTaiKhoan());</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                String soDuFmt = nd.getSoDu() != null ? df.format(nd.getSoDu()) + &quot; đ&quot; : &quot;0 đ&quot;;</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                String tt = &quot;hoat_dong&quot;.equals(nd.getTrangThai()) ? &quot; Hoạt động&quot; : &quot; Bị khóa&quot;;</span>
+<span class="nc" id="L106">                tableUserReport.getItems().add(new UserReportRow(</span>
+<span class="nc" id="L107">                        nd.getTenDangNhap(), nd.getHoTen(), nd.getSoTaiKhoan(),</span>
+<span class="nc" id="L108">                        soDuFmt, String.valueOf(gui), String.valueOf(nhan), tt));</span>
+<span class="nc" id="L109">            }</span>
+<span class="nc" id="L110">        } catch (Exception e) {</span>
+<span class="nc" id="L111">            showAlert(&quot;Lỗi&quot;, &quot;Không thể tải báo cáo: &quot; + e.getMessage());</span>
+<span class="nc" id="L112">        }</span>
+<span class="nc" id="L113">    }</span>
+
+    private void buildPanel() {
+<span class="nc" id="L116">        panel = new VBox(20);</span>
+<span class="nc" id="L117">        panel.setPadding(new Insets(5));</span>
+
+<span class="nc" id="L119">        Label title = new Label(&quot;Báo cáo hệ thống&quot;);</span>
+<span class="nc" id="L120">        title.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+
+<span class="nc" id="L122">        HBox statsRow = new HBox(20);</span>
+<span class="nc" id="L123">        statsRow.setAlignment(Pos.CENTER_LEFT);</span>
+
+<span class="nc" id="L125">        lblTongNguoiDung = new Label(&quot;...&quot;);</span>
+<span class="nc" id="L126">        lblTongGiaoDich = new Label(&quot;...&quot;);</span>
+<span class="nc" id="L127">        lblTongTienLuuChuyen = new Label(&quot;...&quot;);</span>
+<span class="nc" id="L128">        lblBiKhoa = new Label(&quot;...&quot;);</span>
+
+<span class="nc" id="L130">        statsRow.getChildren().addAll(</span>
+<span class="nc" id="L131">                createStatCard(&quot;Tổng người dùng&quot;, lblTongNguoiDung, &quot;#3498db&quot;),</span>
+<span class="nc" id="L132">                createStatCard(&quot;Tổng GD chuyển khoản&quot;, lblTongGiaoDich, &quot;#27ae60&quot;),</span>
+<span class="nc" id="L133">                createStatCard(&quot;Tổng tiền chuyển khoản&quot;, lblTongTienLuuChuyen, &quot;#9b59b6&quot;),</span>
+<span class="nc" id="L134">                createStatCard(&quot;Tài khoản bị khóa&quot;, lblBiKhoa, &quot;#e74c3c&quot;)</span>
+        );
+
+<span class="nc" id="L137">        Label lblUserTitle = new Label(&quot;Chi tiết theo từng người dùng&quot;);</span>
+<span class="nc" id="L138">        lblUserTitle.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 16));</span>
+
+<span class="nc" id="L140">        tableUserReport = new TableView&lt;&gt;();</span>
+<span class="nc" id="L141">        VBox.setVgrow(tableUserReport, Priority.ALWAYS);</span>
+
+<span class="nc" id="L143">        TableColumn&lt;UserReportRow, String&gt; c1 = new TableColumn&lt;&gt;(&quot;Tên đăng nhập&quot;);</span>
+<span class="nc" id="L144">        c1.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;tenDangNhap&quot;));</span>
+<span class="nc" id="L145">        c1.setPrefWidth(130);</span>
+
+<span class="nc" id="L147">        TableColumn&lt;UserReportRow, String&gt; c2 = new TableColumn&lt;&gt;(&quot;Họ tên&quot;);</span>
+<span class="nc" id="L148">        c2.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;hoTen&quot;));</span>
+<span class="nc" id="L149">        c2.setPrefWidth(160);</span>
+
+<span class="nc" id="L151">        TableColumn&lt;UserReportRow, String&gt; c3 = new TableColumn&lt;&gt;(&quot;Số TK&quot;);</span>
+<span class="nc" id="L152">        c3.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;soTaiKhoan&quot;));</span>
+<span class="nc" id="L153">        c3.setPrefWidth(110);</span>
+
+<span class="nc" id="L155">        TableColumn&lt;UserReportRow, String&gt; c4 = new TableColumn&lt;&gt;(&quot;Số dư hiện tại&quot;);</span>
+<span class="nc" id="L156">        c4.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;soDu&quot;));</span>
+<span class="nc" id="L157">        c4.setPrefWidth(140);</span>
+
+<span class="nc" id="L159">        TableColumn&lt;UserReportRow, String&gt; c5 = new TableColumn&lt;&gt;(&quot;GD CK đã gửi&quot;);</span>
+<span class="nc" id="L160">        c5.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;soGDDaGui&quot;));</span>
+<span class="nc" id="L161">        c5.setPrefWidth(100);</span>
+
+<span class="nc" id="L163">        TableColumn&lt;UserReportRow, String&gt; c6 = new TableColumn&lt;&gt;(&quot;GD CK đã nhận&quot;);</span>
+<span class="nc" id="L164">        c6.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;soGDDaNhan&quot;));</span>
+<span class="nc" id="L165">        c6.setPrefWidth(100);</span>
+
+<span class="nc" id="L167">        TableColumn&lt;UserReportRow, String&gt; c7 = new TableColumn&lt;&gt;(&quot;Trạng thái&quot;);</span>
+<span class="nc" id="L168">        c7.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;trangThai&quot;));</span>
+<span class="nc" id="L169">        c7.setPrefWidth(120);</span>
+
+<span class="nc" id="L171">        tableUserReport.getColumns().addAll(c1, c2, c3, c4, c5, c6, c7);</span>
+
+<span class="nc" id="L173">        Button btnRefresh = new Button(&quot;Làm mới báo cáo&quot;);</span>
+<span class="nc" id="L174">        btnRefresh.setStyle(&quot;-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L175">        btnRefresh.setOnAction(e -&gt; refresh());</span>
+
+<span class="nc" id="L177">        panel.getChildren().addAll(title, statsRow, lblUserTitle, tableUserReport, btnRefresh);</span>
+<span class="nc" id="L178">        refresh();</span>
+<span class="nc" id="L179">    }</span>
+
+    private VBox createStatCard(String label, Label valueLabel, String color) {
+<span class="nc" id="L182">        VBox card = new VBox(6);</span>
+<span class="nc" id="L183">        card.setPadding(new Insets(15));</span>
+<span class="nc" id="L184">        card.setPrefWidth(215);</span>
+<span class="nc" id="L185">        card.setStyle(&quot;-fx-background-color: white; -fx-background-radius: 8; &quot; +</span>
+                &quot;-fx-border-color: &quot; + color + &quot;; -fx-border-width: 0 0 4 0;&quot;);
+
+<span class="nc" id="L188">        Label lbl = new Label(label);</span>
+<span class="nc" id="L189">        lbl.setStyle(&quot;-fx-font-size: 12px; -fx-text-fill: #7f8c8d;&quot;);</span>
+
+<span class="nc" id="L191">        valueLabel.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 20));</span>
+<span class="nc" id="L192">        valueLabel.setStyle(&quot;-fx-text-fill: &quot; + color + &quot;;&quot;);</span>
+
+<span class="nc" id="L194">        card.getChildren().addAll(lbl, valueLabel);</span>
+<span class="nc" id="L195">        return card;</span>
+    }
+
+    private void showAlert(String title, String content) {
+<span class="nc" id="L199">        Alert alert = new Alert(Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L200">        alert.setTitle(title);</span>
+<span class="nc" id="L201">        alert.setHeaderText(null);</span>
+<span class="nc" id="L202">        alert.setContentText(content);</span>
+<span class="nc" id="L203">        alert.showAndWait();</span>
+<span class="nc" id="L204">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

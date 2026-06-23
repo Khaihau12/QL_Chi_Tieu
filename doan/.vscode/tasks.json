@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generate JaCoCo Coverage",
+            "type": "shell",
+            "command": "mvn",
+            "args": [
+                "clean",
+                "test",
+                "-q"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "test",
+            "problemMatcher": []
+        }
+    ]
+}

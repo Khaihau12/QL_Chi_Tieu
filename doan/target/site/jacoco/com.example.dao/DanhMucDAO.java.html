@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DanhMucDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.dao</a> &gt; <span class="el_source">DanhMucDAO.java</span></div><h1>DanhMucDAO.java</h1><pre class="source lang-java linenums">package com.example.dao;
+
+import com.example.model.DanhMuc;
+import com.example.util.DatabaseConnection;
+
+import java.sql.*;
+import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+<span class="nc" id="L12">public class DanhMucDAO {</span>
+
+    /**
+     * Kiểm tra tên danh mục đã tồn tại cho loại + phạm vi hay chưa.
+     *
+     * scopeUserSoTaiKhoan:
+     * - null: chỉ kiểm tra danh mục mặc định (so_tai_khoan IS NULL)
+     * - có giá trị: kiểm tra cả mặc định + danh mục riêng của user đó
+     */
+    public boolean tonTaiTenDanhMuc(String tenDanhMuc, String loai, String scopeUserSoTaiKhoan) {
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        String ten = tenDanhMuc != null ? tenDanhMuc.trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L23" title="All 4 branches missed.">        String loaiCheck = (loai == null || loai.isBlank()) ? &quot;chi&quot; : loai.trim().toLowerCase();</span>
+
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (ten.isEmpty()) return false;</span>
+
+        String sql;
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (scopeUserSoTaiKhoan == null) {</span>
+<span class="nc" id="L29">            sql = &quot;SELECT 1 FROM danh_muc &quot; +</span>
+                  &quot;WHERE loai = ? AND so_tai_khoan IS NULL &quot; +
+                  &quot;AND LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM(?)) LIMIT 1&quot;;
+        } else {
+<span class="nc" id="L33">            sql = &quot;SELECT 1 FROM danh_muc &quot; +</span>
+                  &quot;WHERE loai = ? AND (so_tai_khoan IS NULL OR so_tai_khoan = ?) &quot; +
+                  &quot;AND LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM(?)) LIMIT 1&quot;;
+        }
+
+<span class="nc" id="L38">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L39">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L40">            pstmt.setString(1, loaiCheck);</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (scopeUserSoTaiKhoan == null) {</span>
+<span class="nc" id="L42">                pstmt.setString(2, ten);</span>
+            } else {
+<span class="nc" id="L44">                pstmt.setString(2, scopeUserSoTaiKhoan);</span>
+<span class="nc" id="L45">                pstmt.setString(3, ten);</span>
+            }
+<span class="nc" id="L47">            ResultSet rs = pstmt.executeQuery();</span>
+<span class="nc" id="L48">            return rs.next();</span>
+<span class="nc" id="L49">        } catch (SQLException e) {</span>
+<span class="nc" id="L50">            e.printStackTrace();</span>
+<span class="nc" id="L51">            return false;</span>
+        }
+    }
+
+    /**
+     * Kiểm tra trùng tên CHỈ trong danh mục con (parent_id IS NOT NULL),
+     * bất kể danh mục con thuộc cha nào.
+     *
+     * scopeUserSoTaiKhoan:
+     * - null: chỉ kiểm tra danh mục mặc định
+     * - có giá trị: kiểm tra cả mặc định + danh mục riêng của user đó
+     */
+    public boolean tonTaiTenDanhMucCon(String tenDanhMuc, String loai, String scopeUserSoTaiKhoan, Integer excludeId) {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        String ten = tenDanhMuc != null ? tenDanhMuc.trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        String loaiCheck = (loai == null || loai.isBlank()) ? &quot;chi&quot; : loai.trim().toLowerCase();</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (ten.isEmpty()) return false;</span>
+
+        // So sánh mềm: không phân biệt hoa/thường, có dấu/không dấu, khoảng trắng/ký tự đặc biệt.
+<span class="nc" id="L69">        String tenChuan = normalizeCategoryName(ten);</span>
+<span class="nc" id="L70">        List&lt;DanhMuc&gt; dsTheoLoai = layDanhMucTheoLoai(scopeUserSoTaiKhoan, loaiCheck);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        for (DanhMuc dm : dsTheoLoai) {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            if (dm.getParentId() == null) continue; // Chỉ xét danh mục con</span>
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            if (excludeId != null &amp;&amp; dm.getId() == excludeId) continue;</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            String tenHienCo = dm.getTenDanhMuc() != null ? dm.getTenDanhMuc() : &quot;&quot;;</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (tenChuan.equals(normalizeCategoryName(tenHienCo))) {</span>
+<span class="nc" id="L77">                return true;</span>
+            }
+<span class="nc" id="L79">        }</span>
+<span class="nc" id="L80">        return false;</span>
+    }
+
+    private String normalizeCategoryName(String input) {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (input == null) return &quot;&quot;;</span>
+<span class="nc" id="L85">        String s = input.trim().toLowerCase(Locale.ROOT)</span>
+<span class="nc" id="L86">                .replace('đ', 'd')</span>
+<span class="nc" id="L87">                .replace('Đ', 'd');</span>
+<span class="nc" id="L88">        s = Normalizer.normalize(s, Normalizer.Form.NFD)</span>
+<span class="nc" id="L89">                .replaceAll(&quot;\\p{M}+&quot;, &quot;&quot;);</span>
+<span class="nc" id="L90">        return s.replaceAll(&quot;[^a-z0-9]&quot;, &quot;&quot;);</span>
+    }
+    
+    // Lấy tất cả danh mục (mặc định + riêng của user)
+    public List&lt;DanhMuc&gt; layTatCaDanhMuc(String soTaiKhoan) {
+<span class="nc" id="L95">        List&lt;DanhMuc&gt; danhSachDanhMuc = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L96">        String sql = &quot;SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha &quot; +</span>
+                    &quot;FROM danh_muc dm &quot; +
+                    &quot;LEFT JOIN danh_muc parent ON dm.parent_id = parent.id &quot; +
+                    &quot;WHERE dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ? &quot; +
+                    &quot;ORDER BY dm.so_tai_khoan IS NULL DESC, COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc&quot;;
+        
+<span class="nc" id="L102">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L103">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L105">            pstmt.setString(1, soTaiKhoan);</span>
+<span class="nc" id="L106">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L109">                DanhMuc dm = new DanhMuc(</span>
+<span class="nc" id="L110">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L111">                    rs.getString(&quot;ten_danh_muc&quot;),</span>
+<span class="nc" id="L112">                    rs.getString(&quot;mo_ta&quot;),</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                    rs.getString(&quot;loai&quot;) != null ? rs.getString(&quot;loai&quot;) : &quot;chi&quot;,</span>
+<span class="nc" id="L114">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L115">                    (Integer) rs.getObject(&quot;parent_id&quot;),</span>
+<span class="nc" id="L116">                    rs.getString(&quot;ten_danh_muc_cha&quot;)</span>
+                );
+<span class="nc" id="L118">                danhSachDanhMuc.add(dm);</span>
+<span class="nc" id="L119">            }</span>
+<span class="nc" id="L120">        } catch (SQLException e) {</span>
+<span class="nc" id="L121">            e.printStackTrace();</span>
+<span class="nc" id="L122">        }</span>
+        
+<span class="nc" id="L124">        return danhSachDanhMuc;</span>
+    }
+
+    // Lấy danh mục theo loại (chi/thu) cho một user (mặc định + riêng)
+    public List&lt;DanhMuc&gt; layDanhMucTheoLoai(String soTaiKhoan, String loai) {
+<span class="nc" id="L129">        List&lt;DanhMuc&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L130">        String sql = &quot;SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha &quot; +</span>
+                    &quot;FROM danh_muc dm &quot; +
+                    &quot;LEFT JOIN danh_muc parent ON dm.parent_id = parent.id &quot; +
+                    &quot;WHERE dm.loai = ? AND (dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ?) &quot; +
+                    &quot;ORDER BY COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc&quot;;
+<span class="nc" id="L135">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L136">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L137">            pstmt.setString(1, loai);</span>
+<span class="nc" id="L138">            pstmt.setString(2, soTaiKhoan);</span>
+<span class="nc" id="L139">            ResultSet rs = pstmt.executeQuery();</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L141">                result.add(new DanhMuc(</span>
+<span class="nc" id="L142">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L143">                    rs.getString(&quot;ten_danh_muc&quot;),</span>
+<span class="nc" id="L144">                    rs.getString(&quot;mo_ta&quot;),</span>
+                    loai,
+<span class="nc" id="L146">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L147">                    (Integer) rs.getObject(&quot;parent_id&quot;),</span>
+<span class="nc" id="L148">                    rs.getString(&quot;ten_danh_muc_cha&quot;)));</span>
+            }
+<span class="nc" id="L150">        } catch (SQLException e) { e.printStackTrace(); }</span>
+<span class="nc" id="L151">        return result;</span>
+    }
+
+    // Lấy CHỈ danh mục con theo loại (dùng khi gán danh mục cho giao dịch)
+    public List&lt;DanhMuc&gt; layDanhMucConTheoLoai(String soTaiKhoan, String loai) {
+<span class="nc" id="L156">        List&lt;DanhMuc&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L157">        String sql = &quot;SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha &quot; +</span>
+                    &quot;FROM danh_muc dm &quot; +
+                    &quot;LEFT JOIN danh_muc parent ON dm.parent_id = parent.id &quot; +
+                    &quot;WHERE dm.loai = ? AND dm.parent_id IS NOT NULL &quot; +
+                    &quot;AND (dm.so_tai_khoan IS NULL OR dm.so_tai_khoan = ?) &quot; +
+                    &quot;ORDER BY parent.ten_danh_muc, dm.ten_danh_muc&quot;;
+<span class="nc" id="L163">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L164">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+<span class="nc" id="L165">            pstmt.setString(1, loai);</span>
+<span class="nc" id="L166">            pstmt.setString(2, soTaiKhoan);</span>
+<span class="nc" id="L167">            ResultSet rs = pstmt.executeQuery();</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L169">                result.add(new DanhMuc(</span>
+<span class="nc" id="L170">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L171">                    rs.getString(&quot;ten_danh_muc&quot;),</span>
+<span class="nc" id="L172">                    rs.getString(&quot;mo_ta&quot;),</span>
+                    loai,
+<span class="nc" id="L174">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L175">                    (Integer) rs.getObject(&quot;parent_id&quot;),</span>
+<span class="nc" id="L176">                    rs.getString(&quot;ten_danh_muc_cha&quot;)));</span>
+            }
+<span class="nc" id="L178">        } catch (SQLException e) { e.printStackTrace(); }</span>
+<span class="nc" id="L179">        return result;</span>
+    }
+
+    // Lấy ID của danh mục &quot;Thu khác&quot; mặc định (dùng khi nhận tiền auto)
+    public Integer layIdThuKhacMacDinh() {
+<span class="nc" id="L184">        String sql = &quot;SELECT id FROM danh_muc WHERE ten_danh_muc = 'Thu khác' AND loai = 'thu' AND so_tai_khoan IS NULL LIMIT 1&quot;;</span>
+<span class="nc" id="L185">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L186">             Statement stmt = conn.createStatement();</span>
+<span class="nc" id="L187">             ResultSet rs = stmt.executeQuery(sql)) {</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (rs.next()) return rs.getInt(&quot;id&quot;);</span>
+<span class="nc bnc" id="L189" title="All 6 branches missed.">        } catch (SQLException e) { e.printStackTrace(); }</span>
+<span class="nc" id="L190">        return null;</span>
+    }
+    
+    // Lấy tất cả danh mục (chỉ mặc định - cho backward compatible)
+    public List&lt;DanhMuc&gt; layTatCaDanhMuc() {
+<span class="nc" id="L195">        List&lt;DanhMuc&gt; danhSachDanhMuc = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L196">        String sql = &quot;SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha &quot; +</span>
+                    &quot;FROM danh_muc dm &quot; +
+                    &quot;LEFT JOIN danh_muc parent ON dm.parent_id = parent.id &quot; +
+                    &quot;WHERE dm.so_tai_khoan IS NULL &quot; +
+                    &quot;ORDER BY COALESCE(dm.parent_id, dm.id), dm.parent_id IS NULL DESC, dm.ten_danh_muc&quot;;
+        
+<span class="nc" id="L202">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L203">             Statement stmt = conn.createStatement();</span>
+<span class="nc" id="L204">             ResultSet rs = stmt.executeQuery(sql)) {</span>
+            
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            while (rs.next()) {</span>
+<span class="nc" id="L207">                DanhMuc dm = new DanhMuc(</span>
+<span class="nc" id="L208">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L209">                    rs.getString(&quot;ten_danh_muc&quot;),</span>
+<span class="nc" id="L210">                    rs.getString(&quot;mo_ta&quot;),</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                    rs.getString(&quot;loai&quot;) != null ? rs.getString(&quot;loai&quot;) : &quot;chi&quot;,</span>
+<span class="nc" id="L212">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L213">                    (Integer) rs.getObject(&quot;parent_id&quot;),</span>
+<span class="nc" id="L214">                    rs.getString(&quot;ten_danh_muc_cha&quot;)</span>
+                );
+<span class="nc" id="L216">                danhSachDanhMuc.add(dm);</span>
+<span class="nc" id="L217">            }</span>
+<span class="nc" id="L218">        } catch (SQLException e) {</span>
+<span class="nc" id="L219">            e.printStackTrace();</span>
+<span class="nc" id="L220">        }</span>
+        
+<span class="nc" id="L222">        return danhSachDanhMuc;</span>
+    }
+    
+    // Lấy danh mục theo ID
+    public DanhMuc layDanhMucTheoId(int id) {
+<span class="nc" id="L227">        String sql = &quot;SELECT dm.*, parent.ten_danh_muc AS ten_danh_muc_cha &quot; +</span>
+                    &quot;FROM danh_muc dm &quot; +
+                    &quot;LEFT JOIN danh_muc parent ON dm.parent_id = parent.id &quot; +
+                    &quot;WHERE dm.id = ?&quot;;
+        
+<span class="nc" id="L232">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L233">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L235">            pstmt.setInt(1, id);</span>
+<span class="nc" id="L236">            ResultSet rs = pstmt.executeQuery();</span>
+            
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            if (rs.next()) {</span>
+<span class="nc" id="L239">                return new DanhMuc(</span>
+<span class="nc" id="L240">                    rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L241">                    rs.getString(&quot;ten_danh_muc&quot;),</span>
+<span class="nc" id="L242">                    rs.getString(&quot;mo_ta&quot;),</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                    rs.getString(&quot;loai&quot;) != null ? rs.getString(&quot;loai&quot;) : &quot;chi&quot;,</span>
+<span class="nc" id="L244">                    rs.getString(&quot;so_tai_khoan&quot;),</span>
+<span class="nc" id="L245">                    (Integer) rs.getObject(&quot;parent_id&quot;),</span>
+<span class="nc" id="L246">                    rs.getString(&quot;ten_danh_muc_cha&quot;)</span>
+                );
+            }
+<span class="nc bnc" id="L249" title="All 4 branches missed.">        } catch (SQLException e) {</span>
+<span class="nc" id="L250">            e.printStackTrace();</span>
+<span class="nc" id="L251">        }</span>
+        
+<span class="nc" id="L253">        return null;</span>
+    }
+    
+    // Thêm danh mục mới (hỗ trợ danh mục riêng và loại chi/thu)
+    public boolean themDanhMuc(DanhMuc danhMuc) {
+        // Chặn cứng ở DAO: danh mục con cùng loại không được trùng tên dù khác cha.
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (danhMuc.getParentId() != null &amp;&amp;</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">                tonTaiTenDanhMucCon(danhMuc.getTenDanhMuc(), danhMuc.getLoai(), danhMuc.getSoTaiKhoan(), null)) {</span>
+<span class="nc" id="L261">            return false;</span>
+        }
+
+<span class="nc" id="L264">        String sql = &quot;INSERT INTO danh_muc (ten_danh_muc, mo_ta, loai, so_tai_khoan, parent_id) VALUES (?, ?, ?, ?, ?)&quot;;</span>
+        
+<span class="nc" id="L266">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L267">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L269">            pstmt.setString(1, danhMuc.getTenDanhMuc());</span>
+<span class="nc" id="L270">            pstmt.setString(2, danhMuc.getMoTa());</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">            pstmt.setString(3, danhMuc.getLoai() != null ? danhMuc.getLoai() : &quot;chi&quot;);</span>
+<span class="nc" id="L272">            pstmt.setString(4, danhMuc.getSoTaiKhoan());</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (danhMuc.getParentId() != null) pstmt.setInt(5, danhMuc.getParentId());</span>
+<span class="nc" id="L274">            else pstmt.setNull(5, Types.INTEGER);</span>
+            
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L277">        } catch (SQLException e) {</span>
+<span class="nc" id="L278">            e.printStackTrace();</span>
+<span class="nc" id="L279">            return false;</span>
+        }
+    }
+    
+    // Sửa danh mục
+    public boolean suaDanhMuc(DanhMuc danhMuc) {
+        // Chặn cứng ở DAO: danh mục con cùng loại không được trùng tên dù khác cha.
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (danhMuc.getParentId() != null &amp;&amp;</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">                tonTaiTenDanhMucCon(danhMuc.getTenDanhMuc(), danhMuc.getLoai(), danhMuc.getSoTaiKhoan(), danhMuc.getId())) {</span>
+<span class="nc" id="L288">            return false;</span>
+        }
+
+<span class="nc" id="L291">        String sql = &quot;UPDATE danh_muc SET ten_danh_muc = ?, mo_ta = ?, parent_id = ? WHERE id = ?&quot;;</span>
+        
+<span class="nc" id="L293">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L294">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L296">            pstmt.setString(1, danhMuc.getTenDanhMuc());</span>
+<span class="nc" id="L297">            pstmt.setString(2, danhMuc.getMoTa());</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">            if (danhMuc.getParentId() != null) pstmt.setInt(3, danhMuc.getParentId());</span>
+<span class="nc" id="L299">            else pstmt.setNull(3, Types.INTEGER);</span>
+<span class="nc" id="L300">            pstmt.setInt(4, danhMuc.getId());</span>
+            
+<span class="nc bnc" id="L302" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L303">        } catch (SQLException e) {</span>
+<span class="nc" id="L304">            e.printStackTrace();</span>
+<span class="nc" id="L305">            return false;</span>
+        }
+    }
+    
+    // Xóa danh mục
+    public boolean xoaDanhMuc(int id) {
+<span class="nc" id="L311">        String sql = &quot;DELETE FROM danh_muc WHERE id = ?&quot;;</span>
+        
+<span class="nc" id="L313">        try (Connection conn = DatabaseConnection.getConnection();</span>
+<span class="nc" id="L314">             PreparedStatement pstmt = conn.prepareStatement(sql)) {</span>
+            
+<span class="nc" id="L316">            pstmt.setInt(1, id);</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">            return pstmt.executeUpdate() &gt; 0;</span>
+<span class="nc" id="L318">        } catch (SQLException e) {</span>
+<span class="nc" id="L319">            e.printStackTrace();</span>
+<span class="nc" id="L320">            return false;</span>
+        }
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

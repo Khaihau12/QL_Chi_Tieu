@@ -1,0 +1,30 @@
+{
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-17.0.17.10-hotspot",
+            "default": true
+        }
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.maven.enabled": true,
+    "java.project.sourcePaths": [
+        "doan/src/main/java",
+        "doan/src/test/java"
+    ],
+    "java.project.outputPath": "doan/target/classes",
+    "java.test.defaultConfig": "JUnit 4",
+    "java.test.config": [
+        {
+            "name": "JUnit 4",
+            "workingDirectory": "${workspaceFolder}/doan"
+        }
+    ],
+    "coverage-gutters.coverageFileNames": [
+        "jacoco.xml",
+        "coverage.xml",
+        "lcov.info",
+        "cov.xml",
+        "coverage.cobertura.xml"
+    ]
+}

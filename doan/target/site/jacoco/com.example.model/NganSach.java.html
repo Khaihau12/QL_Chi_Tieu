@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NganSach.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.model</a> &gt; <span class="el_source">NganSach.java</span></div><h1>NganSach.java</h1><pre class="source lang-java linenums">package com.example.model;
+
+import java.math.BigDecimal;
+
+/**
+ * Model Ngân sách (Budget) - Giới hạn chi tiêu cho từng danh mục
+ */
+public class NganSach {
+    private int id;
+    private int danhMucId;        // ID danh mục
+    private String soTaiKhoan;    // Số tài khoản người dùng
+    private BigDecimal gioiHan;   // Giới hạn chi tiêu
+    private int thang;            // Tháng áp dụng (1-12)
+    private int nam;              // Năm áp dụng
+    private String tenDanhMuc;    // Tên danh mục (để hiển thị, không lưu DB)
+
+    // Constructor mặc định (no-arg constructor)
+<span class="nc" id="L18">    public NganSach() {</span>
+<span class="nc" id="L19">    }</span>
+
+    // Constructor đầy đủ
+<span class="fc" id="L22">    public NganSach(int id, int danhMucId, String soTaiKhoan, BigDecimal gioiHan, int thang, int nam) {</span>
+<span class="fc" id="L23">        this.id = id;</span>
+<span class="fc" id="L24">        this.danhMucId = danhMucId;</span>
+<span class="fc" id="L25">        this.soTaiKhoan = soTaiKhoan;</span>
+<span class="fc" id="L26">        this.gioiHan = gioiHan;</span>
+<span class="fc" id="L27">        this.thang = thang;</span>
+<span class="fc" id="L28">        this.nam = nam;</span>
+<span class="fc" id="L29">    }</span>
+
+    // Constructor không có ID
+<span class="nc" id="L32">    public NganSach(int danhMucId, String soTaiKhoan, BigDecimal gioiHan, int thang, int nam) {</span>
+<span class="nc" id="L33">        this.danhMucId = danhMucId;</span>
+<span class="nc" id="L34">        this.soTaiKhoan = soTaiKhoan;</span>
+<span class="nc" id="L35">        this.gioiHan = gioiHan;</span>
+<span class="nc" id="L36">        this.thang = thang;</span>
+<span class="nc" id="L37">        this.nam = nam;</span>
+<span class="nc" id="L38">    }</span>
+
+    // Getters and Setters
+    public int getId() {
+<span class="nc" id="L42">        return id;</span>
+    }
+
+    public void setId(int id) {
+<span class="nc" id="L46">        this.id = id;</span>
+<span class="nc" id="L47">    }</span>
+
+    public int getDanhMucId() {
+<span class="nc" id="L50">        return danhMucId;</span>
+    }
+
+    public void setDanhMucId(int danhMucId) {
+<span class="nc" id="L54">        this.danhMucId = danhMucId;</span>
+<span class="nc" id="L55">    }</span>
+
+    public String getSoTaiKhoan() {
+<span class="nc" id="L58">        return soTaiKhoan;</span>
+    }
+
+    public void setSoTaiKhoan(String soTaiKhoan) {
+<span class="nc" id="L62">        this.soTaiKhoan = soTaiKhoan;</span>
+<span class="nc" id="L63">    }</span>
+
+    public BigDecimal getGioiHan() {
+<span class="nc" id="L66">        return gioiHan;</span>
+    }
+
+    public void setGioiHan(BigDecimal gioiHan) {
+<span class="nc" id="L70">        this.gioiHan = gioiHan;</span>
+<span class="nc" id="L71">    }</span>
+
+    public int getThang() {
+<span class="nc" id="L74">        return thang;</span>
+    }
+
+    public void setThang(int thang) {
+<span class="nc" id="L78">        this.thang = thang;</span>
+<span class="nc" id="L79">    }</span>
+
+    public int getNam() {
+<span class="nc" id="L82">        return nam;</span>
+    }
+
+    public void setNam(int nam) {
+<span class="nc" id="L86">        this.nam = nam;</span>
+<span class="nc" id="L87">    }</span>
+
+    public String getTenDanhMuc() {
+<span class="nc" id="L90">        return tenDanhMuc;</span>
+    }
+
+    public void setTenDanhMuc(String tenDanhMuc) {
+<span class="nc" id="L94">        this.tenDanhMuc = tenDanhMuc;</span>
+<span class="nc" id="L95">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

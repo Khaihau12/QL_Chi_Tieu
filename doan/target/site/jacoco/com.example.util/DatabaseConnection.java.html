@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.util</a> &gt; <span class="el_source">DatabaseConnection.java</span></div><h1>DatabaseConnection.java</h1><pre class="source lang-java linenums">package com.example.util;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+/**
+ * Database Connection Utility Class - Đơn giản cho đồ án
+ * Kết nối MySQL bằng JDBC
+ */
+<span class="nc" id="L11">public class DatabaseConnection {</span>
+    
+    // Thông tin kết nối
+    private static final String URL = &quot;jdbc:mysql://localhost:3306/QLChiTieu?useSSL=false&amp;serverTimezone=UTC&amp;useUnicode=true&amp;characterEncoding=UTF-8&quot;;
+    private static final String USERNAME = &quot;root&quot;;
+    private static final String PASSWORD = &quot;&quot;; // XAMPP mặc định không có mật khẩu
+    
+    /**
+     * Lấy connection đến database
+     */
+    public static Connection getConnection() throws SQLException {
+        try {
+            // Load MySQL JDBC Driver
+<span class="nc" id="L24">            Class.forName(&quot;com.mysql.cj.jdbc.Driver&quot;);</span>
+            
+            // Tạo và trả về connection
+<span class="nc" id="L27">            return DriverManager.getConnection(URL, USERNAME, PASSWORD);</span>
+            
+<span class="nc" id="L29">        } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L30">            System.err.println(&quot;MySQL JDBC Driver không tìm thấy!&quot;);</span>
+<span class="nc" id="L31">            e.printStackTrace();</span>
+<span class="nc" id="L32">            throw new SQLException(&quot;Driver không tìm thấy&quot;, e);</span>
+        }
+    }
+    
+    /**
+     * Test kết nối database
+     */
+    public static boolean testConnection() {
+<span class="nc" id="L40">        try (Connection conn = getConnection()) {</span>
+<span class="nc" id="L41">            System.out.println(&quot;✅ Kết nối MySQL thành công!&quot;);</span>
+<span class="nc" id="L42">            return true;</span>
+<span class="nc" id="L43">        } catch (SQLException e) {</span>
+<span class="nc" id="L44">            System.err.println(&quot;❌ Lỗi kết nối database!&quot;);</span>
+<span class="nc" id="L45">            e.printStackTrace();</span>
+<span class="nc" id="L46">            return false;</span>
+        }
+    }
+    
+    /**
+     * Đóng connection
+     */
+    public static void closeConnection(Connection conn) {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (conn != null) {</span>
+            try {
+<span class="nc" id="L56">                conn.close();</span>
+<span class="nc" id="L57">            } catch (SQLException e) {</span>
+<span class="nc" id="L58">                e.printStackTrace();</span>
+<span class="nc" id="L59">            }</span>
+        }
+<span class="nc" id="L61">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

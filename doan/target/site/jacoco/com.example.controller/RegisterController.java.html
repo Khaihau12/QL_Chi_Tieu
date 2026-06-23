@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegisterController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">doan</a> &gt; <a href="index.source.html" class="el_package">com.example.controller</a> &gt; <span class="el_source">RegisterController.java</span></div><h1>RegisterController.java</h1><pre class="source lang-java linenums">package com.example.controller;
+
+import com.example.dao.NguoiDungDAO;
+import com.example.model.NguoiDung;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
+
+import java.sql.SQLException;
+
+/**
+ * Controller cho màn hình đăng ký (JavaFX thuần)
+ */
+public class RegisterController {
+
+    private Stage stage;
+    private Scene scene;
+    private TextField txtTenDangNhap;
+    private TextField txtEmail;
+    private TextField txtHoTen;
+    private PasswordField txtMatKhau;
+    private PasswordField txtXacNhanMatKhau;
+    private Label lblThongBao;
+    private Button btnDangKy;
+    private Hyperlink linkDangNhap;
+<span class="nc" id="L31">    private NguoiDungDAO nguoiDungDAO = new NguoiDungDAO();</span>
+
+<span class="nc" id="L33">    public RegisterController(Stage stage) {</span>
+<span class="nc" id="L34">        this.stage = stage;</span>
+<span class="nc" id="L35">        createUI();</span>
+<span class="nc" id="L36">    }</span>
+
+    private void createUI() {
+        // Root layout
+<span class="nc" id="L40">        VBox root = new VBox(12);</span>
+<span class="nc" id="L41">        root.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L42">        root.setPadding(new Insets(30));</span>
+<span class="nc" id="L43">        root.setStyle(&quot;-fx-background-color: #f0f0f0;&quot;);</span>
+
+        // Tiêu đề
+<span class="nc" id="L46">        Label lblTieuDe = new Label(&quot;ĐĂNG KÝ TÀI KHOẢN&quot;);</span>
+<span class="nc" id="L47">        lblTieuDe.setFont(Font.font(&quot;Arial&quot;, FontWeight.BOLD, 24));</span>
+<span class="nc" id="L48">        lblTieuDe.setStyle(&quot;-fx-text-fill: #2c3e50;&quot;);</span>
+
+        // Form đăng ký
+<span class="nc" id="L51">        Label lblHoTen = new Label(&quot;Họ tên:&quot;);</span>
+<span class="nc" id="L52">        lblHoTen.setFont(Font.font(&quot;Arial&quot;, 13));</span>
+<span class="nc" id="L53">        txtHoTen = new TextField();</span>
+<span class="nc" id="L54">        txtHoTen.setPromptText(&quot;Nhập họ tên đầy đủ&quot;);</span>
+<span class="nc" id="L55">        txtHoTen.setPrefWidth(350);</span>
+<span class="nc" id="L56">        txtHoTen.setStyle(&quot;-fx-font-size: 13px;&quot;);</span>
+
+<span class="nc" id="L58">        Label lblTenDangNhap = new Label(&quot;Tên đăng nhập:&quot;);</span>
+<span class="nc" id="L59">        lblTenDangNhap.setFont(Font.font(&quot;Arial&quot;, 13));</span>
+<span class="nc" id="L60">        txtTenDangNhap = new TextField();</span>
+<span class="nc" id="L61">        txtTenDangNhap.setPromptText(&quot;Nhập tên đăng nhập&quot;);</span>
+<span class="nc" id="L62">        txtTenDangNhap.setPrefWidth(350);</span>
+<span class="nc" id="L63">        txtTenDangNhap.setStyle(&quot;-fx-font-size: 13px;&quot;);</span>
+
+<span class="nc" id="L65">        Label lblEmail = new Label(&quot;Email:&quot;);</span>
+<span class="nc" id="L66">        lblEmail.setFont(Font.font(&quot;Arial&quot;, 13));</span>
+<span class="nc" id="L67">        txtEmail = new TextField();</span>
+<span class="nc" id="L68">        txtEmail.setPromptText(&quot;Nhập email&quot;);</span>
+<span class="nc" id="L69">        txtEmail.setPrefWidth(350);</span>
+<span class="nc" id="L70">        txtEmail.setStyle(&quot;-fx-font-size: 13px;&quot;);</span>
+
+<span class="nc" id="L72">        Label lblMatKhau = new Label(&quot;Mật khẩu:&quot;);</span>
+<span class="nc" id="L73">        lblMatKhau.setFont(Font.font(&quot;Arial&quot;, 13));</span>
+<span class="nc" id="L74">        txtMatKhau = new PasswordField();</span>
+<span class="nc" id="L75">        txtMatKhau.setPromptText(&quot;Nhập mật khẩu (ít nhất 6 ký tự)&quot;);</span>
+<span class="nc" id="L76">        txtMatKhau.setPrefWidth(350);</span>
+<span class="nc" id="L77">        txtMatKhau.setStyle(&quot;-fx-font-size: 13px;&quot;);</span>
+
+<span class="nc" id="L79">        Label lblXacNhan = new Label(&quot;Xác nhận mật khẩu:&quot;);</span>
+<span class="nc" id="L80">        lblXacNhan.setFont(Font.font(&quot;Arial&quot;, 13));</span>
+<span class="nc" id="L81">        txtXacNhanMatKhau = new PasswordField();</span>
+<span class="nc" id="L82">        txtXacNhanMatKhau.setPromptText(&quot;Nhập lại mật khẩu&quot;);</span>
+<span class="nc" id="L83">        txtXacNhanMatKhau.setPrefWidth(350);</span>
+<span class="nc" id="L84">        txtXacNhanMatKhau.setStyle(&quot;-fx-font-size: 13px;&quot;);</span>
+
+        // Hỗ trợ thao tác Enter liên tục không cần dùng chuột
+<span class="nc" id="L87">        txtHoTen.setOnAction(e -&gt; txtTenDangNhap.requestFocus());</span>
+<span class="nc" id="L88">        txtTenDangNhap.setOnAction(e -&gt; txtEmail.requestFocus());</span>
+<span class="nc" id="L89">        txtEmail.setOnAction(e -&gt; txtMatKhau.requestFocus());</span>
+<span class="nc" id="L90">        txtMatKhau.setOnAction(e -&gt; txtXacNhanMatKhau.requestFocus());</span>
+<span class="nc" id="L91">        txtXacNhanMatKhau.setOnAction(e -&gt; handleDangKy());</span>
+
+        // Nút đăng ký
+<span class="nc" id="L94">        btnDangKy = new Button(&quot;Đăng ký&quot;);</span>
+<span class="nc" id="L95">        btnDangKy.setPrefWidth(350);</span>
+<span class="nc" id="L96">        btnDangKy.setPrefHeight(40);</span>
+<span class="nc" id="L97">        btnDangKy.setStyle(&quot;-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L98">        btnDangKy.setOnAction(e -&gt; handleDangKy());</span>
+
+        // Thông báo
+<span class="nc" id="L101">        lblThongBao = new Label(&quot;&quot;);</span>
+<span class="nc" id="L102">        lblThongBao.setFont(Font.font(&quot;Arial&quot;, 12));</span>
+<span class="nc" id="L103">        lblThongBao.setWrapText(true);</span>
+<span class="nc" id="L104">        lblThongBao.setMaxWidth(350);</span>
+
+        // Link quay lại đăng nhập
+<span class="nc" id="L107">        linkDangNhap = new Hyperlink(&quot;Đã có tài khoản? Đăng nhập&quot;);</span>
+<span class="nc" id="L108">        linkDangNhap.setStyle(&quot;-fx-font-size: 12px;&quot;);</span>
+<span class="nc" id="L109">        linkDangNhap.setOnAction(e -&gt; handleQuayLai());</span>
+
+        // Thêm vào layout
+<span class="nc" id="L112">        root.getChildren().addAll(</span>
+            lblTieuDe,
+            new Label(&quot;&quot;), // spacer
+            lblHoTen,
+            txtHoTen,
+            lblTenDangNhap,
+            txtTenDangNhap,
+            lblEmail,
+            txtEmail,
+            lblMatKhau,
+            txtMatKhau,
+            lblXacNhan,
+            txtXacNhanMatKhau,
+            btnDangKy,
+            lblThongBao,
+            linkDangNhap
+        );
+
+        // Tạo scene
+<span class="nc" id="L131">        scene = new Scene(root, 500, 650);</span>
+<span class="nc" id="L132">    }</span>
+
+    private void handleDangKy() {
+<span class="nc" id="L135">        String tenDangNhap = txtTenDangNhap.getText().trim();</span>
+<span class="nc" id="L136">        String email = txtEmail.getText().trim();</span>
+<span class="nc" id="L137">        String hoTen = txtHoTen.getText().trim();</span>
+<span class="nc" id="L138">        String matKhau = txtMatKhau.getText();</span>
+<span class="nc" id="L139">        String xacNhanMatKhau = txtXacNhanMatKhau.getText();</span>
+
+        try {
+<span class="nc" id="L142">            boolean tenTonTai = nguoiDungDAO.tonTaiTenDangNhap(tenDangNhap);</span>
+<span class="nc" id="L143">            boolean emailTonTai = nguoiDungDAO.tonTaiEmail(email);</span>
+<span class="nc" id="L144">            String validationError = validateInputDangKy(</span>
+                    hoTen, tenDangNhap, email, matKhau, xacNhanMatKhau, tenTonTai, emailTonTai);
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (validationError != null) {</span>
+<span class="nc" id="L147">                lblThongBao.setText(validationError);</span>
+<span class="nc" id="L148">                lblThongBao.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+<span class="nc" id="L149">                return;</span>
+            }
+
+            // Tạo đối tượng người dùng mới
+<span class="nc" id="L153">            NguoiDung nguoiDung = new NguoiDung(tenDangNhap, matKhau, hoTen, email);</span>
+
+<span class="nc" id="L155">            boolean thanhCong = nguoiDungDAO.dangKy(nguoiDung);</span>
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (thanhCong) {</span>
+<span class="nc" id="L158">                lblThongBao.setText(&quot;Đăng ký thành công! Đang chuyển về đăng nhập...&quot;);</span>
+<span class="nc" id="L159">                lblThongBao.setStyle(&quot;-fx-text-fill: green;&quot;);</span>
+
+                // Delay 1.5s rồi chuyển về màn hình đăng nhập (dùng PauseTransition như LoginController)
+<span class="nc" id="L162">                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(</span>
+<span class="nc" id="L163">                        javafx.util.Duration.millis(1500));</span>
+<span class="nc" id="L164">                pause.setOnFinished(ev -&gt; chuyenVeDangNhap());</span>
+<span class="nc" id="L165">                pause.play();</span>
+<span class="nc" id="L166">            } else {</span>
+<span class="nc" id="L167">                lblThongBao.setText(&quot;Đăng ký thất bại. Vui lòng thử lại!&quot;);</span>
+<span class="nc" id="L168">                lblThongBao.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+            }
+<span class="nc" id="L170">        } catch (SQLException e) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            String message = e.getMessage() != null ? e.getMessage().toLowerCase() : &quot;&quot;;</span>
+<span class="nc bnc" id="L172" title="All 4 branches missed.">            if (message.contains(&quot;duplicate entry&quot;) &amp;&amp; message.contains(&quot;ten_dang_nhap&quot;)) {</span>
+<span class="nc" id="L173">                lblThongBao.setText(&quot;Tên đăng nhập đã tồn tại!&quot;);</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">            } else if (message.contains(&quot;duplicate entry&quot;) &amp;&amp; message.contains(&quot;email&quot;)) {</span>
+<span class="nc" id="L175">                lblThongBao.setText(&quot;Email đã tồn tại!&quot;);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            } else if (message.contains(&quot;duplicate entry&quot;)) {</span>
+<span class="nc" id="L177">                lblThongBao.setText(&quot;Tên đăng nhập hoặc email đã tồn tại!&quot;);</span>
+            } else {
+<span class="nc" id="L179">                lblThongBao.setText(&quot;Lỗi đăng ký. Vui lòng thử lại!&quot;);</span>
+            }
+<span class="nc" id="L181">            lblThongBao.setStyle(&quot;-fx-text-fill: red;&quot;);</span>
+<span class="nc" id="L182">        }</span>
+<span class="nc" id="L183">    }</span>
+
+    public static String validateInputDangKy(String hoTen,
+                                             String tenDangNhap,
+                                             String email,
+                                             String matKhau,
+                                             String xacNhanMatKhau,
+                                             boolean tenDangNhapDaTonTai,
+                                             boolean emailDaTonTai) {
+<span class="nc bnc" id="L192" title="All 6 branches missed.">        if (tenDangNhap == null || tenDangNhap.trim().isEmpty()</span>
+<span class="nc bnc" id="L193" title="All 4 branches missed.">                || email == null || email.trim().isEmpty()</span>
+<span class="nc bnc" id="L194" title="All 4 branches missed.">                || hoTen == null || hoTen.trim().isEmpty()</span>
+<span class="nc bnc" id="L195" title="All 4 branches missed.">                || matKhau == null || matKhau.isEmpty()</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">                || xacNhanMatKhau == null || xacNhanMatKhau.isEmpty()) {</span>
+<span class="nc" id="L197">            return &quot;Vui lòng nhập đầy đủ thông tin!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (matKhau.length() &lt; 6) {</span>
+<span class="nc" id="L201">            return &quot;Mật khẩu phải có ít nhất 6 ký tự!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (!matKhau.equals(xacNhanMatKhau)) {</span>
+<span class="nc" id="L205">            return &quot;Mật khẩu xác nhận không khớp!&quot;;</span>
+        }
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (tenDangNhapDaTonTai) return &quot;Tên đăng nhập đã tồn tại!&quot;;</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (emailDaTonTai) return &quot;Email đã tồn tại!&quot;;</span>
+
+<span class="nc" id="L211">        return null;</span>
+    }
+
+    private void handleQuayLai() {
+<span class="nc" id="L215">        chuyenVeDangNhap();</span>
+<span class="nc" id="L216">    }</span>
+
+    private void chuyenVeDangNhap() {
+<span class="nc" id="L219">        LoginController loginController = new LoginController(stage);</span>
+<span class="nc" id="L220">        stage.setScene(loginController.getScene());</span>
+<span class="nc" id="L221">        stage.setTitle(&quot;Đăng nhập&quot;);</span>
+<span class="nc" id="L222">        stage.setResizable(false);</span>
+<span class="nc" id="L223">        stage.setWidth(520);</span>
+<span class="nc" id="L224">        stage.setHeight(590);</span>
+<span class="nc" id="L225">        stage.centerOnScreen();</span>
+<span class="nc" id="L226">    }</span>
+
+    public Scene getScene() {
+<span class="nc" id="L229">        return scene;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

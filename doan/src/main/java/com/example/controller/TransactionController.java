@@ -558,16 +558,12 @@ public class TransactionController {
             return "Số tiền không hợp lệ!";
         }
 
-        try {
-            BigDecimal soTien = MoneyInputUtil.parseMoney(soTienStr);
-            if (soTien == null) {
-                return "Số tiền không hợp lệ!";
-            }
-            if (soTien.compareTo(BigDecimal.ZERO) <= 0) {
-                return "Số tiền phải lớn hơn 0!";
-            }
-        } catch (NumberFormatException e) {
+        BigDecimal soTien = MoneyInputUtil.parseMoney(soTienStr);
+        if (soTien == null) {
             return "Số tiền không hợp lệ!";
+        }
+        if (soTien.compareTo(BigDecimal.ZERO) <= 0) {
+            return "Số tiền phải lớn hơn 0!";
         }
 
         if (soTaiKhoanGui == null || soTaiKhoanGui.trim().isEmpty()) {
@@ -594,12 +590,8 @@ public class TransactionController {
             return "Vui lòng nhập số tiền!";
         }
 
-        try {
-            BigDecimal soTien = MoneyInputUtil.parseMoney(soTienStr);
-            if (soTien == null || soTien.compareTo(BigDecimal.ZERO) <= 0) {
-                return "Số tiền không hợp lệ!";
-            }
-        } catch (NumberFormatException e) {
+        BigDecimal soTien = MoneyInputUtil.parseMoney(soTienStr);
+        if (soTien == null || soTien.compareTo(BigDecimal.ZERO) <= 0) {
             return "Số tiền không hợp lệ!";
         }
 
