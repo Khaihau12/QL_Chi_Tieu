@@ -543,19 +543,15 @@ public class AdminAccountController {
             return "Vui lòng nhập số tiền cần nạp!";
         }
 
-        try {
-            BigDecimal soTienNap = MoneyInputUtil.parseMoney(soTienStr);
-            if (soTienNap == null) {
-                return "Số tiền không hợp lệ!";
-            }
-            if (soTienNap.compareTo(BigDecimal.ZERO) <= 0) {
-                return "Số tiền nạp phải lớn hơn 0!";
-            }
-            if (soTienNap.compareTo(new BigDecimal("999999999999")) > 0) {
-                return "Số tiền nạp quá lớn!";
-            }
-        } catch (NumberFormatException e) {
+        BigDecimal soTienNap = MoneyInputUtil.parseMoney(soTienStr);
+        if (soTienNap == null) {
             return "Số tiền không hợp lệ!";
+        }
+        if (soTienNap.compareTo(BigDecimal.ZERO) <= 0) {
+            return "Số tiền nạp phải lớn hơn 0!";
+        }
+        if (soTienNap.compareTo(new BigDecimal("999999999999")) > 0) {
+            return "Số tiền nạp quá lớn!";
         }
 
         if (soTaiKhoanAdmin == null || soTaiKhoanAdmin.isBlank()) {

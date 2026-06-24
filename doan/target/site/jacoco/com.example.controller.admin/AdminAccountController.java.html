@@ -543,82 +543,78 @@ public class AdminAccountController {
 <span class="fc" id="L543">            return &quot;Vui lòng nhập số tiền cần nạp!&quot;;</span>
         }
 
-        try {
-<span class="fc" id="L547">            BigDecimal soTienNap = MoneyInputUtil.parseMoney(soTienStr);</span>
-<span class="fc bfc" id="L548" title="All 2 branches covered.">            if (soTienNap == null) {</span>
-<span class="fc" id="L549">                return &quot;Số tiền không hợp lệ!&quot;;</span>
-            }
-<span class="fc bfc" id="L551" title="All 2 branches covered.">            if (soTienNap.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
-<span class="fc" id="L552">                return &quot;Số tiền nạp phải lớn hơn 0!&quot;;</span>
-            }
-<span class="fc bfc" id="L554" title="All 2 branches covered.">            if (soTienNap.compareTo(new BigDecimal(&quot;999999999999&quot;)) &gt; 0) {</span>
-<span class="fc" id="L555">                return &quot;Số tiền nạp quá lớn!&quot;;</span>
-            }
-<span class="nc" id="L557">        } catch (NumberFormatException e) {</span>
-<span class="nc" id="L558">            return &quot;Số tiền không hợp lệ!&quot;;</span>
-<span class="fc" id="L559">        }</span>
-
-<span class="pc bpc" id="L561" title="1 of 4 branches missed.">        if (soTaiKhoanAdmin == null || soTaiKhoanAdmin.isBlank()) {</span>
-<span class="fc" id="L562">            return &quot;Không xác định được tài khoản Admin để ghi lịch sử giao dịch!&quot;;</span>
+<span class="fc" id="L546">        BigDecimal soTienNap = MoneyInputUtil.parseMoney(soTienStr);</span>
+<span class="fc bfc" id="L547" title="All 2 branches covered.">        if (soTienNap == null) {</span>
+<span class="fc" id="L548">            return &quot;Số tiền không hợp lệ!&quot;;</span>
+        }
+<span class="fc bfc" id="L550" title="All 2 branches covered.">        if (soTienNap.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
+<span class="fc" id="L551">            return &quot;Số tiền nạp phải lớn hơn 0!&quot;;</span>
+        }
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (soTienNap.compareTo(new BigDecimal(&quot;999999999999&quot;)) &gt; 0) {</span>
+<span class="fc" id="L554">            return &quot;Số tiền nạp quá lớn!&quot;;</span>
         }
 
-<span class="fc" id="L565">        return null;</span>
+<span class="pc bpc" id="L557" title="1 of 4 branches missed.">        if (soTaiKhoanAdmin == null || soTaiKhoanAdmin.isBlank()) {</span>
+<span class="fc" id="L558">            return &quot;Không xác định được tài khoản Admin để ghi lịch sử giao dịch!&quot;;</span>
+        }
+
+<span class="fc" id="L561">        return null;</span>
     }
 
     public static String validateInputXemThongTinTaiKhoan(NguoiDung selected, NguoiDung thongTinNguoiDung) {
-<span class="fc bfc" id="L569" title="All 2 branches covered.">        if (selected == null) {</span>
-<span class="fc" id="L570">            return &quot;Vui lòng chọn user cần xem thông tin!&quot;;</span>
+<span class="fc bfc" id="L565" title="All 2 branches covered.">        if (selected == null) {</span>
+<span class="fc" id="L566">            return &quot;Vui lòng chọn user cần xem thông tin!&quot;;</span>
         }
 
-<span class="fc bfc" id="L573" title="All 2 branches covered.">        if (thongTinNguoiDung == null) {</span>
-<span class="fc" id="L574">            return &quot;Không tìm thấy thông tin người dùng trong cơ sở dữ liệu!&quot;;</span>
+<span class="fc bfc" id="L569" title="All 2 branches covered.">        if (thongTinNguoiDung == null) {</span>
+<span class="fc" id="L570">            return &quot;Không tìm thấy thông tin người dùng trong cơ sở dữ liệu!&quot;;</span>
         }
 
-<span class="fc" id="L577">        return null;</span>
+<span class="fc" id="L573">        return null;</span>
     }
 
     private String safeText(String value) {
-<span class="nc bnc" id="L581" title="All 4 branches missed.">        return value == null || value.isBlank() ? &quot;-&quot; : value;</span>
+<span class="nc bnc" id="L577" title="All 4 branches missed.">        return value == null || value.isBlank() ? &quot;-&quot; : value;</span>
     }
 
     private Label createInfoSectionTitle(String text) {
-<span class="nc" id="L585">        Label label = new Label(text);</span>
-<span class="nc" id="L586">        label.setStyle(&quot;-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;&quot;);</span>
-<span class="nc" id="L587">        return label;</span>
+<span class="nc" id="L581">        Label label = new Label(text);</span>
+<span class="nc" id="L582">        label.setStyle(&quot;-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;&quot;);</span>
+<span class="nc" id="L583">        return label;</span>
     }
 
     private void addInfoRow(GridPane grid, int row, String key, String value) {
-<span class="nc" id="L591">        Label lblKey = new Label(key + &quot;:&quot;);</span>
-<span class="nc" id="L592">        lblKey.setStyle(&quot;-fx-text-fill: #5d6d7e; -fx-font-weight: bold;&quot;);</span>
+<span class="nc" id="L587">        Label lblKey = new Label(key + &quot;:&quot;);</span>
+<span class="nc" id="L588">        lblKey.setStyle(&quot;-fx-text-fill: #5d6d7e; -fx-font-weight: bold;&quot;);</span>
 
-<span class="nc" id="L594">        Label lblVal = new Label(value);</span>
-<span class="nc" id="L595">        lblVal.setStyle(&quot;-fx-text-fill: #2c3e50;&quot;);</span>
-<span class="nc" id="L596">        lblVal.setWrapText(true);</span>
-<span class="nc" id="L597">        lblVal.setMaxWidth(460);</span>
+<span class="nc" id="L590">        Label lblVal = new Label(value);</span>
+<span class="nc" id="L591">        lblVal.setStyle(&quot;-fx-text-fill: #2c3e50;&quot;);</span>
+<span class="nc" id="L592">        lblVal.setWrapText(true);</span>
+<span class="nc" id="L593">        lblVal.setMaxWidth(460);</span>
 
-<span class="nc" id="L599">        grid.add(lblKey, 0, row);</span>
-<span class="nc" id="L600">        grid.add(lblVal, 1, row);</span>
-<span class="nc" id="L601">    }</span>
+<span class="nc" id="L595">        grid.add(lblKey, 0, row);</span>
+<span class="nc" id="L596">        grid.add(lblVal, 1, row);</span>
+<span class="nc" id="L597">    }</span>
 
     private String formatVaiTro(String vaiTro) {
-<span class="nc bnc" id="L604" title="All 2 branches missed.">        if (&quot;quan_ly&quot;.equals(vaiTro)) return &quot;Quản lý&quot;;</span>
-<span class="nc bnc" id="L605" title="All 2 branches missed.">        if (&quot;nguoi_dung&quot;.equals(vaiTro)) return &quot;Người dùng&quot;;</span>
-<span class="nc" id="L606">        return safeText(vaiTro);</span>
+<span class="nc bnc" id="L600" title="All 2 branches missed.">        if (&quot;quan_ly&quot;.equals(vaiTro)) return &quot;Quản lý&quot;;</span>
+<span class="nc bnc" id="L601" title="All 2 branches missed.">        if (&quot;nguoi_dung&quot;.equals(vaiTro)) return &quot;Người dùng&quot;;</span>
+<span class="nc" id="L602">        return safeText(vaiTro);</span>
     }
 
     private String formatTrangThai(NguoiDung nd) {
-<span class="nc bnc" id="L610" title="All 2 branches missed.">        if (nd == null) return &quot;-&quot;;</span>
-<span class="nc bnc" id="L611" title="All 2 branches missed.">        if (&quot;hoat_dong&quot;.equals(nd.getTrangThai())) return &quot;Hoạt động&quot;;</span>
-<span class="nc bnc" id="L612" title="All 2 branches missed.">        if (&quot;bi_khoa&quot;.equals(nd.getTrangThai())) return &quot;Bị khóa&quot;;</span>
-<span class="nc" id="L613">        return safeText(nd.getTrangThai());</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">        if (nd == null) return &quot;-&quot;;</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (&quot;hoat_dong&quot;.equals(nd.getTrangThai())) return &quot;Hoạt động&quot;;</span>
+<span class="nc bnc" id="L608" title="All 2 branches missed.">        if (&quot;bi_khoa&quot;.equals(nd.getTrangThai())) return &quot;Bị khóa&quot;;</span>
+<span class="nc" id="L609">        return safeText(nd.getTrangThai());</span>
     }
 
     private void showAlert(String title, String content) {
-<span class="nc" id="L617">        Alert alert = new Alert(Alert.AlertType.INFORMATION);</span>
-<span class="nc" id="L618">        alert.setTitle(title);</span>
-<span class="nc" id="L619">        alert.setHeaderText(null);</span>
-<span class="nc" id="L620">        alert.setContentText(content);</span>
-<span class="nc" id="L621">        alert.showAndWait();</span>
-<span class="nc" id="L622">    }</span>
+<span class="nc" id="L613">        Alert alert = new Alert(Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L614">        alert.setTitle(title);</span>
+<span class="nc" id="L615">        alert.setHeaderText(null);</span>
+<span class="nc" id="L616">        alert.setContentText(content);</span>
+<span class="nc" id="L617">        alert.showAndWait();</span>
+<span class="nc" id="L618">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

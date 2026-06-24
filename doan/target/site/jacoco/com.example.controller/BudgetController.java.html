@@ -106,11 +106,11 @@ public class BudgetController {
 <span class="nc" id="L106">                super.updateItem(item, empty);</span>
 <span class="nc bnc" id="L107" title="All 4 branches missed.">                if (empty || item == null) {</span>
 <span class="nc" id="L108">                    setText(null);</span>
-<span class="nc" id="L109">                } else {</span>
+                } else {
 <span class="nc" id="L110">                    setText(String.format(&quot;%,.0f&quot;, item.doubleValue()));</span>
                 }
 <span class="nc" id="L112">            }</span>
-<span class="nc" id="L113">        });</span>
+        });
         
 <span class="nc" id="L115">        TableColumn&lt;NganSach, Void&gt; colDaChi = new TableColumn&lt;&gt;(&quot;Đã Chi (VNĐ)&quot;);</span>
 <span class="nc" id="L116">        colDaChi.setPrefWidth(150);</span>
@@ -120,7 +120,7 @@ public class BudgetController {
 <span class="nc" id="L120">                super.updateItem(item, empty);</span>
 <span class="nc bnc" id="L121" title="All 2 branches missed.">                if (empty) {</span>
 <span class="nc" id="L122">                    setText(null);</span>
-<span class="nc" id="L123">                } else {</span>
+                } else {
 <span class="nc" id="L124">                    NganSach ns = getTableView().getItems().get(getIndex());</span>
 <span class="nc" id="L125">                    double daChi = nganSachDAO.layTongChiTheoDanhMuc(</span>
 <span class="nc" id="L126">                        ns.getSoTaiKhoan(), </span>
@@ -134,12 +134,12 @@ public class BudgetController {
 <span class="nc" id="L134">                    BigDecimal gioiHan = ns.getGioiHan();</span>
 <span class="nc bnc" id="L135" title="All 2 branches missed.">                    if (daChi &gt;= gioiHan.doubleValue()) {</span>
 <span class="nc" id="L136">                        setStyle(&quot;-fx-text-fill: red; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L137">                    } else {</span>
+                    } else {
 <span class="nc" id="L138">                        setStyle(&quot;-fx-text-fill: green;&quot;);</span>
                     }
                 }
 <span class="nc" id="L141">            }</span>
-<span class="nc" id="L142">        });</span>
+        });
         
 <span class="nc" id="L144">        TableColumn&lt;NganSach, Void&gt; colConLai = new TableColumn&lt;&gt;(&quot;Còn Lại (VNĐ)&quot;);</span>
 <span class="nc" id="L145">        colConLai.setPrefWidth(150);</span>
@@ -149,7 +149,7 @@ public class BudgetController {
 <span class="nc" id="L149">                super.updateItem(item, empty);</span>
 <span class="nc bnc" id="L150" title="All 2 branches missed.">                if (empty) {</span>
 <span class="nc" id="L151">                    setText(null);</span>
-<span class="nc" id="L152">                } else {</span>
+                } else {
 <span class="nc" id="L153">                    NganSach ns = getTableView().getItems().get(getIndex());</span>
 <span class="nc" id="L154">                    double daChi = nganSachDAO.layTongChiTheoDanhMuc(</span>
 <span class="nc" id="L155">                        ns.getSoTaiKhoan(), </span>
@@ -163,12 +163,12 @@ public class BudgetController {
                     
 <span class="nc bnc" id="L164" title="All 2 branches missed.">                    if (conLai &lt; 0) {</span>
 <span class="nc" id="L165">                        setStyle(&quot;-fx-text-fill: red; -fx-font-weight: bold;&quot;);</span>
-<span class="nc" id="L166">                    } else {</span>
+                    } else {
 <span class="nc" id="L167">                        setStyle(&quot;-fx-text-fill: blue;&quot;);</span>
                     }
                 }
 <span class="nc" id="L170">            }</span>
-<span class="nc" id="L171">        });</span>
+        });
         
 <span class="nc" id="L173">        TableColumn&lt;NganSach, Integer&gt; colThang = new TableColumn&lt;&gt;(&quot;Tháng&quot;);</span>
 <span class="nc" id="L174">        colThang.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;thang&quot;));</span>
@@ -258,7 +258,7 @@ public class BudgetController {
 <span class="nc bnc" id="L258" title="All 2 branches missed.">                for (int i = thangHienTai; i &lt;= 12; i++) {</span>
 <span class="nc" id="L259">                    cbThangMoi.getItems().add(i);</span>
                 }
-<span class="nc" id="L261">            } else {</span>
+            } else {
                 // Năm tương lai: tất cả tháng
 <span class="nc bnc" id="L263" title="All 2 branches missed.">                for (int i = 1; i &lt;= 12; i++) {</span>
 <span class="nc" id="L264">                    cbThangMoi.getItems().add(i);</span>
@@ -326,7 +326,7 @@ public class BudgetController {
 <span class="nc bnc" id="L326" title="All 2 branches missed.">            if (nganSachDAO.themNganSach(ns)) {</span>
 <span class="nc" id="L327">                showAlert(&quot;Thành công&quot;, &quot;Thêm ngân sách thành công!&quot;);</span>
 <span class="nc" id="L328">                loadData();</span>
-<span class="nc" id="L329">            } else {</span>
+            } else {
 <span class="nc" id="L330">                showAlert(&quot;Lỗi&quot;, &quot;Thêm ngân sách thất bại!&quot;);</span>
             }
 <span class="nc" id="L332">        });</span>
@@ -363,12 +363,12 @@ public class BudgetController {
 <span class="nc bnc" id="L363" title="All 2 branches missed.">                if (nganSachDAO.suaNganSach(selected)) {</span>
 <span class="nc" id="L364">                    showAlert(&quot;Thành công&quot;, &quot;Sửa ngân sách thành công!&quot;);</span>
 <span class="nc" id="L365">                    loadData();</span>
-<span class="nc" id="L366">                } else {</span>
+                } else {
 <span class="nc" id="L367">                    showAlert(&quot;Lỗi&quot;, &quot;Sửa ngân sách thất bại!&quot;);</span>
                 }
 <span class="nc" id="L369">            } catch (NumberFormatException e) {</span>
 <span class="nc" id="L370">                showAlert(&quot;Lỗi&quot;, &quot;Số tiền không hợp lệ! Vui lòng nhập số.&quot;);</span>
-            }
+<span class="nc" id="L371">            }</span>
 <span class="nc" id="L372">        });</span>
 <span class="nc" id="L373">    }</span>
     
@@ -377,8 +377,8 @@ public class BudgetController {
                                                    Integer thang,
                                                    Integer nam,
                                                    boolean nganSachDaTonTai) {
-<span class="pc bpc" id="L380" title="2 of 6 branches missed.">        if (danhMuc == null || gioiHanStr == null || gioiHanStr.trim().isEmpty()</span>
-<span class="pc bpc" id="L381" title="2 of 4 branches missed.">                || thang == null || nam == null) {</span>
+<span class="pc bpc" id="L380" title="4 of 10 branches missed.">        if (danhMuc == null || gioiHanStr == null || gioiHanStr.trim().isEmpty()</span>
+                || thang == null || nam == null) {
 <span class="fc" id="L382">            return &quot;Vui lòng điền đầy đủ thông tin!&quot;;</span>
         }
 
@@ -391,7 +391,7 @@ public class BudgetController {
 
 <span class="fc bfc" id="L392" title="All 2 branches covered.">        if (nganSachDaTonTai) {</span>
 <span class="fc" id="L393">            return &quot;Ngân sách cho danh mục \&quot;&quot; + danhMuc.getTenDanhMuc() + &quot;\&quot; tháng &quot;</span>
-<span class="fc" id="L394">                    + thang + &quot;/&quot; + nam + &quot; đã tồn tại!\nVui lòng chọn danh mục hoặc tháng khác.&quot;;</span>
+                    + thang + &quot;/&quot; + nam + &quot; đã tồn tại!\nVui lòng chọn danh mục hoặc tháng khác.&quot;;
         }
 
 <span class="fc" id="L397">        return null;</span>
@@ -402,70 +402,66 @@ public class BudgetController {
 <span class="fc" id="L402">            return &quot;Vui lòng nhập giới hạn ngân sách!&quot;;</span>
         }
 
-        try {
-<span class="fc" id="L406">            BigDecimal gioiHan = MoneyInputUtil.parseMoney(gioiHanStr);</span>
-<span class="fc bfc" id="L407" title="All 2 branches covered.">            if (gioiHan == null) {</span>
-<span class="fc" id="L408">                return &quot;Số tiền không hợp lệ! Vui lòng nhập số.&quot;;</span>
-            }
-<span class="fc bfc" id="L410" title="All 2 branches covered.">            if (gioiHan.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
-<span class="fc" id="L411">                return &quot;Giới hạn phải lớn hơn 0!&quot;;</span>
-            }
-<span class="fc bfc" id="L413" title="All 2 branches covered.">            if (gioiHan.compareTo(new BigDecimal(&quot;9999999999&quot;)) &gt; 0) {</span>
-<span class="fc" id="L414">                return &quot;Giới hạn quá lớn! Vui lòng nhập số tiền nhỏ hơn 10 tỷ.&quot;;</span>
-            }
-<span class="nc" id="L416">        } catch (NumberFormatException e) {</span>
-<span class="nc" id="L417">            return &quot;Số tiền không hợp lệ! Vui lòng nhập số.&quot;;</span>
+<span class="fc" id="L405">        BigDecimal gioiHan = MoneyInputUtil.parseMoney(gioiHanStr);</span>
+<span class="fc bfc" id="L406" title="All 2 branches covered.">        if (gioiHan == null) {</span>
+<span class="fc" id="L407">            return &quot;Số tiền không hợp lệ! Vui lòng nhập số.&quot;;</span>
+        }
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        if (gioiHan.compareTo(BigDecimal.ZERO) &lt;= 0) {</span>
+<span class="fc" id="L410">            return &quot;Giới hạn phải lớn hơn 0!&quot;;</span>
+        }
+<span class="fc bfc" id="L412" title="All 2 branches covered.">        if (gioiHan.compareTo(new BigDecimal(&quot;9999999999&quot;)) &gt; 0) {</span>
+<span class="fc" id="L413">            return &quot;Giới hạn quá lớn! Vui lòng nhập số tiền nhỏ hơn 10 tỷ.&quot;;</span>
         }
 
-<span class="fc" id="L420">        return null;</span>
+<span class="fc" id="L416">        return null;</span>
     }
 
     public static String validateInputChonNganSach(NganSach selected, String hanhDong) {
-<span class="fc bfc" id="L424" title="All 2 branches covered.">        if (selected == null) {</span>
-<span class="fc bfc" id="L425" title="All 2 branches covered.">            if (&quot;xoa&quot;.equals(hanhDong)) {</span>
-<span class="fc" id="L426">                return &quot;Vui lòng chọn ngân sách cần xóa!&quot;;</span>
+<span class="fc bfc" id="L420" title="All 2 branches covered.">        if (selected == null) {</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            if (&quot;xoa&quot;.equals(hanhDong)) {</span>
+<span class="fc" id="L422">                return &quot;Vui lòng chọn ngân sách cần xóa!&quot;;</span>
             }
-<span class="fc" id="L428">            return &quot;Vui lòng chọn ngân sách cần sửa!&quot;;</span>
+<span class="fc" id="L424">            return &quot;Vui lòng chọn ngân sách cần sửa!&quot;;</span>
         }
 
-<span class="fc" id="L431">        return null;</span>
+<span class="fc" id="L427">        return null;</span>
     }
 
     private void handleXoa() {
-<span class="nc" id="L435">        NganSach selected = table.getSelectionModel().getSelectedItem();</span>
-<span class="nc" id="L436">        String validationError = validateInputChonNganSach(selected, &quot;xoa&quot;);</span>
-<span class="nc bnc" id="L437" title="All 2 branches missed.">        if (validationError != null) {</span>
-<span class="nc" id="L438">            showAlert(&quot;Lỗi&quot;, validationError);</span>
-<span class="nc" id="L439">            return;</span>
+<span class="nc" id="L431">        NganSach selected = table.getSelectionModel().getSelectedItem();</span>
+<span class="nc" id="L432">        String validationError = validateInputChonNganSach(selected, &quot;xoa&quot;);</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">        if (validationError != null) {</span>
+<span class="nc" id="L434">            showAlert(&quot;Lỗi&quot;, validationError);</span>
+<span class="nc" id="L435">            return;</span>
         }
         
-<span class="nc" id="L442">        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);</span>
-<span class="nc" id="L443">        confirm.setTitle(&quot;Xác nhận&quot;);</span>
-<span class="nc" id="L444">        confirm.setHeaderText(&quot;Xóa ngân sách: &quot; + selected.getTenDanhMuc());</span>
-<span class="nc" id="L445">        confirm.setContentText(&quot;Bạn có chắc chắn muốn xóa?&quot;);</span>
+<span class="nc" id="L438">        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);</span>
+<span class="nc" id="L439">        confirm.setTitle(&quot;Xác nhận&quot;);</span>
+<span class="nc" id="L440">        confirm.setHeaderText(&quot;Xóa ngân sách: &quot; + selected.getTenDanhMuc());</span>
+<span class="nc" id="L441">        confirm.setContentText(&quot;Bạn có chắc chắn muốn xóa?&quot;);</span>
         
-<span class="nc" id="L447">        confirm.showAndWait().ifPresent(response -&gt; {</span>
-<span class="nc bnc" id="L448" title="All 2 branches missed.">            if (response == ButtonType.OK) {</span>
-<span class="nc bnc" id="L449" title="All 2 branches missed.">                if (nganSachDAO.xoaNganSach(selected.getId())) {</span>
-<span class="nc" id="L450">                    showAlert(&quot;Thành công&quot;, &quot;Xóa ngân sách thành công!&quot;);</span>
-<span class="nc" id="L451">                    loadData();</span>
-<span class="nc" id="L452">                } else {</span>
-<span class="nc" id="L453">                    showAlert(&quot;Lỗi&quot;, &quot;Xóa ngân sách thất bại!&quot;);</span>
+<span class="nc" id="L443">        confirm.showAndWait().ifPresent(response -&gt; {</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">            if (response == ButtonType.OK) {</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">                if (nganSachDAO.xoaNganSach(selected.getId())) {</span>
+<span class="nc" id="L446">                    showAlert(&quot;Thành công&quot;, &quot;Xóa ngân sách thành công!&quot;);</span>
+<span class="nc" id="L447">                    loadData();</span>
+                } else {
+<span class="nc" id="L449">                    showAlert(&quot;Lỗi&quot;, &quot;Xóa ngân sách thất bại!&quot;);</span>
                 }
             }
-<span class="nc" id="L456">        });</span>
-<span class="nc" id="L457">    }</span>
+<span class="nc" id="L452">        });</span>
+<span class="nc" id="L453">    }</span>
     
     private void showAlert(String title, String content) {
-<span class="nc" id="L460">        Alert alert = new Alert(Alert.AlertType.INFORMATION);</span>
-<span class="nc" id="L461">        alert.setTitle(title);</span>
-<span class="nc" id="L462">        alert.setHeaderText(null);</span>
-<span class="nc" id="L463">        alert.setContentText(content);</span>
-<span class="nc" id="L464">        alert.showAndWait();</span>
-<span class="nc" id="L465">    }</span>
+<span class="nc" id="L456">        Alert alert = new Alert(Alert.AlertType.INFORMATION);</span>
+<span class="nc" id="L457">        alert.setTitle(title);</span>
+<span class="nc" id="L458">        alert.setHeaderText(null);</span>
+<span class="nc" id="L459">        alert.setContentText(content);</span>
+<span class="nc" id="L460">        alert.showAndWait();</span>
+<span class="nc" id="L461">    }</span>
     
     public Scene getScene() {
-<span class="nc" id="L468">        return scene;</span>
+<span class="nc" id="L464">        return scene;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

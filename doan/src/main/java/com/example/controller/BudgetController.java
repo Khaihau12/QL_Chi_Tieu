@@ -402,19 +402,15 @@ public class BudgetController {
             return "Vui lòng nhập giới hạn ngân sách!";
         }
 
-        try {
-            BigDecimal gioiHan = MoneyInputUtil.parseMoney(gioiHanStr);
-            if (gioiHan == null) {
-                return "Số tiền không hợp lệ! Vui lòng nhập số.";
-            }
-            if (gioiHan.compareTo(BigDecimal.ZERO) <= 0) {
-                return "Giới hạn phải lớn hơn 0!";
-            }
-            if (gioiHan.compareTo(new BigDecimal("9999999999")) > 0) {
-                return "Giới hạn quá lớn! Vui lòng nhập số tiền nhỏ hơn 10 tỷ.";
-            }
-        } catch (NumberFormatException e) {
+        BigDecimal gioiHan = MoneyInputUtil.parseMoney(gioiHanStr);
+        if (gioiHan == null) {
             return "Số tiền không hợp lệ! Vui lòng nhập số.";
+        }
+        if (gioiHan.compareTo(BigDecimal.ZERO) <= 0) {
+            return "Giới hạn phải lớn hơn 0!";
+        }
+        if (gioiHan.compareTo(new BigDecimal("9999999999")) > 0) {
+            return "Giới hạn quá lớn! Vui lòng nhập số tiền nhỏ hơn 10 tỷ.";
         }
 
         return null;

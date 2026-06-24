@@ -1,2 +1,7 @@
 com\example\controller\TransactionControllerValidationTest.class
+com\example\controller\CategoryControllerChonDanhMucValidationTest.class
 com\example\controller\CategoryControllerValidationTest.class
+com\example\controller\admin\AdminAccountNapTienValidationTest.class
+com\example\controller\BudgetControllerValidationTest.class
+com\example\controller\admin\AdminAccountControllerValidationTest.class
+com\example\controller\admin\AdminCategoryControllerValidationTest.class
